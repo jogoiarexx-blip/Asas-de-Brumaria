@@ -94,6 +94,7 @@ export async function installDragonGLB(dragon,bytes,{gameplaySpecies=null}={}){
     const saddle=officialFury?measureFurySaddle(gltf.scene,{scale,
       offsetY:alignment.position.y,offsetZ:alignment.position.z}):null;
     const nextModel={root,mixer,slots,animations,active:null,original,scale,
+      visualHeight:size.y*scale,visualWingspan:size.x*scale,
       officialFury,riderOriginal,saddle,restRotations:new Map(),rig:gltf.scene};
     if(officialFury){
       for(const name of ['Bone_038','Bone_039','Bone_042','Bone_043',
