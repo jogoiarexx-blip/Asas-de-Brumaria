@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {inspectGLB} from './glbValidation.js';
 import {mapDragonClips,dragonAnimationState,selectDragonClip} from './dragonClipMap.js';
+import {measureFurySaddle,fitHeroSaddle} from './heroSaddleFit.js';
 import {browserDragonBudget,maxDragonTextureSize,downsizeDragonTextures} from './dragonTextureBudget.js';
 
 const VERSION='0.180.0';
@@ -86,8 +87,10 @@ export async function installDragonGLB(dragon,bytes,{gameplaySpecies=null}={}){
     // Preserve the original saddle position through every swap and reset.
     const riderOriginal=current?.riderOriginal??(dragon.rider?.position.clone()??null);
     const riderPrevious=dragon.rider?.position.clone()??null;
+    const saddle=officialFury?measureFurySaddle(gltf.scene,{scale,
+      offsetY:alignment.position.y,offsetZ:alignment.position.z}):null;
     const nextModel={root,mixer,slots,animations,active:null,original,scale,
-      officialFury,riderOriginal,restRotations:new Map(),rig:gltf.scene};
+      officialFury,riderOriginal,saddle,restRotations:new Map(),rig:gltf.scene};
     if(officialFury){
       for(const name of ['Bone_038','Bone_039','Bone_042','Bone_043',
         'Bone_029','Bone_034','Bone_006','Bone_011']){
@@ -105,7 +108,8 @@ export async function installDragonGLB(dragon,bytes,{gameplaySpecies=null}={}){
         if(officialFury){
           // The new model's back is lower than the procedural saddle.
           // Move only the rider's visual slot; collision/mount remain intact.
-          dragon.rider.position.set(0,-2.48+1.08*scale-box.min.y*scale+.08,-.06);
+          if(dragon.hero?.riderVisualReady)fitHeroSaddle(dragon.hero);
+          else dragon.rider.position.set(0,-2.48+1.08*scale-box.min.y*scale+.08,-.06);
         }else if(riderOriginal)dragon.rider.position.copy(riderOriginal);
       }
       for(const {obj} of original)obj.visible=false;
