@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {inspectGLB} from './glbValidation.js';
 import {addMissingRiderClips,mountedMotionState} from './heroRiderAnimation.js';
 import {fitHeroSaddle} from './heroSaddleFit.js';
+import {createPedestrianIdle} from './heroPedestrianIdle.js';
 
 const VERSION='0.180.0';
 const CDN=[`https://cdn.jsdelivr.net/npm/three@${VERSION}/examples/jsm/`,`https://unpkg.com/three@${VERSION}/examples/jsm/`];
@@ -76,8 +77,10 @@ const clipName=(name='')=>{
  if(/dance/.test(n))return 'dance';
  return null;
 };
-function mixAnimations(scene,sourceClips,{repairMounted=false}={}){
- const clips=repairMounted?addMissingRiderClips(scene,sourceClips,{repairMounted:true}):sourceClips;
+function mixAnimations(scene,sourceClips,{repairMounted=false,pedestrian=false}={}){
+ const clipList=repairMounted?addMissingRiderClips(scene,sourceClips,{repairMounted:true}):[...sourceClips];
+ const synthesized=pedestrian?createPedestrianIdle(clipList):null;
+ const clips=synthesized?[...clipList,synthesized]:clipList;
  const mixer=new THREE.AnimationMixer(scene),actions={};
  for(const clip of clips){const slot=clipName(clip.name);if(slot&&!actions[slot])actions[slot]=mixer.clipAction(clip);}
  const active=actions.idle??actions.walk??Object.values(actions)[0]??null;
@@ -98,7 +101,7 @@ export async function installHeroGLB(hero,bytes,{yaw=0,onStatus=()=>{}}={}){
  // a second time instead of using scene.clone() with broken skinning.
  const mountedScene=cloneSkinned?cloneSkinned(gltf.scene):(await new GLTFLoader().parseAsync(raw,'')).scene;
  const foot=makeVariant(gltf.scene,yaw),rider=makeVariant(mountedScene,yaw);
- const footAnim=mixAnimations(gltf.scene,gltf.animations??[]);
+ const footAnim=mixAnimations(gltf.scene,gltf.animations??[],{pedestrian:true});
  const rideAnim=mixAnimations(mountedScene,gltf.animations??[],{repairMounted:true});
  disposeModels(hero);
  hero.group.add(foot);hero.rider.add(rider);
