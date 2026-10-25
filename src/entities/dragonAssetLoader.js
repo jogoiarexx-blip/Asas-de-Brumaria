@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {inspectGLB} from './glbValidation.js';
 import {mapDragonClips,dragonAnimationState,selectDragonClip} from './dragonClipMap.js';
 import {measureFurySaddle,fitHeroSaddle} from './heroSaddleFit.js';
+import {dragonVisualScale} from './dragonSizing.js';
 import {browserDragonBudget,maxDragonTextureSize,downsizeDragonTextures} from './dragonTextureBudget.js';
 
 const VERSION='0.180.0';
@@ -62,13 +63,16 @@ export async function installDragonGLB(dragon,bytes,{gameplaySpecies=null}={}){
     const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
     if(!Number.isFinite(size.length())||size.y<.01||Math.max(size.x,size.y,size.z)>1e7)
       throw new Error('Dimensões inválidas ou modelo sem altura.');
-    const scale=Math.min(4.1/size.y,6/Math.max(size.x,.01),9/Math.max(size.z,.01));
-    if(!Number.isFinite(scale)||scale<=0)throw new Error('Escala GLB inválida.');
+    // Original Furies were limited by a 6-unit wingspan: their visual
+    // height ended at ~2.16, almost as small as the 2.23-unit player.
+    // Standardize both dragons to ~3.35 tall and keep the character at 100%.
+    // Optional/custom GLBs retain their previous fitting constraints.
+    const officialFury=gameplaySpecies==='furia_noite'||gameplaySpecies==='furia_luz';
+    const scale=dragonVisualScale(size,officialFury);
     root=new THREE.Group();root.name='ExternalDragonGLB';
     const alignment=new THREE.Group();alignment.scale.setScalar(scale);
     // The 49-bone Fury source faces +Z; Brumaria gameplay faces -Z.
     // Align only official species models, leaving optional user GLBs alone.
-    const officialFury=gameplaySpecies==='furia_noite'||gameplaySpecies==='furia_luz';
     if(officialFury){
       alignment.rotation.y=Math.PI;
       alignment.position.set(center.x*scale,-2.48-box.min.y*scale,center.z*scale);
@@ -124,7 +128,8 @@ export async function installDragonGLB(dragon,bytes,{gameplaySpecies=null}={}){
       current.mixer.stopAllAction();
       disposeRoot(current.root);
     }
-    return {...info,clips:(gltf.animations??[]).map(x=>x.name),mapped:Object.keys(slots),scale};
+    return {...info,clips:(gltf.animations??[]).map(x=>x.name),mapped:Object.keys(slots),scale,
+      visualHeight:size.y*scale,visualWingspan:size.x*scale};
   }catch(error){
     if(root)disposeRoot(root);
     else disposeRoot(gltf.scene);
