@@ -103,7 +103,8 @@ export async function installHeroGLB(hero,bytes,{yaw=0,onStatus=()=>{}}={}){
  disposeModels(hero);
  hero.group.add(foot);hero.rider.add(rider);
  hero.rider.updateMatrixWorld(true);
- const hipBone=mountedScene.getObjectByName('mixamorig_Hips')
+ const hipBone=mountedScene.getObjectByName('mixamorigHips')
+   ??mountedScene.getObjectByName('mixamorig_Hips')
    ??mountedScene.getObjectByName('mixamorig:Hips');
  if(hipBone?.isBone){
    const hips=hero.rider.worldToLocal(hipBone.getWorldPosition(new THREE.Vector3()));
