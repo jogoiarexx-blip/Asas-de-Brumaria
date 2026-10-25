@@ -31,17 +31,19 @@ test('pedestrian framing and input direction remain unchanged',()=>{
  assert.ok(Object.values(bad).every(Number.isFinite),JSON.stringify(bad));
 });
 
-test('actual GLB has no native walking idle, fallback makes a still standing clip',()=>{
+test('official GLB idle is preserved and older five-clip character files gain a fallback',()=>{
  const raw=readFileSync(new URL('../assets/models/personagem_animado_montaria.glb',import.meta.url));
  const len=raw.readUInt32LE(12);
  const json=JSON.parse(raw.subarray(20,20+len).toString('utf8'));
  const names=json.animations.map(c=>c.name);
  assert.ok(names.includes('Walking'));
- assert.ok(!names.includes('Idle'),names);
+ assert.ok(names.includes('Idle'),names);
+ assert.equal(names.filter(n=>n==='Idle').length,1,'do not duplicate the official Idle clip');
  const loader=readFileSync(new URL('../src/entities/heroAssetLoader.js',import.meta.url),'utf8');
  const idle=readFileSync(new URL('../src/entities/heroPedestrianIdle.js',import.meta.url),'utf8');
  assert.match(loader,/const synthesized=pedestrian\?createPedestrianIdle\(clipList\)/);
  assert.match(loader,/const footAnim=mixAnimations\(gltf.scene,gltf.animations\?\?\[\],\{pedestrian:true\}\)/);
+ assert.match(idle,/clips\.some\(c=>/);
  assert.match(idle,/track\.createInterpolant\(\)\.evaluate\(target\)/);
  assert.match(idle,/new THREE\.AnimationClip\('Idle',3,tracks\)/);
 });
