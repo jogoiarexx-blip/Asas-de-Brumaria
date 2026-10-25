@@ -17,26 +17,29 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const scale=(p,f=1)=>Object.fromEntries(Object.entries(p).map(([k,v])=>[k,v.map(n=>n*f)]));
 export function riderBoneNames(){return Object.values(BONES);}
 
+/** Optimized against measured 44-bone FK. Source rig faces local +Z.
+ * Before: both hands 0.31m behind the hips; after: ~0.27m ahead.
+ * Preserve the authored five non-mounted animation clips unchanged. */
 function seated(t,strength=1){
   const wave=Math.sin(Math.PI*2*t);
   return scale({
-    hips:[7,0,2*wave],spine:[-8,0,-3*wave],spine1:[-8,0,1.5*wave],
-    chest:[6,0,-wave],neck:[5,0,0],head:[0,2*wave,0],
-    lthigh:[-62,0,-8],rthigh:[-62,0,8],lknee:[78,0,0],rknee:[78,0,0],
+    hips:[6,0,.9*wave],spine:[7,0,-.6*wave],spine1:[6,0,.5*wave],
+    chest:[5,0,-.8*wave],neck:[-2,0,0],head:[0,1.2*wave,0],
+    lthigh:[-63,0,-7],rthigh:[-63,0,7],lknee:[82,0,0],rknee:[82,0,0],
     lfoot:[-14,0,0],rfoot:[-14,0,0],
-    larm:[-42,-6,-9],rarm:[-42,6,9],
-    lelbow:[-44,0,0],relbow:[-44,0,0],
+    larm:[57,21,-10],rarm:[60,-19,7],
+    lelbow:[41,3,-3],relbow:[38,-3,4],
     lhand:[-8,0,0],rhand:[-8,0,0]
   },strength);
 }
 function flying(t,flapping=true){
   const p=seated(t),wave=Math.sin(Math.PI*2*t);
-  p.chest=[-13-(flapping?3*wave:0),0,-3*wave];
-  p.spine1=[-11,0,-2*wave];p.hips=[10,0,2*wave];
-  p.head=[8,0,-3*wave];
-  p.larm=[-45+(flapping?8*wave:0),-10,-14];
-  p.rarm=[-45+(flapping?8*wave:0),10,14];
-  p.lelbow=[-55+4*wave,0,0];p.relbow=[-55+4*wave,0,0];
+  p.chest=[5+(flapping?2*wave:0),0,-1.2*wave];
+  p.spine1=[7,0,-.8*wave];p.hips=[7,0,.9*wave];
+  p.head=[-2,0,-1.8*wave];
+  p.larm=[57+(flapping?3*wave:0),21,-10];
+  p.rarm=[60+(flapping?3*wave:0),-19,7];
+  p.lelbow=[41+1.5*wave,3,-3];p.relbow=[38+1.5*wave,-3,4];
   return p;
 }
 export const RIDER_CLIPS=Object.freeze({
@@ -45,23 +48,25 @@ export const RIDER_CLIPS=Object.freeze({
   Riding_Idle:[2.4,t=>seated(t)],
   Riding_Walk:[.8,t=>{
     const p=seated(t),w=Math.sin(2*Math.PI*t);
-    p.chest=[2,0,2*w];p.hips=[5,0,-2*w];
-    p.lthigh=[-62+5*w,0,-8];p.rthigh=[-62-5*w,0,8];return p;
+    p.chest=[5,0,1.1*w];p.hips=[6,0,-1.1*w];
+    p.lthigh=[-63+3*w,0,-7];p.rthigh=[-63-3*w,0,7];return p;
   }],
-  Riding_Takeoff:[.78,t=>({...flying(t),chest:[-20+10*t,0,0],hips:[12+5*t,0,0]})],
+  Riding_Takeoff:[.78,t=>({...flying(t),chest:[11-6*t,0,0],hips:[9-2*t,0,0]})],
   Riding_Fly:[1,t=>flying(t)],
   Riding_Glide:[2.4,t=>flying(t,false)],
-  Riding_Landing:[.54,t=>({...seated(t),chest:[-8+10*t,0,0],hips:[12-5*t,0,0]})],
+  Riding_Landing:[.54,t=>({...seated(t),chest:[9-4*t,0,0],hips:[9-3*t,0,0]})],
   Riding_Attack:[.4,t=>({...flying(t,false),
-    rarm:[-45-23*Math.sin(Math.PI*t),10,12],
-    chest:[-10-9*Math.sin(Math.PI*t),0,0]})],
+    rarm:[60+10*Math.sin(Math.PI*t),-19,7],
+    chest:[5+7*Math.sin(Math.PI*t),0,0]})],
   Riding_Hurt:[.5,t=>({...seated(t),
-    spine:[-8,0,15*Math.sin(Math.PI*t)],
+    spine:[7,0,9*Math.sin(Math.PI*t)],
     head:[0,0,-12*Math.sin(Math.PI*t)]})],
   Dismount:[.77,t=>seated(t,clamp((1-t)*1.28,0,1))]
 });
-export function addMissingRiderClips(scene,clips=[]){
-  const byName=new Set(clips.map(c=>c.name.toLowerCase()));
+export function addMissingRiderClips(scene,clips=[],{repairMounted=false}={}){
+  // Previous production GLB clips are backwards. Replace ONLY mounted poses.
+  const authored=repairMounted?clips.filter(c=>!Object.hasOwn(RIDER_CLIPS,c.name)):clips;
+  const byName=new Set(authored.map(c=>c.name.toLowerCase()));
   const bones=Object.fromEntries(Object.entries(BONES)
     .map(([alias,name])=>[alias,scene.getObjectByName(name)
       ??scene.getObjectByName(name.replace(/[:./]/g,'_'))]).filter(([,bone])=>bone?.isBone));
@@ -85,7 +90,7 @@ export function addMissingRiderClips(scene,clips=[]){
     }
     generated.push(new THREE.AnimationClip(name,duration,tracks));
   }
-  return [...clips,...generated];
+  return [...authored,...generated];
 }
 export function mountedMotionState(dragon={}){
   if((dragon.hurtTime??0)>0)return 'rideHurt';
