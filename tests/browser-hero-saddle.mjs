@@ -27,7 +27,9 @@ try{
   const g=window.__saddleQAGame,d=g.dragon,h=g.hero;
   d.mount();h.setMounted(true);
   const THREE=await import('three');
-  const bone=key=>h.glbRoots[1].getObjectByName('mixamorig_'+key);
+  const bone=key=>h.glbRoots[1].getObjectByName('mixamorig'+key)
+    ??h.glbRoots[1].getObjectByName('mixamorig_'+key)
+    ??h.glbRoots[1].getObjectByName('mixamorig:'+key);
   const sample=state=>{
    d.pose=state;d.airborne=['takeoff','cruise'].includes(state);
    d.speed=state==='cruise'?28:state==='ground'?0:7;
