@@ -1,0 +1,24 @@
+/* Prévia premium 2.5D: fotos WebP RGBA, nenhum WebGL ou download externo. */
+.monte-camadas-fundo,.monte-camadas-vazio{
+  position:relative; width:100%; border-radius:20px; overflow:hidden;
+  background:radial-gradient(ellipse at 55% 30%,#57341f 0%,#211713 48%,#100d0b 100%);
+  box-shadow:inset 0 0 0 1px #ffffff14,0 16px 38px #0005;
+}
+.monte-camadas-svg{display:block;width:100%;height:auto;max-height:425px;aspect-ratio:640/545;filter:drop-shadow(0 8px 14px #0005)}
+.monte-camada-foto{pointer-events:none}
+.monte-camada-foto.monte-camada-nova{animation:monteIngredienteEntrando .38s cubic-bezier(.17,.9,.4,1.15) both}
+@keyframes monteIngredienteEntrando{from{opacity:.1;transform:translateY(-37px)}to{opacity:1;transform:translateY(0)}}
+.monte-camadas-legenda{position:absolute;left:12px;right:12px;bottom:9px;font-size:10px;text-align:center;color:#dfc1a1;background:#15100ddc;border-radius:999px;padding:5px 10px;pointer-events:none}
+.monte-camadas-vazio{height:245px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:16px;text-align:center;box-sizing:border-box}
+.monte-camadas-vazio span{font-size:38px;opacity:.75}.monte-camadas-vazio strong{font-size:16px}.monte-camadas-vazio small{color:#cbbbad;max-width:270px;line-height:1.45}
+/* Tirar a velha pilha colorida e dar o espaço principal para o lanche */
+.monte-preview-scene.monte-preview-scene-fotos{display:block!important}
+.monte-preview-scene-fotos .monte-preview-list{display:flex!important;flex-wrap:wrap;gap:6px;margin-top:12px}
+.monte-preview-scene-fotos .monte-preview-item{padding:5px 8px;gap:6px;flex:1 1 128px;max-width:100%;border-radius:10px}
+.monte-preview-scene-fotos .monte-preview-item .monte-thumb{width:40px;height:34px;flex:0 0 40px}
+.monte-preview-scene-fotos .monte-preview-copy strong{font-size:11px}.monte-preview-scene-fotos .monte-preview-copy small{font-size:10px}
+.monte-thumb.monte-thumb-real{background:radial-gradient(ellipse,#64412a,#251711);border-color:#ffffff1c}
+.monte-thumb.monte-thumb-real::before,.monte-thumb.monte-thumb-real::after{display:none!important}
+.monte-thumb.monte-thumb-real img{position:relative;z-index:2;max-width:100%;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 2px #0008)}
+@media(max-width:720px){.monte-camadas-svg{max-height:245px}.monte-camadas-vazio{height:150px}.monte-camadas-vazio span{font-size:26px}.monte-camadas-legenda{font-size:9px}.monte-preview-scene-fotos .monte-preview-list{display:none!important}}
+@media(prefers-reduced-motion:reduce){.monte-camada-foto.monte-camada-nova{animation:none}}

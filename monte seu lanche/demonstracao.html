@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demonstração das camadas — Monte Seu Brutu's</title>
+<link rel="stylesheet" href="camadas.css">
+<style>
+:root{font:16px system-ui;color:#f5e9da;background:#130e0b}body{margin:0;padding:24px}
+main{max-width:1100px;margin:auto}h1{margin:0 0 8px}p{color:#d1bdaa;line-height:1.5}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+fieldset{border:1px solid #5a3c2c;border-radius:18px;padding:18px;background:#241913}
+legend{font-weight:750;color:#ffb768}
+.item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #ffffff14;gap:8px}.item label{flex:1}
+button{cursor:pointer;background:#fbaa44;color:#2a1505;font-weight:800;padding:8px 13px;border:0;border-radius:9px}
+.qty{min-width:24px;text-align:center}
+#area{min-width:0}#area>div{max-width:580px;margin:auto}
+@media(max-width:760px){.layout{grid-template-columns:1fr}body{padding:12px}}
+</style>
+</head>
+<body><main><h1>Monte Seu Brutu's — Camadas WebP</h1>
+<p>Prévia técnica para testar as fotos reais. Esta página não realiza pedidos nem altera preços do cardápio.</p>
+<div class="layout"><div><fieldset><legend>Escolha os ingredientes</legend><div id="opcoes"></div></fieldset></div><div id="area" aria-live="polite"></div></div>
+</main><script src="camadas.js"></script><script>
+const dados=[
+ ['mont-pao-brioche','Pão brioche','pao'],['mont-pao-tradicional','Pão tradicional','pao'],['mont-pao-baguete','Pão baguete','pao'],
+ ['mont-hamburguer-bovino','Hambúrguer bovino','proteina'],['mont-frango','Filé de frango','proteina'],['mont-costela','Costela desfiada','proteina'],
+ ['mont-queijo-cheddar','Cheddar','queijo'],['mont-queijo-mussarela','Muçarela','queijo'],['mont-bacon','Bacon','extra'],
+ ['mont-alface','Alface','salada'],['mont-tomate','Tomate','salada'],['mont-cebola-roxa','Cebola roxa','salada'],
+ ['mont-maionese','Maionese','molho'],['mont-barbecue','Barbecue','molho'],['mont-molho-casa','Molho da casa','molho'],
+ ['mont-ovo','Ovo','extra'],['mont-cebola-caramelizada','Cebola caramelizada','extra'],['mont-catupiry','Catupiry','extra']
+];
+const quantidades={'mont-pao-brioche':1,'mont-hamburguer-bovino':1,'mont-queijo-cheddar':1,'mont-alface':1};
+function atualizar(){
+ const selecionados=dados.filter(d=>quantidades[d[0]]>0).map(d=>({id:d[0],nome:d[1],grupo:d[2],quantidade:quantidades[d[0]]}));
+ document.getElementById('area').innerHTML=BrutusCamadas.render(selecionados);
+ document.getElementById('opcoes').innerHTML=dados.map(d=>`<div class="item"><label>${d[1]}</label><button type="button" data-id="${d[0]}" data-inc="-1" aria-label="Retirar ${d[1]}">−</button><b class="qty">${quantidades[d[0]]||0}</b><button type="button" data-id="${d[0]}" data-inc="1" aria-label="Adicionar ${d[1]}">+</button></div>`).join('');
+}
+document.getElementById('opcoes').addEventListener('click',e=>{
+ const btn=e.target.closest('[data-id]');if(!btn)return;
+ const id=btn.dataset.id,inc=Number(btn.dataset.inc);
+ if(id.startsWith('mont-pao-')&&inc>0)for(const key of Object.keys(quantidades))if(key.startsWith('mont-pao-'))quantidades[key]=0;
+ quantidades[id]=Math.max(0,Math.min(id.startsWith('mont-pao-')?1:4,(quantidades[id]||0)+inc));atualizar();
+});atualizar();
+</script></body></html>

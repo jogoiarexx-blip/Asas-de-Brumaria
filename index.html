@@ -1,101 +1,594 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#071a25">
-  <meta name="description" content="Asas de Brumária: explore ilhas, monte em seu dragão e complete missões.">
-  <title>Asas de Brumária v1.4.18 — Aventura de Dragões</title>
-  <link rel="stylesheet" href="./src/ui/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brutu's Delivery — Cardápio</title>
+<meta name="description" content="Peça pelo cardápio digital do Brutu's Delivery e receba tudo quentinho em casa.">
+<meta name="theme-color" content="#14100d">
+<link rel="canonical" href="https://brutu-s-delivery.onrender.com/">
+
+<!-- Preview do link (aparece quando o link é colado no WhatsApp, Instagram etc.)
+     IMPORTANTE: og:image precisa ser uma URL ABSOLUTA quando o site estiver
+     hospedado (ex: https://seudominio.com/icons/og-image.jpg), senão o
+     WhatsApp não consegue buscar a imagem. Troque a linha abaixo depois de
+     publicar o site — veja o README. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Brutu's Delivery — Cardápio">
+<meta property="og:description" content="Peça pelo cardápio digital do Brutu's Delivery e receba tudo quentinho em casa.">
+<meta property="og:url" content="https://brutu-s-delivery.onrender.com/">
+<meta property="og:image" content="https://brutu-s-delivery.onrender.com/icons/og-image-professional.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Brutu's Delivery — Cardápio">
+<meta name="twitter:description" content="Peça pelo cardápio digital do Brutu's Delivery e receba tudo quentinho em casa.">
+<meta name="twitter:image" content="https://brutu-s-delivery.onrender.com/icons/og-image-professional.jpg">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="stylesheet" href="css/style.css?v=2.9.2">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Restaurant","name":"Brutu's Delivery","url":"https://brutu-s-delivery.onrender.com/","telephone":"+55 16 99331-9742","servesCuisine":"Hambúrgueres e lanches","address":{"@type":"PostalAddress","streetAddress":"Rua Seis de Janeiro, 806","addressLocality":"Morro Agudo","addressRegion":"SP","addressCountry":"BR"}}</script>
+
+<!-- Configuração central da marca/tema (ver data/site-config.js) -->
+<script src="data/site-config.js"></script>
+<script>
+  (function () {
+    try {
+      var t = window.SITE_CONFIG && window.SITE_CONFIG.tema;
+      if (!t) return;
+      var root = document.documentElement.style;
+      if (t.accent) root.setProperty("--accent", t.accent);
+      if (t.accentDark) root.setProperty("--accent-dark", t.accentDark);
+      if (t.ember) root.setProperty("--ember", t.ember);
+    } catch (e) { /* se der qualquer erro, mantém as cores padrão do CSS */ }
+  })();
+</script>
+<link rel="stylesheet" href="css/roleta.css?v=2.9.3">
+<link rel="stylesheet" href="monte%20seu%20lanche/montador.css?v=3.0.0">
+<link rel="stylesheet" href="monte%20seu%20lanche/camadas.css?v=3.0.0">
+<link rel="stylesheet" href="css/cardapio-profissional.css?v=2.9.2">
 </head>
 <body>
-  <div id="game" aria-label="Mundo do jogo em 3D"></div>
-  <div id="hud">
-    <div class="hud-top">
-      <div class="brand"><span class="brand-icon">◆</span><div><strong>ASAS DE BRUMÁRIA</strong><small>VOE · DESCUBRA · AMANSE DRAGÕES</small></div></div>
-      <div class="top-pills"><span id="mode-pill">EXPLORAÇÃO</span><span id="weather-pill">CÉU ABERTO</span><span id="clock-pill">10:19</span><span id="fps-pill">60 FPS</span><span id="controller-status" aria-live="polite">TECLADO / TOQUE</span><button id="gpu-toggle" type="button" title="Preferência de GPU, resolução e sombras">⚙ GPU</button><button id="quality-toggle" type="button" title="Alternar qualidade gráfica">GRÁFICOS: AUTO · G</button></div>
+
+<a href="#main-content" class="skip-link">Pular para o conteúdo</a>
+
+<div id="offline-indicator" class="offline-banner hidden" role="status">
+  Sem conexão — mostrando o último cardápio salvo
+</div>
+
+<!-- ======================= TELA DE CARREGAMENTO ======================= -->
+<div id="loading-screen" class="loading-screen">
+  <div class="selo loading-selo" aria-hidden="true">B</div>
+  <strong>Preparando o cardápio</strong>
+  <div class="loading-skeleton" aria-hidden="true"><i></i><i></i><i></i></div>
+</div>
+
+<!-- ======================= APP (preenchido via JS) ======================= -->
+<div id="app" class="hidden">
+
+  <!-- ---------- Cabeçalho ---------- -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="logo-selo selo" aria-hidden="true">
+        <img id="restaurante-logo" src="" alt="">
+      </div>
+      <div class="brand-block">
+        <span class="brand-kicker">Cardápio oficial</span>
+        <h1 class="brand-name" id="restaurante-nome">Brutu's Delivery</h1>
+        <div class="brand-meta">
+          <span id="restaurante-status" class="status-aberto">Aberto agora</span>
+          <span class="dot">•</span>
+          <span id="restaurante-tempo">40-60 min</span>
+        </div>
+      </div>
+      <button class="meus-pedidos-btn hidden" id="meus-pedidos-btn" type="button" aria-label="Acompanhar meus pedidos">
+        <span aria-hidden="true">📦</span>
+        <span class="meus-pedidos-btn-text">Meus pedidos</span>
+        <span class="meus-pedidos-badge hidden" id="meus-pedidos-badge">1</span>
+      </button>
     </div>
-    <div class="mission-card"><div class="eyebrow"><span class="pulse"></span> MISSÃO ATIVA <span id="quest-index">01 / 04</span></div><h2 id="quest-title">A PRIMEIRA CONEXÃO</h2><p id="quest-desc">Aproxime-se do dragão e monte nele.</p><div id="quest-progress"></div><div id="quest-guide" aria-live="off">SIGA O OBJETIVO MARCADO NO MAPA</div></div>
-    <div class="map-panel"><div class="map-head"><span>MAPA DAS ILHAS</span><span class="map-north">N ↑</span></div><canvas id="mini-map" width="160" height="160" aria-label="Minimapa"></canvas><div class="map-footer" id="waypoint">OBJETIVO A 0m</div></div>
-    <div id="toast" aria-live="polite"></div>
-    <button id="stable-toggle" class="stable-toggle" type="button" aria-label="Abrir estábulo de dragões">🐉 ESTÁBULO <span>T</span></button>
-    <div id="expedition-status" class="expedition-status">MARCOS 0/5 · AMIZADES 0/3</div>
-    <div id="mountain-status" class="mountain-status">🏔 MAPA DE MONTANHAS A LESTE</div>
-    <div id="contract-status" class="contract-status hidden" aria-live="polite"></div>
-    <div id="training-status" class="training-status hidden" aria-live="polite"></div>
-    <div id="dragon-model-status" class="dragon-model-status" data-state="loading" role="status" aria-live="polite">Carregando Fúria da Noite 3D…</div>
-    <div id="interaction" class="hidden">E · MONTAR NO DRAGÃO</div>
-    <div id="target-lock" class="target-lock hidden">◆ SENTINELA NA MIRA</div><div class="crosshair">+</div><div id="hurt-overlay" class="hurt-overlay"></div>
-    <div class="bottom-hud"><div class="status-card"><div class="stat-head"><span>ENERGIA DO DRAGÃO</span><span id="energy-number">100%</span></div><div class="energy-track"><div id="energy-bar"></div></div><div class="stat-head health-head"><span id="health-label">RESISTÊNCIA DA FÚRIA DA NOITE</span><span id="health-number">100%</span></div><div class="energy-track health-track"><div id="health-bar"></div></div><div class="stat-row"><span id="speed-text">NO SOLO</span><span id="altitude-text">ALT 0 m</span><span id="dodge-status">ESQUIVA · EM VOO</span></div></div><div id="keyboard-help"><b>W A S D</b> MOVER NA DIREÇÃO DA CÂMERA <span>•</span> <b>ESPAÇO</b> SUBIR <span>•</span> <b>CTRL</b> DESCER <span>•</span> <b>E</b> INTERAGIR <span>•</span> <b>F</b> FOGO <span>•</span> <b>Q</b> ESQUIVAR (VOANDO) <span>•</span> <b>SHIFT</b> TURBO / ANDAR DEVAGAR <span>•</span> <b>T</b> ESTÁBULO <span>•</span> <b>P</b> SALVAR <span>•</span> <b>C</b> CLIMA <span>•</span> <b>N</b> HORÁRIO <span>•</span> <b>G</b> GRÁFICOS <span>•</span> <b>⚙ GPU</b> VÍDEO <span>•</span> <b>V</b> CÂMERA ATRÁS · ARRASTE / RODA</div></div>
-    <div id="gamepad-help" class="gamepad-help">🎮 ANALÓGICO E: MOVER · ANALÓGICO D: CÂMERA · A: INTERAGIR · X: FOGO · Y/START: ESTÁBULO · LB/RB: DESCER/SUBIR · LT/RT: FREAR/ACELERAR · L3: TURBO · R3: ESQUIVA · B: VOLTAR</div>
-    <div class="mobile-controls" id="mobile-controls">
-      <div class="touch-dpad"><button data-hold="w" class="pad-up" aria-label="Avançar">▲</button><button data-hold="a" class="pad-left" aria-label="Virar à esquerda">◀</button><button data-hold="s" class="pad-down" aria-label="Recuar">▼</button><button data-hold="d" class="pad-right" aria-label="Virar à direita">▶</button></div>
-      <div class="touch-actions"><button class="touch-action small" data-hold="ctrl">DESCER</button><button class="touch-action small" data-hold="shift">TURBO</button><button class="touch-action dodge" data-tap="q">ESQUIVA</button><button class="touch-action fire" data-tap="f">FOGO</button><button class="touch-action climb" data-hold="space">SUBIR</button><button class="touch-action mount" data-tap="e">MONTAR</button></div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="busca-input" placeholder="O que você quer comer hoje?" aria-label="Buscar produto" autocomplete="off">
+        <button type="button" id="busca-limpar" class="search-clear hidden" aria-label="Limpar busca">×</button>
+      </div>
+      <div class="search-feedback hidden" id="search-feedback" aria-live="polite">
+        <span id="search-feedback-text"></span>
+        <button type="button" id="search-feedback-clear">Limpar busca</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---------- Categorias (sticky) ---------- -->
+  <nav class="category-nav" aria-label="Categorias do cardápio">
+    <div class="category-scroll" id="categoria-nav-scroll"></div>
+  </nav>
+
+  <!-- ---------- Conteúdo principal ---------- -->
+  <main id="main-content">
+    <section class="pedido-ativo-banner hidden" id="pedido-ativo-banner" aria-live="polite">
+      <div>
+        <small>PEDIDO EM ANDAMENTO</small>
+        <strong id="pedido-ativo-titulo">Aguardando confirmação</strong>
+        <span id="pedido-ativo-subtitulo">Toque para acompanhar seu pedido.</span>
+      </div>
+      <button type="button" id="pedido-ativo-abrir">Acompanhar →</button>
+    </section>
+    <div class="hero-banner" id="banner-wrap">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <img class="hero-mascot" id="hero-mascot" src="" alt="">
+      <div class="hero-text">
+        <span class="hero-eyebrow">CARDÁPIO OFICIAL · PEDIDO ONLINE</span>
+        <h2 class="hero-title" id="hero-title">Brutu's Delivery</h2>
+        <p class="hero-slogan" id="hero-slogan"></p>
+        <span class="banner-tag" id="banner-tag"></span>
+      </div>
+      <img class="hero-banner-promo hidden" id="hero-banner-promo" src="" alt="">
+    </div>
+
+    <div class="service-highlights" aria-label="Facilidades do pedido">
+      <div class="service-highlight"><span aria-hidden="true">💬</span><strong>Pedido fácil</strong><small>Envie pelo WhatsApp</small></div>
+      <div class="service-highlight"><span aria-hidden="true">💠</span><strong>Pix simples</strong><small>QR Code após o envio</small></div>
+      <div class="service-highlight"><span aria-hidden="true">🛵</span><strong>Entrega ou retirada</strong><small>Você escolhe</small></div>
+      <div class="service-highlight"><span aria-hidden="true">🔥</span><strong>Feito na hora</strong><small>Do seu jeito</small></div>
+    </div>
+
+    <section class="monte-chamada hidden" aria-label="Monte seu lanche personalizado">
+      <span class="monte-chamada-icone" aria-hidden="true">🍔</span>
+      <div><span class="monte-chamada-kicker">NOVIDADE · SUA RECEITA</span>
+      <h2>Monte Seu Brutu's</h2><p>Crie do zero: escolha pão, carne, queijos, saladas, molhos e extras. Sem receitas prontas!</p></div>
+      <button type="button" id="monte-abrir" class="monte-chamada-btn">🎮 Começar a montar</button>
+    </section>
+
+    <section class="menu-insights" id="menu-insights" aria-label="Informações rápidas do pedido">
+      <div class="menu-insight"><span aria-hidden="true">🛵</span><div><small>Entrega</small><strong id="insight-entrega">Calculando…</strong></div></div>
+      <div class="menu-insight"><span aria-hidden="true">🧾</span><div><small>Pedido mínimo</small><strong id="insight-minimo">—</strong></div></div>
+      <div class="menu-insight"><span aria-hidden="true">⏱️</span><div><small>Tempo estimado</small><strong id="insight-tempo">—</strong></div></div>
+    </section>
+
+    <section class="promo-carousel-section hidden" id="destaques-section" aria-label="Promoções em destaque">
+      <div class="promo-carousel-heading">
+        <div>
+          <span>SELEÇÃO BRUTU'S</span>
+          <strong>Escolhas que valem a mordida</strong>
+        </div>
+        <small>Arraste ou use as setas</small>
+      </div>
+      <div class="promo-carousel" id="destaques-scroll">
+        <button class="promo-carousel-arrow promo-carousel-prev" type="button" aria-label="Promoção anterior">‹</button>
+        <div class="promo-carousel-viewport" id="promo-carousel-viewport"></div>
+        <button class="promo-carousel-arrow promo-carousel-next" type="button" aria-label="Próxima promoção">›</button>
+        <div class="promo-carousel-dots" id="promo-carousel-dots" aria-label="Escolher promoção"></div>
+      </div>
+    </section>
+
+    <div id="categorias-container"><!-- seções de categoria/produtos geradas via JS --></div>
+
+    <p id="sem-resultado" class="empty-state hidden">Nenhum produto encontrado para essa busca 🔍</p>
+
+    <footer class="app-footer">
+      <div class="footer-brand"><span class="selo" aria-hidden="true">B</span><div><strong>Brutu's Delivery</strong><small>O sabor é bruto. A fome não tem chance.</small></div></div>
+      <div class="footer-info">
+        <a id="footer-mapa" href="#" target="_blank" rel="noopener"><span aria-hidden="true">📍</span><span><strong>Retirada</strong><small id="footer-endereco"></small></span></a>
+        <div><span aria-hidden="true">🕐</span><span><strong>Atendimento</strong><small id="footer-horario"></small></span></div>
+        <a id="footer-whatsapp" href="#" target="_blank" rel="noopener"><span aria-hidden="true">💬</span><span><strong>WhatsApp</strong><small id="footer-telefone"></small></span></a>
+      </div>
+      <p>Imagens ilustrativas. Consulte a disponibilidade dos produtos.</p>
+    </footer>
+  </main>
+
+  <!-- ---------- Barra flutuante do carrinho ---------- -->
+  <button class="back-to-top hidden" id="back-to-top" type="button" aria-label="Voltar ao topo" title="Voltar ao topo">↑</button>
+
+  <div class="cart-bar hidden" id="cart-bar">
+    <button class="cart-bar-inner" id="cart-bar-btn" type="button">
+      <span class="cart-bar-count">
+        <span class="cart-bar-badge" id="cart-bar-badge">0</span>
+        <span id="cart-bar-label">Ver sacola</span>
+      </span>
+      <span class="cart-bar-cta">
+        <span id="cart-bar-total">R$ 0,00</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+      </span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ======================= ACOMPANHAMENTO DE PEDIDOS ======================= -->
+<div class="overlay hidden" id="tracking-overlay" role="dialog" aria-modal="true" aria-labelledby="tracking-title">
+  <div class="sheet tracking-sheet">
+    <button class="sheet-close" id="tracking-close" aria-label="Fechar">✕</button>
+    <div class="tracking-head">
+      <div>
+        <small>BRUTU'S DELIVERY</small>
+        <h2 id="tracking-title">Meus pedidos</h2>
+      </div>
+      <button class="tracking-notify-btn" id="tracking-notify-btn" type="button">🔔 Ativar avisos</button>
+    </div>
+    <p class="tracking-intro">Acompanhe aqui o mesmo pedido que a loja atualiza no painel.</p>
+    <div id="tracking-lista" class="tracking-lista"></div>
+  </div>
+</div>
+
+<!-- ======================= MODAL DE PRODUTO ======================= -->
+<!-- Montador de lanches: preços e disponibilidade vêm do cardápio oficial -->
+<div class="monte-overlay hidden" id="monte-overlay" role="dialog" aria-modal="true" aria-labelledby="monte-titulo">
+  <div class="monte-dialog">
+    <header class="monte-topo"><div><span class="monte-chamada-kicker">COZINHA INTERATIVA</span><h2 id="monte-titulo">Monte Seu Brutu's 🍔</h2></div>
+      <button type="button" class="monte-close" id="monte-fechar" aria-label="Fechar montador">✕</button>
+    </header>
+    <nav class="monte-passos" aria-label="Etapas do montador"><span data-monte-passo class="ativo">1. Pão</span><span data-monte-passo>2. Carne</span><span data-monte-passo>3. Queijo</span><span data-monte-passo>4. Salada</span><span data-monte-passo>5. Finalizar</span></nav>
+    <div class="monte-conteudo"><div class="monte-opcoes-col"><h3 id="monte-indicador">1. Escolha o pão</h3><div id="monte-stage"></div></div>
+      <aside class="monte-visual-col"><h3>Seu lanche</h3><div id="monte-visual" aria-live="polite"></div>
+      <div class="monte-precos"><small>Preço por unidade: <strong id="monte-preco-unitario">R$ 0,00</strong></small>
+      <strong id="monte-preco-vivo" aria-live="polite">R$ 0,00</strong></div>
+      <div class="monte-quantidade"><span>Quantidade</span><button type="button" id="monte-menos" aria-label="Diminuir">−</button><strong id="monte-quantidade">1</strong><button type="button" id="monte-mais" aria-label="Aumentar">+</button></div>
+      </aside></div>
+    <footer class="monte-rodape"><button type="button" id="monte-anterior" class="monte-sec" hidden>← Voltar</button>
+      <span class="monte-rodape-preco">Total: <strong id="monte-total">R$ 0,00</strong></span>
+      <button type="button" id="monte-proximo" class="monte-principal">Continuar →</button>
+      <button type="button" id="monte-confirmar" class="monte-principal" hidden>Adicionar à sacola 🛒</button>
+    </footer>
+  </div>
+</div>
+
+<div class="overlay hidden" id="product-overlay" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+  <div class="sheet" id="product-sheet">
+    <button class="sheet-close" id="product-close" aria-label="Fechar">✕</button>
+    <img id="product-modal-photo" class="product-modal-photo" src="" alt="">
+    <div class="product-modal-body">
+      <h2 class="product-modal-title" id="product-modal-title"></h2>
+      <p class="product-modal-desc" id="product-modal-desc"></p>
+      <div class="product-modal-meta" id="product-modal-meta"></div>
+
+      <div class="info-block" id="product-ingredientes-block">
+        <h3>Ingredientes</h3>
+        <div class="tag-list" id="product-ingredientes"></div>
+      </div>
+
+      <div class="info-block hidden" id="product-adicionais-block">
+        <h3>Personalize seu pedido</h3>
+        <div id="product-adicionais-list"></div>
+      </div>
+
+      <div class="info-block">
+        <h3>Observações</h3>
+        <textarea class="obs-input" id="product-obs" rows="2" maxlength="140" placeholder="Ex: sem cebola, ponto da carne, etc."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="qty-stepper">
+        <button class="qty-btn" id="qty-minus" type="button" aria-label="Diminuir quantidade">−</button>
+        <span class="qty-value" id="qty-value">1</span>
+        <button class="qty-btn" id="qty-plus" type="button" aria-label="Aumentar quantidade">+</button>
+      </div>
+      <button class="btn-primary" id="add-to-cart-btn" type="button">
+        <span>Adicionar</span>
+        <span class="preco" id="product-modal-preco">R$ 0,00</span>
+      </button>
     </div>
   </div>
-  <section id="gpu-panel" class="gpu-panel hidden" aria-label="Opções de vídeo e GPU">
-    <div class="gpu-panel-title"><strong>⚙ CONFIGURAÇÕES DE VÍDEO</strong><button id="gpu-close" type="button" aria-label="Fechar configurações">✕</button></div>
-    <p>GPU em uso (informação fornecida pelo navegador): <strong id="gpu-device">Consultando…</strong></p>
-    <label>Preferência de GPU (solicitação ao navegador)
-      <select id="gpu-preference"><option value="default">Automático (navegador)</option><option value="high-performance">Preferir alto desempenho</option><option value="low-power">Preferir baixo consumo</option></select></label>
-    <label>Resolução interna <select id="gpu-resolution"><option value="0.5">50% · PC fraco</option><option value="0.75">75% · equilibrado</option><option value="1">100% · padrão</option></select></label>
-    <label class="gpu-check"><input id="gpu-shadows" type="checkbox"> Sombras dinâmicas</label>
-    <label class="gpu-check"><input id="gpu-antialias" type="checkbox"> Suavização de serrilhado (antialias)</label>
-    <p id="gpu-note">O navegador decide qual GPU física usar. Para escolher entre integrada e dedicada, configure também o Windows/driver. As preferências só serão aplicadas após reiniciar a página.</p>
-    <button id="gpu-apply" type="button">SALVAR, APLICAR E REINICIAR</button>
-  </section>
-  <div id="npc-dialogue" class="npc-dialogue hidden" role="dialog" aria-label="Conversa com morador" aria-modal="false"><div class="npc-dialogue-heading"><strong id="npc-name">MORADOR</strong><span id="npc-role"></span></div><p id="npc-text"></p><button id="npc-close" type="button">CONTINUAR · E</button></div>
-  <div id="stable" class="stable-screen hidden" role="dialog" aria-label="Estábulo e treinamento" aria-modal="true">
-    <section class="stable-card">
-      <div class="stable-heading"><div><small>VILA DE BRUMÁRIA</small><h2>ESTÁBULO DOS DRAGÕES</h2><p>Treine habilidades, descubra espécies e domine os circuitos aéreos.</p></div><button id="stable-close" class="stable-close" type="button" aria-label="Fechar estábulo">✕</button></div>
-      <section class="hero-glb-panel" aria-label="Importar modelo 3D do personagem">
-        <strong>NOVO HERÓI ANIMADO · A PÉ E SOBRE O DRAGÃO</strong>
-        <p>O novo personagem usa as animações de caminhar, correr, montar, cavalgar, decolar, voar, planar, atacar, pousar e desmontar. Se o modelo ainda não apareceu, clique em IMPORTAR GLB e escolha <b>personagem_animado_montaria.glb</b>. A importação permanece salva no navegador.</p>
-        <input id="hero-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
-        <div class="hero-glb-buttons"><button id="hero-glb-import" type="button">IMPORTAR GLB</button><button id="hero-glb-demo" type="button">TESTAR MODELO DEMO</button><button id="hero-glb-reset" type="button">VOLTAR AO ORIGINAL</button></div>
-        <p id="hero-glb-status" data-state="neutral" role="status" aria-live="polite">Selecione um GLB. O arquivo é salvo somente neste navegador, quando possível.</p>
-      </section>
-      <section class="hero-glb-panel" aria-label="Testar modelo 3D GLB do dragão">
-        <strong>DRAGÃO 3D · TESTE DE MODELO EXTERNO</strong>
-        <p>Importe um dragão GLB rigado do seu computador para comparar com o original durante voo, pouso e combate. As mecânicas continuam iguais. Modelo CC0 sugerido: <a href="https://opengameart.org/content/cethiels-dragon-3d" target="_blank" rel="noopener noreferrer">Cethiel's Dragon 3D</a> (o ZIP exige conversão para GLB no Blender).</p>
-        <input id="dragon-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
-        <div class="hero-glb-buttons"><button id="dragon-glb-import" type="button">IMPORTAR DRAGÃO GLB</button><button id="dragon-glb-demo" type="button">TESTAR DRAGÃO DEMO ANIMADO</button><button id="dragon-glb-cc0" type="button">USAR DRAGÃO CC0 REAL</button><button id="dragon-glb-reset" type="button">VOLTAR AO DRAGÃO ORIGINAL</button></div>
-        <p id="dragon-glb-status" role="status" aria-live="polite" data-state="neutral">O arquivo é opcional. Sem GLB, o jogo mantém todos os modelos e animações originais.</p>
-      </section>
-      <section class="hero-glb-panel" aria-label="Carregar Fúrias da Noite e da Luz">
-        <strong>MODELOS DAS FÚRIAS · 49 OSSOS E 8 ANIMAÇÕES</strong>
-        <p>Carregue o GLB de cada Fúria uma vez neste navegador. A Fúria da Noite é sua montaria inicial; a Fúria da Luz continua desbloqueável com pontos. O jogo guarda os dois arquivos separadamente quando o navegador permite.</p>
-        <input id="night-fury-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
-        <input id="light-fury-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
-        <div class="hero-glb-buttons">
-          <button id="night-fury-glb-import" type="button">CARREGAR FÚRIA DA NOITE</button>
-          <button id="light-fury-glb-import" type="button">CARREGAR FÚRIA DA LUZ</button>
+</div>
+
+<!-- ======================= CARRINHO / CHECKOUT ======================= -->
+<div class="overlay hidden" id="cart-overlay" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+  <div class="sheet" id="cart-sheet">
+    <button class="sheet-close" id="cart-close" aria-label="Fechar">✕</button>
+
+    <div id="cart-empty-view" class="empty-cart hidden">
+      <div class="selo" aria-hidden="true">B</div>
+      <p>Sua sacola está vazia.<br>Adicione produtos do cardápio para continuar.</p>
+      <div id="cart-ultimo-pedido" class="hidden"></div>
+    </div>
+
+    <div id="cart-filled-view">
+      <div class="cart-header"><h2 class="cart-title">Sua sacola</h2></div>
+      <div class="checkout-steps" aria-label="Etapas da finalização">
+        <button type="button" class="active" data-checkout-step-target="1"><b>1</b><span>Sacola</span></button><i></i>
+        <button type="button" data-checkout-step-target="2"><b>2</b><span>Seus dados</span></button><i></i>
+        <button type="button" data-checkout-step-target="3"><b>3</b><span>Confirmar</span></button>
+      </div>
+      <p id="cart-loja-fechada-aviso" class="loja-fechada-aviso hidden" role="status">
+        ⚠️ A loja está fechada no momento. Você pode montar o pedido, mas só poderá enviá-lo quando reabrirmos.
+      </p>
+      <section class="checkout-panel" data-checkout-step="1" aria-label="Itens da sacola">
+      <div class="cart-items" id="cart-items-list"></div>
+
+      <div class="cart-summary">
+        <div class="summary-row"><span>Subtotal</span><span id="cart-subtotal">R$ 0,00</span></div>
+        <div class="summary-row" id="cart-taxa-row"><span>Taxa de entrega</span><span id="cart-taxa">R$ 0,00</span></div>
+        <div class="summary-row hidden" id="cart-desconto-row"><span>Desconto <span id="cart-cupom-label"></span></span><span id="cart-desconto">− R$ 0,00</span></div>
+        <div class="summary-row total"><span>Total</span><span class="valor" id="cart-total">R$ 0,00</span></div>
+      </div>
+      <div class="minimum-order hidden" id="minimum-order" role="status"></div>
+
+      <div class="form-section coupon-section" style="padding-top:0;">
+        <button type="button" class="coupon-disclosure" id="cupom-toggle" aria-expanded="false" aria-controls="cupom-content">🏷️ Tenho um cupom <span aria-hidden="true">⌄</span></button>
+        <div id="cupom-content" class="hidden">
+        <div class="field cupom-field" style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="flex:1;">
+            <input class="text-input" type="text" id="input-cupom" placeholder="Código do cupom" autocomplete="off" style="text-transform:uppercase;">
+            <span class="error-text" id="cupom-erro" style="display:none;"></span>
+            <span class="success-text" id="cupom-ok" style="display:none;color:#37c973;font-size:12.5px;"></span>
+          </div>
+          <button type="button" class="btn-add-mini" id="btn-aplicar-cupom" style="width:auto;padding:10px 14px;border-radius:10px;flex:0 0 auto;">Aplicar</button>
         </div>
-        <p id="fury-glb-status" data-state="neutral" role="status" aria-live="polite">Se os modelos ainda não aparecem, escolha os arquivos .glb do pacote de animações enviado.</p>
+        </div>
+      </div>
+
+      <div class="form-section hidden" id="secao-premios-roleta" style="padding-top:0;">
+        <h3>Usar um prêmio</h3>
+        <div id="lista-premios-checkout" class="premios-checkout-lista"></div>
+        <p class="roleta-hint" style="margin:8px 0 0;">Apenas 1 prêmio por pedido. Não pode combinar com outro prêmio.</p>
+      </div>
+
+      <div class="smart-suggestions hidden" id="smart-suggestions">
+        <div class="smart-suggestions-title"><span>✨ Complete seu pedido</span><small>Sugestões que combinam</small></div>
+        <div class="smart-suggestions-list" id="smart-suggestions-list"></div>
+      </div>
+
+      <div class="checkout-nav checkout-nav-next">
+        <button type="button" class="btn-primary" id="checkout-ir-dados">Continuar para seus dados <span aria-hidden="true">→</span></button>
+      </div>
       </section>
-      <div id="stable-village-note" class="stable-note"></div>
-      <div class="stable-balance"><strong id="train-points">0</strong> PONTOS DE TREINAMENTO <span id="train-circuits">0 circuitos</span></div>
-      <div id="discovery-list" class="discovery-list">Marcos encontrados: 0/5</div>
-      <h3>QUADRO DE MISSÕES · <span id="daily-day">DIA 1</span></h3>
-      <p class="daily-board-note">Fale com Iara, Lume, Borin ou Nara para aceitar tarefas. A cada novo dia surgem novas rotas e recompensas.</p>
-      <div id="daily-board" class="daily-board" aria-label="Missões diárias disponíveis"></div>
-      <div id="wild-list" class="wild-list" aria-label="Dragões selvagens para amansar"></div>
-      <div class="preview-panel"><canvas id="stable-preview-canvas" aria-label="Modelo 3D giratório do dragão selecionado"></canvas><div class="preview-info"><strong id="stable-preview-name">Fúria da Noite · Dragão Inicial</strong><small id="stable-preview-caption">Arraste para girar · Visualização 3D dos dragões</small><label for="stable-preview-motion">Testar animação:</label><select id="stable-preview-motion" aria-label="Animação do dragão na prévia"><option value="fly">Voar (Fly)</option><option value="glide">Planar (Glide)</option><option value="idle">Parado (Idle)</option><option value="walk">Andar (Walk)</option><option value="attack">Atacar (Attack)</option><option value="hurt">Reagir (Hurt)</option><option value="takeoff">Decolar (Takeoff)</option><option value="land">Pousar (Landing)</option></select></div></div>
-      <h3>SEUS DRAGÕES</h3><div id="species-list" class="species-list"></div>
-      <h3>EVOLUÇÃO DAS HABILIDADES</h3><div id="skill-list" class="skill-list"></div>
-      <div class="training-footer"><div><strong>DESAFIO DOS VENTOS</strong><small>Três aros dourados em 95 segundos. Ganhe +1 ponto ao completar.</small></div><button id="train-start" type="button">INICIAR CIRCUITO</button></div>
-      <div class="training-footer advanced-footer"><div><strong>CIRCUITO DA TEMPESTADE</strong><small>Cinco aros em 80 segundos, velocidade mínima de 18 m/s. Recompensa +2 pontos.</small></div><button id="train-advanced" type="button">CIRCUITO AVANÇADO</button></div>
-      <p class="stable-tip">Complete missões para ganhar pontos. Troque de dragão e melhore atributos somente na vila. O progresso é salvo automaticamente.</p>
+
+      <section class="checkout-panel hidden" data-checkout-step="2" aria-label="Dados para finalizar">
+
+      <!-- Entrega ou retirada -->
+      <div class="form-section">
+        <h3>Entrega ou retirada</h3>
+        <div class="segmented" role="group" aria-label="Tipo de entrega">
+          <button type="button" id="opt-entrega" aria-pressed="true">🛵 Entrega</button>
+          <button type="button" id="opt-retirada" aria-pressed="false">🏃 Retirar no local</button>
+        </div>
+        <div class="pickup-card hidden" id="retirada-info">
+          <strong>Retirada na Brutu's</strong>
+          <span id="retirada-endereco">Rua Seis de Janeiro, 806</span>
+          <small>Em frente ao Pé na Areia · acompanhe a previsão informada no pedido</small>
+          <div><button type="button" id="retirada-copiar">Copiar endereço</button><a id="retirada-mapa" href="#" target="_blank" rel="noopener">Abrir no mapa</a></div>
+        </div>
+      </div>
+
+      <!-- Dados do cliente -->
+      <form id="checkout-form" novalidate>
+        <div class="form-section" style="padding-top:0;">
+          <h3>Seus dados</h3>
+          <div class="field">
+            <label for="input-nome">Nome</label>
+            <input class="text-input" type="text" id="input-nome" name="nome" autocomplete="name" required>
+            <span class="error-text">Informe seu nome.</span>
+          </div>
+          <div class="privacy-preference">
+            <label for="salvar-dados-cliente"><input type="checkbox" id="salvar-dados-cliente"> Salvar meus dados neste aparelho</label>
+            <button type="button" id="apagar-dados-cliente">Apagar dados salvos</button>
+            <small>Use apenas em aparelho pessoal. Seus dados não são salvos aqui sem sua escolha.</small>
+          </div>
+          <div class="field">
+            <label for="input-telefone">Telefone / WhatsApp</label>
+            <input class="text-input" type="tel" id="input-telefone" name="telefone" placeholder="(16) 99999-9999" autocomplete="tel" required>
+            <span class="error-text">Informe um telefone para contato.</span>
+          </div>
+        </div>
+
+        <div class="form-section" style="padding-top:0;" id="endereco-section">
+          <h3>Endereço de entrega</h3>
+          <div class="field">
+            <label for="input-endereco">Endereço</label>
+            <input class="text-input" type="text" id="input-endereco" name="endereco" placeholder="Rua, avenida..." autocomplete="street-address" required>
+            <span class="error-text">Informe o endereço.</span>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="input-numero">Número</label>
+              <input class="text-input" type="text" id="input-numero" name="numero" inputmode="numeric" required>
+              <span class="error-text">Obrigatório.</span>
+            </div>
+            <div class="field">
+              <label for="input-bairro">Bairro</label>
+              <select class="text-input" id="input-bairro" name="bairro" required>
+                <option value="" disabled selected>Selecione seu bairro...</option>
+              </select>
+              <span class="error-text">Obrigatório.</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="input-referencia">Ponto de referência (opcional)</label>
+            <input class="text-input" type="text" id="input-referencia" name="referencia" placeholder="Ex: perto do mercado tal">
+          </div>
+        </div>
+
+        <div class="form-section" style="padding-top:0;">
+          <h3>Forma de pagamento</h3>
+          <div class="payment-options" role="radiogroup" aria-label="Forma de pagamento">
+            <button type="button" class="payment-option" data-pagamento="PIX" aria-pressed="true">
+              <span class="radio-dot"></span> PIX
+            </button>
+            <button type="button" class="payment-option" data-pagamento="Dinheiro" aria-pressed="false">
+              <span class="radio-dot"></span> Dinheiro
+            </button>
+            <button type="button" class="payment-option" data-pagamento="Cartão" aria-pressed="false">
+              <span class="radio-dot"></span> Cartão (na entrega/retirada)
+            </button>
+          </div>
+          <div class="field hidden" id="troco-field" style="margin-top:12px;">
+            <label for="input-troco">Vai pagar com quanto?</label>
+            <input class="text-input" type="text" inputmode="decimal" id="input-troco" name="troco" placeholder="Ex: 100,00 (deixe em branco se não precisar de troco)">
+            <div id="troco-resultado" class="troco-resultado hidden"></div>
+          </div>
+
+          <div class="pix-after-order-note" id="pix-after-order-note">
+            <strong>Primeiro envie o pedido</strong>
+            <span>Ao finalizar, seu pedido será aberto no WhatsApp. Depois de tocar em <strong>Enviar</strong> no WhatsApp, volte para este site: o QR Code, a chave e o Pix copia-e-cola aparecerão aqui.</span>
+          </div>
+        </div>
+
+        <div class="form-section" style="padding-top:0;">
+          <h3>Observação geral do pedido (opcional)</h3>
+          <textarea class="obs-input" id="input-observacao-geral" rows="2" maxlength="200" placeholder="Ex: tocar a campainha, retirar cebola de tudo..."></textarea>
+        </div>
+      </form>
+
+      <div class="checkout-nav">
+        <button type="button" class="btn-secondary" id="checkout-voltar-sacola"><span aria-hidden="true">←</span> Voltar</button>
+        <button type="button" class="btn-primary" id="checkout-ir-revisao">Revisar pedido <span aria-hidden="true">→</span></button>
+      </div>
+      </section>
+
+      <section class="checkout-panel hidden" data-checkout-step="3" aria-label="Revisão do pedido">
+        <div class="checkout-review" id="checkout-review"></div>
+        <button type="button" class="checkout-edit-data" id="checkout-editar-dados">✏️ Editar dados de entrega e pagamento</button>
+
+      <div class="finalize-footer">
+        <div class="finalize-total">
+          <span>Total do pedido</span>
+          <span class="valor" id="finalize-total">R$ 0,00</span>
+        </div>
+
+        <div class="checkout-alert-card" role="alert">
+          <div class="checkout-alert-title" id="checkout-alert-title">Confirmação do pedido</div>
+          <p class="checkout-alert-text" id="checkout-alert-text">Ao finalizar, tentaremos registrar o pedido online e abriremos o WhatsApp. Toque em <strong>Enviar</strong> no WhatsApp para confirmar e manter o contato com a Brutu's. Se o registro online falhar, o WhatsApp continua funcionando.</p>
+        </div>
+
+        <label class="checkout-confirm-checkbox" for="checkbox-confirmar-envio">
+          <input type="checkbox" id="checkbox-confirmar-envio">
+          <span id="checkout-confirm-label">Li e entendi que preciso confirmar o envio dentro do WhatsApp.</span>
+        </label>
+        <div class="checkout-confirm-hint" id="checkout-confirm-hint">Marque a caixa acima para liberar o envio do pedido.</div>
+
+        <div class="whatsapp-warning-banner hidden" id="whatsapp-warning-banner" role="alert">
+          <span id="whatsapp-warning-texto">⚠️ Confirme o envio no WhatsApp para finalizar seu pedido!</span>
+          <button type="button" id="whatsapp-warning-copy" class="whatsapp-copy-link">📋 Copiar pedido</button>
+          <button type="button" id="whatsapp-warning-close" aria-label="Fechar aviso">✕</button>
+        </div>
+        <div class="whatsapp-blocked-banner hidden" id="whatsapp-blocked-banner" role="alert">
+          <span id="whatsapp-blocked-texto">📵 Seu navegador bloqueou a abertura automática do WhatsApp.</span>
+          <a href="#" id="whatsapp-blocked-link" class="whatsapp-blocked-link" target="_blank" rel="noopener">Toque aqui para enviar seu pedido</a>
+          <button type="button" id="whatsapp-blocked-copy" class="whatsapp-copy-link">📋 Copiar pedido</button>
+        </div>
+        <button class="btn-whatsapp" id="finalizar-btn" type="button" disabled>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.29-1.39a9.87 9.87 0 0 0 4.75 1.21h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.13a8.2 8.2 0 0 1-4.2-1.15l-.3-.18-3.14.82.84-3.06-.2-.31a8.2 8.2 0 0 1-1.26-4.34c0-4.54 3.7-8.24 8.26-8.24 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.55-3.7 8.21-8.24 8.21zm4.52-6.16c-.25-.12-1.47-.72-1.7-.81-.23-.08-.4-.12-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.04-.38-1.99-1.22-.73-.65-1.23-1.46-1.37-1.71-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.42-.14 0-.31-.01-.48-.01-.17 0-.44.06-.67.31-.23.25-.87.85-.87 2.08 0 1.23.89 2.41 1.01 2.58.12.17 1.75 2.67 4.24 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.16-.48-.28z"/></svg>
+          <span id="finalizar-btn-texto">Abrir WhatsApp para Enviar Pedido</span>
+        </button>
+      </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="order-modal-overlay hidden" id="order-modal-overlay">
+    <div class="order-modal" role="dialog" aria-modal="true" aria-labelledby="order-modal-title">
+      <button type="button" class="order-modal-close" id="order-modal-close" aria-label="Fechar">✕</button>
+      <div class="order-modal-icon" id="order-modal-icon">📲</div>
+      <h3 id="order-modal-title">Pedido quase concluído</h3>
+      <p id="order-modal-message">O WhatsApp foi aberto com seu pedido. Toque no botão verde <strong>“Enviar”</strong> para confirmar com a Brutu's.</p>
+
+      <div class="order-pix-pending hidden" id="order-pix-pending" role="status" aria-live="polite">
+        <span class="order-pix-spinner" aria-hidden="true"></span>
+        <span id="order-pix-pending-text">Envie seu pedido no WhatsApp. Depois de enviar, volte para este site para liberar o QR Code do Pix.</span>
+      </div>
+
+      <div class="pix-info hidden" id="pix-info">
+        <div class="pix-info-header">
+          <span id="pix-tipo-titulo">Pague com Pix</span>
+          <span class="pix-valor" id="pix-valor">R$ 0,00</span>
+        </div>
+        <div class="pix-qrcode-wrap">
+          <div id="pix-qrcode" class="pix-qrcode" aria-label="QR Code Pix"></div>
+        </div>
+        <div class="pix-chave-row">
+          <div>
+            <span class="pix-chave-label" id="pix-tipo-label">Chave Pix</span>
+            <span class="pix-chave-valor" id="pix-chave-display">—</span>
+          </div>
+          <button type="button" class="pix-copy-btn" id="pix-copiar-chave">Copiar chave</button>
+        </div>
+        <button type="button" class="pix-copy-btn pix-copy-full" id="pix-copiar-codigo">Copiar código Pix (com valor)</button>
+        <p class="pix-hint" id="pix-titular"></p>
+        <div class="pix-important" role="alert">
+          <strong>Pedido enviado — agora faça o Pix</strong>
+          <span>Use o QR Code, a chave ou o código Pix acima. Se a loja solicitar, envie o comprovante pelo WhatsApp.</span>
+        </div>
+      </div>
+
+      <button type="button" class="btn-whatsapp order-modal-btn hidden" id="order-modal-whatsapp">Abrir WhatsApp</button>
+      <button type="button" class="btn-secondary order-modal-btn hidden" id="order-modal-confirmar-envio-pix">Já enviei e voltei — mostrar Pix</button>
+      <button type="button" class="btn-secondary order-modal-btn" id="order-modal-entendi">Concluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dados do cardápio embutidos em JS (funciona abrindo o arquivo com duplo clique,
+     sem precisar de servidor). Para editar o cardápio, mexa neste arquivo. -->
+<script src="data/menu-public-data.js"></script>
+<script src="js/vendor/qrcode.min.js" defer></script>
+
+<!-- ======================= ROLETA DA SORTE ======================= -->
+<button type="button" id="roleta-open-btn" class="roleta-fab hidden" aria-label="Roleta da Terça">
+  🎰 <span>Roleta</span>
+</button>
+
+<div id="roleta-overlay" class="roleta-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="roleta-title">
+  <div class="roleta-sheet">
+    <button type="button" class="roleta-close" id="roleta-close" aria-label="Fechar">✕</button>
+    <header class="roleta-hero">
+      <span class="roleta-eyebrow">Terça Brutu's</span>
+      <h2 id="roleta-title">Roleta da Terça</h2>
+      <p class="roleta-sub">Toda terça você tem 1 giro. Não acumula e o prêmio vale somente hoje.</p>
+    </header>
+
+    <div class="roleta-tel-row">
+      <input type="tel" id="roleta-tel-input" class="text-input" placeholder="Seu WhatsApp com DDD" inputmode="tel">
+      <button type="button" id="roleta-btn-tel" class="roleta-btn-sec">OK</button>
+    </div>
+
+    <div class="roleta-giros"><span>Giros disponíveis</span><strong id="roleta-giros-count">0</strong></div>
+    <p class="roleta-status" id="roleta-status" role="status" aria-live="polite"></p>
+
+    <div class="roleta-stage">
+      <div class="roleta-pointer" aria-hidden="true">▼</div>
+      <div class="roleta-roda-wrap">
+        <div class="roleta-luzes" aria-hidden="true"></div>
+        <div id="roleta-roda" class="roleta-roda"></div>
+        <div id="roleta-labels" class="roleta-labels"></div>
+        <div class="roleta-centro"><span>B</span><small>BRUTU'S</small></div>
+      </div>
+    </div>
+
+    <button type="button" id="roleta-btn-girar" class="roleta-btn-girar" disabled><span aria-hidden="true">✦</span> Girar a roleta</button>
+
+    <section class="roleta-carteira">
+      <div class="roleta-meus-header"><h3 class="roleta-meus-titulo">Meus Prêmios</h3><span>🎁</span></div>
+      <div id="roleta-meus-premios" class="roleta-meus-lista"></div>
+      <p class="roleta-hint"><strong>Regra da terça:</strong> 1 giro por WhatsApp, uma vez no dia. O giro não acumula e qualquer prêmio ganho só pode ser usado nesta mesma terça-feira.</p>
     </section>
   </div>
-  <div id="start-screen" class="modal-screen"><div class="start-art">✦ <span>✦</span> ✦</div><div class="modal-content"><div class="pretitle">UMA JORNADA ORIGINAL INSPIRADA EM AVENTURAS DE DRAGÕES</div><h1>ASAS DE<br><em>BRUMÁRIA</em></h1><p>Explore ilhas esquecidas, treine seu dragão, enfrente sentinelas inimigas , resgate filhotes perdidos e conquiste a confiança de dragões selvagens.</p><div class="features"><span>◈ Mundo 3D</span><span>◈ Voo livre</span><span>◈ 7 missões + contratos + expedição às montanhas</span><span>◈ Dia e noite dinâmicos</span></div><button id="start-btn">COMEÇAR A AVENTURA <span>→</span></button><button id="new-game-btn" class="new-game-btn hidden" type="button">CRIAR NOVA PARTIDA (APAGA O SAVE)</button><small>Teclado · Controle Xbox/PlayStation/USB/Bluetooth (Gamepad API) · Toque · Áudio opcional</small></div></div>
-  <div id="benchmark-controls" class="hidden" aria-label="Comparar desempenho dos gráficos">
-    <button id="benchmark-toggle" type="button">COMPARAR FPS (B)</button>
-    <button id="benchmark-copy" type="button" disabled>COPIAR RESULTADOS</button>
-    <pre id="benchmark-report" role="status" aria-live="polite">Pressione B para comparar FPS nos modos LEVE, EQUILIBRADO e DETALHADO.</pre>
+</div>
+
+<div id="roleta-win-modal" class="roleta-win-modal hidden" role="dialog" aria-modal="true">
+  <div class="roleta-win-caixa">
+    <div id="roleta-confetti" class="roleta-confetti"></div>
+    <span id="roleta-resultado-eyebrow" class="roleta-win-eyebrow">Prêmio desbloqueado</span>
+    <img class="roleta-win-banner" src="img/roleta/ganhou.webp" alt="Ganhou!" width="340" height="194" decoding="async">
+    <div id="roleta-win-icone" class="roleta-win-icone">🎁</div>
+    <h3 id="roleta-resultado-titulo">Parabéns!</h3>
+    <p id="roleta-win-nome" class="roleta-win-nome">Prêmio</p>
+    <p id="roleta-resultado-msg" class="roleta-win-msg">Seu prêmio foi salvo em <strong>Meus Prêmios</strong>. Use ainda hoje: ele expira no fim desta terça-feira.</p>
+    <button type="button" id="roleta-win-depois" class="roleta-btn-girar">Usar no pedido de hoje</button>
   </div>
-  <pre id="performance-panel" class="hidden" role="status" aria-live="off"></pre>
-  <div id="fatal" class="fatal hidden"></div>
-  <script type="module" src="./src/main.js"></script>
+</div>
+
+<script src="js/roleta.js?v=2.9.3"></script>
+<script src="js/fila-pedidos.js" defer></script>
+<script src="js/montador-core.js?v=2.9.7" defer></script>
+<script src="monte%20seu%20lanche/camadas.js?v=3.0.0" defer></script>
+<script src="monte%20seu%20lanche/montador.js?v=3.0.0" defer></script>
+<script src="js/app.js?v=2.9.7" defer></script>
 </body>
 </html>

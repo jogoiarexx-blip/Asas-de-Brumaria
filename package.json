@@ -1,13 +1,24 @@
 {
-  "name": "asas-de-brumaria",
-  "version": "1.4.18",
-  "private": true,
-  "type": "module",
-  "description": "Protótipo 3D de aventura, montaria e missões com dragões feito em Three.js",
+  "name": "brutus-delivery",
+  "version": "3.0.0",
+  "description": "Brutu's Delivery — cardápio, pedidos, painel e impressão",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "python start_game.py",
-    "check": "node tests/check-project.mjs && node --test tests/*.test.js && node tests/check-species-assets.mjs",
-    "assets:inspect": "node tools/modelPipeline.mjs inspect",
-    "assets:optimize": "node tools/modelPipeline.mjs optimize"
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js",
+    "sync-menu": "node scripts/sincronizar-cardapio.js",
+    "check": "node --check backend/server.js && node --check backend/db.js && node --check backend/lib/regras-negocio.js && node --check js/app.js && node --check js/roleta.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "verify": "npm run sync-menu && npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1"
   }
 }

@@ -1,0 +1,159 @@
+/* Brutu's Delivery — Mini game Monte Seu Brutu's | mobile first */
+.monte-chamada{display:flex;align-items:center;gap:16px;margin:18px auto 25px;padding:22px;border:1px solid #ffac4788;border-radius:22px;background:linear-gradient(120deg,#311b0f 0%,#171310 65%,#38200b 100%);color:#fff;box-shadow:0 10px 32px #160c082b}
+.monte-chamada-icone{font-size:clamp(45px,6vw,72px);filter:drop-shadow(0 4px 12px #ff963866)}
+.monte-chamada>div{flex:1;min-width:0}.monte-chamada-kicker{font-size:11px;font-weight:900;letter-spacing:.12em;color:#ffba67}
+.monte-chamada h2{margin:4px 0;font-size:clamp(22px,3vw,33px);color:white}.monte-chamada p{margin:0;font-size:14px;color:#e6d5c6;line-height:1.45}
+.monte-chamada-btn,.monte-principal{cursor:pointer;border:0;border-radius:13px;background:#ff9d35;color:#201005;font-size:15px;font-weight:900;min-height:49px;padding:12px 19px;white-space:nowrap;box-shadow:0 4px 0 #b65b11}
+.monte-chamada-btn:hover,.monte-principal:hover{background:#ffc477}.monte-chamada-btn:disabled{cursor:not-allowed;filter:grayscale(1);opacity:.5}
+.monte-overlay{position:fixed;inset:0;z-index:99999;background:#060503dc;display:flex;justify-content:center;align-items:center;padding:max(env(safe-area-inset-top),8px) 10px max(env(safe-area-inset-bottom),8px)}
+.monte-overlay.hidden{display:none!important}
+.monte-dialog{background:#151311;border:1px solid #725031;border-radius:20px;box-shadow:0 30px 80px #000b;width:min(1020px,100%);max-height:96dvh;display:flex;flex-direction:column;overflow:hidden;color:#fff}
+.monte-topo{padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(120deg,#331b10,#1a1410)}
+.monte-topo h2{margin:2px 0 0;color:white;font-size:clamp(20px,4vw,28px)}
+.monte-close{width:44px;height:44px;background:#ffffff1a;border:1px solid #ffffff44;color:white;border-radius:12px;font-size:21px;cursor:pointer;flex-shrink:0}
+.monte-passos{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid #ffffff1d;justify-content:center}
+.monte-passos span{flex:1;max-width:200px;background:#2b2520;padding:10px 4px;border-radius:10px;text-align:center;font-size:12px;color:#c3b4a4;font-weight:700}
+.monte-passos span.ativo{background:#ffad49;color:#251309}
+.monte-conteudo{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);min-height:0;overflow:hidden}
+.monte-opcoes-col,.monte-visual-col{overflow-y:auto;padding:17px;min-height:0;max-height:65dvh;overscroll-behavior:contain}
+.monte-opcoes-col h3,.monte-visual-col h3{margin:0 0 12px;color:#ffca85;font-size:17px}
+.monte-visual-col{border-left:1px solid #46372a;background:#1e1b17}
+.monte-ajuda{font-size:13px;line-height:1.5;color:#c8bab0;margin:0 0 14px}.monte-base-lista{display:grid;gap:9px}
+.monte-base{border:1px solid #6d5440;border-radius:13px;background:#29231e;color:white;display:grid;grid-template-columns:66px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;min-height:85px;cursor:pointer;padding:8px}
+.monte-base.selecionado{border:2px solid #ffae40;background:#44301f}.monte-base img{width:66px;height:66px;object-fit:cover;border-radius:9px;background:#101010}.monte-base strong,.monte-base small{display:block}.monte-base strong{font-size:14px}.monte-base small{color:#c1b5a8;font-size:11px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.monte-base b{color:#ffc477;font-size:13px}
+.monte-opcoes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}.monte-ingrediente{padding:10px 12px;background:#23402b;color:#edffdf;border:1px solid #4b7956;border-radius:999px;cursor:pointer;min-height:40px}.monte-ingrediente.retirado{background:#49312d;color:#f9c1b3;border-color:#bd6956;text-decoration:line-through}
+.monte-extra{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #4c4034;padding:12px 0}.monte-extra>div:first-child{min-width:0}.monte-extra strong{display:block;font-size:14px}.monte-extra small{font-size:12px;color:#ffc477}.monte-contador{display:flex;align-items:center;gap:12px}.monte-contador button,.monte-quantidade button{width:39px;height:39px;min-width:39px;border-radius:10px;border:1px solid #795538;background:#3c2a1b;color:#fff;font-size:22px;cursor:pointer}.monte-contador b{min-width:14px;text-align:center}
+.monte-burger-art{height:164px;border-radius:20px;background:radial-gradient(ellipse,#8e4a19 1%,#382519 46%,transparent 72%);display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:25px;line-height:1.15;margin-bottom:12px;filter:drop-shadow(0 8px 16px #0006)}.monte-burger-art{height:auto;min-height:164px;padding:12px 8px;gap:2px;box-sizing:border-box}
+.monte-camada{display:flex;gap:5px;align-items:center;justify-content:center;max-width:98%;min-width:55%;font-size:17px;line-height:1.25;padding:3px 11px;border-radius:14px;background:linear-gradient(110deg,#743d22,#a55d29);border:1px solid #d58b3b;box-shadow:0 2px 4px #0005}
+.monte-camada:nth-child(2n){min-width:72%;background:linear-gradient(110deg,#3b5a25,#677e2b);border-color:#8d9b43}
+.monte-camada:nth-child(3n){min-width:84%;background:linear-gradient(110deg,#64481d,#b07832);border-color:#de9b39}
+.monte-camada small{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;max-width:205px}
+
+#monte-visual>strong{display:block;font-size:16px}#monte-visual>small{display:block;margin:5px 0 11px;color:#b9ad9e;font-size:11px}.monte-tags{display:flex;flex-wrap:wrap;gap:5px}.monte-tags span{font-size:11px;border-radius:100px;padding:5px 8px;background:#322e28;color:#ddd}.monte-tirados{color:#ff9d91;font-size:12px;line-height:1.5}.monte-turbinados{color:#a5e8a1;font-size:12px;line-height:1.5}
+.monte-precos{display:flex;flex-direction:column;gap:7px;margin-top:17px;padding:12px;border:1px solid #8f5931;border-radius:13px}.monte-precos small{color:#c3bcb6}.monte-precos>strong{font-size:26px;color:#ffb259}
+.monte-quantidade{display:flex;align-items:center;gap:12px;margin-top:12px}.monte-quantidade span{margin-right:auto}.monte-quantidade strong{min-width:18px;text-align:center}
+.monte-revisao{background:#28221d;padding:12px;border-radius:12px;margin-bottom:16px}.monte-revisao p{font-size:14px;margin:7px 0}.monte-nota-label{display:block;font-weight:700;margin-bottom:8px}.monte-opcoes-col textarea{width:100%;background:#292521;color:#fff;border-radius:11px;border:1px solid #78604d;padding:11px;font:inherit;box-sizing:border-box}.monte-aviso{font-size:12px;color:#dac7b6}
+.monte-rodape{display:flex;gap:9px;align-items:center;justify-content:flex-end;padding:13px 17px;border-top:1px solid #56402f;background:#211a15}.monte-rodape-preco{margin-right:auto;font-size:13px;color:#ded1c6;white-space:nowrap}.monte-rodape-preco strong{display:block;font-size:19px;color:white}.monte-sec{background:#37302b;border:1px solid #70523c;color:#fff;border-radius:12px;font-weight:800;padding:12px 13px;min-height:45px;cursor:pointer}
+@media(max-width:720px){.monte-conteudo{display:flex;flex-direction:column;min-height:0;flex:1 1 auto;overflow-y:auto}.monte-opcoes-col,.monte-visual-col{flex:0 0 auto;min-height:0;height:auto;max-height:none;overflow:visible}.monte-chamada{flex-wrap:wrap;padding:15px;gap:10px}.monte-chamada-icone{font-size:38px}.monte-chamada>div{flex-basis:calc(100% - 60px)}.monte-chamada-btn{width:100%}.monte-conteudo{grid-template-columns:minmax(0,1fr);overflow-y:auto}.monte-opcoes-col,.monte-visual-col{overflow:visible;max-height:none;padding:14px}.monte-opcoes-col{order:2}.monte-visual-col{order:1;border-left:0;border-bottom:1px solid #493629;padding:9px 14px}.monte-visual-col h3{display:none}.monte-burger-art{height:auto;min-height:78px;max-height:142px;overflow:hidden;font-size:14px;margin:0 0 6px;padding:4px;gap:1px}.monte-camada{font-size:13px;line-height:1.1;padding:2px 8px}.monte-camada small{font-size:9px}.monte-tags{max-height:35px;overflow:hidden}.monte-tirados,.monte-turbinados{font-size:10px;max-height:28px;overflow:hidden}.monte-precos{padding:6px 9px;margin-top:6px;display:flex;flex-direction:row;align-items:center;justify-content:space-between}.monte-precos>strong{font-size:18px}.monte-quantidade{margin-top:8px}.monte-dialog{height:min(98dvh,900px);max-height:98dvh}.monte-rodape{padding:9px}.monte-rodape-preco strong{font-size:15px}.monte-rodape-preco{font-size:11px}.monte-principal{font-size:13px;padding:10px}.monte-base{grid-template-columns:58px minmax(0,1fr);min-height:75px}.monte-base img{width:58px;height:58px}.monte-base b{grid-column:2}.monte-passos{padding:7px}.monte-passos span{font-size:10px;padding:9px 2px}}
+@media(prefers-reduced-motion:reduce){.monte-dialog *{scroll-behavior:auto!important;transition:none!important}}
+
+/* Montagem do zero: pilha de ingredientes animada, acessível e responsiva */
+.monte-grupo{margin:14px 0 22px}.monte-grupo h4{font-size:13px;color:#ffb868;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 7px}
+.monte-item-resumo{display:flex;gap:10px;align-items:center;min-width:0}.monte-emoji{font-size:29px;flex-shrink:0}
+.monte-extra.monte-escolhido{background:#3b2c19;padding:12px;border-radius:11px;border-bottom:1px solid #af7732}.monte-contador button:disabled{opacity:.35;cursor:not-allowed}
+.monte-erro{border:1px solid #db8a42;background:#5b3117;padding:12px;border-radius:12px;font-size:13px;line-height:1.5}
+.monte-stack{background:radial-gradient(ellipse at center,#96501d 0%,#372119 50%,transparent 75%);min-height:170px;gap:0;justify-content:flex-end}
+.monte-layer{min-height:22px;border-radius:55% / 50%;display:flex;justify-content:center;align-items:center;gap:9px;width:min(88%,270px);margin-top:-2px;border:1px solid #ffe3a166;box-shadow:0 3px 8px #0006;transition:transform .15s ease}
+.monte-layer span{font-size:18px}.monte-layer small{font-size:10px;color:#f7ebde;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:135px}
+.monte-layer-pao{height:31px;border-radius:55% 55% 30% 30%;background:linear-gradient(#ffd076,#b66c25)}
+.monte-layer-proteina{background:linear-gradient(#85431e,#492417)}
+.monte-layer-queijo{background:linear-gradient(#ffdb43,#e89013);color:#362411}.monte-layer-salada{background:linear-gradient(#68b94a,#267d30)}
+.monte-layer-molho{background:linear-gradient(#f4b96a,#c86536)}.monte-layer-extra{background:linear-gradient(#b14b2b,#7a241d)}
+.monte-layer-base{height:22px;background:linear-gradient(#b76e2e,#efb86e);font-size:16px}
+.monte-empty{display:grid;gap:9px;font-size:44px;text-align:center}.monte-empty small{font-size:13px;color:#ffcc8a}
+.monte-principal:disabled{opacity:.46;cursor:not-allowed}
+@media(max-width:720px){.monte-stack{min-height:100px;max-height:170px}.monte-layer{min-height:15px}.monte-layer-pao{height:23px}.monte-layer span{font-size:13px}.monte-layer small{font-size:9px}.monte-extra{gap:5px}.monte-item-resumo{gap:6px}.monte-emoji{font-size:24px}}
+
+/* ===== v2.9.8 — cards visuais e preview mais realista do Monte Seu Brutu's ===== */
+.monte-ajuda-topo{font-size:14px;color:#dfc9b5;margin-bottom:16px}
+.monte-grupo{margin:10px 0 18px}
+.monte-grupo h4{font-size:13px;color:#ffb868;text-transform:uppercase;letter-spacing:.1em;margin:8px 0 10px}
+.monte-extra{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 12px;margin-bottom:10px;border:1px solid #5b4333;border-radius:16px;background:linear-gradient(180deg,#211914,#18120f);transition:border-color .18s ease,transform .18s ease,background .18s ease;box-shadow:0 10px 24px #00000018}
+.monte-extra:hover{border-color:#b9792f;transform:translateY(-1px)}
+.monte-extra.monte-escolhido{background:linear-gradient(180deg,#352315,#24160f);border-color:#db913f;box-shadow:0 12px 26px #0005}
+.monte-item-resumo{display:flex;gap:12px;align-items:center;min-width:0;flex:1}
+.monte-card-copy{min-width:0}.monte-card-copy strong{display:block;font-size:18px;line-height:1.2;margin-bottom:3px}.monte-card-copy p{margin:0 0 5px;color:#d4c2b4;font-size:13px;line-height:1.4}.monte-card-copy small{font-size:12px;color:#ffbe65}
+.monte-thumb{width:86px;height:66px;flex:0 0 86px;border-radius:15px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:1px solid #ffffff1d;background:linear-gradient(135deg,#3b291d,#20130d);box-shadow:inset 0 1px 0 #ffffff12,0 8px 20px #00000045}
+.monte-thumb span{position:relative;z-index:2;font-size:27px;filter:drop-shadow(0 2px 3px #0008)}
+.monte-thumb::before,.monte-thumb::after{content:"";position:absolute;inset:auto;display:block}
+.monte-thumb::before{left:8px;right:8px;bottom:10px;top:18px;border-radius:14px;opacity:.96}
+.monte-thumb::after{inset:0;background:linear-gradient(180deg,#ffffff18,transparent 44%,#00000020)}
+.monte-thumb-brioche::before,.monte-thumb-tradicional::before,.monte-thumb-baguete::before{background:linear-gradient(180deg,#ffd980,#ca7b2d);border-radius:40px 40px 18px 18px;top:20px;height:26px}
+.monte-thumb-hamburguer-bovino::before{background:linear-gradient(180deg,#7d401d,#442114);height:25px;top:22px;border-radius:22px}
+.monte-thumb-frango::before{background:linear-gradient(180deg,#e6bf7c,#b77439);height:23px;top:23px;border-radius:22px}
+.monte-thumb-costela::before{background:linear-gradient(180deg,#8f4b2b,#58291b);height:23px;top:23px;border-radius:22px}
+.monte-thumb-cheddar::before{background:linear-gradient(180deg,#ffd64c,#ec9a12);height:26px;top:20px;clip-path:polygon(10% 0,100% 0,86% 100%,0 100%)}
+.monte-thumb-mussarela::before{background:linear-gradient(180deg,#fff8dd,#ece2b0);height:24px;top:21px;border-radius:10px}
+.monte-thumb-alface::before{background:radial-gradient(circle at 20% 40%,#9de261 0 12%,transparent 13%),radial-gradient(circle at 55% 30%,#74c64d 0 12%,transparent 13%),radial-gradient(circle at 78% 55%,#4f9c39 0 13%,transparent 14%),linear-gradient(180deg,#7fd455,#2d8d39);height:28px;top:19px;border-radius:18px}
+.monte-thumb-tomate::before{background:radial-gradient(circle at center,#ff8871 0 30%,#d53922 31% 100%);height:28px;top:19px;border-radius:50%}
+.monte-thumb-cebola-roxa::before{background:radial-gradient(circle at center,transparent 0 25%,#dfd2ff 26% 34%,#a354a5 35% 48%,transparent 49%),radial-gradient(circle at 38% 50%,transparent 0 19%,#dfd2ff 20% 28%,#a354a5 29% 40%,transparent 41%);height:28px;top:19px}
+.monte-thumb-maionese::before{background:radial-gradient(circle at 30% 60%,#fff6d9 0 26%,transparent 27%),radial-gradient(circle at 60% 40%,#f6edcc 0 24%,transparent 25%),linear-gradient(180deg,#fbf8e9,#dbcfaa);height:28px;top:19px;border-radius:16px}
+.monte-thumb-barbecue::before{background:linear-gradient(180deg,#7b2f1d,#512017);height:28px;top:19px;border-radius:18px}
+.monte-thumb-molho-casa::before{background:linear-gradient(180deg,#f0a35f,#d26934);height:28px;top:19px;border-radius:18px}
+.monte-thumb-bacon::before{background:repeating-linear-gradient(135deg,#a01f19 0 8px,#f17c57 8px 14px,#f3ccad 14px 17px);height:30px;top:18px;border-radius:15px}
+.monte-thumb-ovo::before{background:radial-gradient(circle at center,#f2b01d 0 18%,#f8dd85 19% 24%,#fff 25% 56%,transparent 57%);height:32px;top:16px;border-radius:50%}
+.monte-thumb-cebola-caramelizada::before{background:radial-gradient(circle at 35% 55%,transparent 0 18%,#e5b481 19% 27%,#8b4321 28% 40%,transparent 41%),radial-gradient(circle at 60% 45%,transparent 0 18%,#e5b481 19% 27%,#8b4321 28% 40%,transparent 41%);height:31px;top:17px}
+.monte-thumb-catupiry::before{background:linear-gradient(180deg,#fffef2,#ede2b0);height:29px;top:18px;border-radius:18px}
+.monte-preview-scene{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:16px;align-items:start;margin-bottom:12px}
+.monte-burger-hero{position:relative;min-height:350px;border-radius:22px;padding:16px 18px 10px;display:flex;flex-direction:column;justify-content:flex-end;background:radial-gradient(circle at 50% 18%,#7e411a 0%,#311a10 44%,#1d1410 70%);box-shadow:inset 0 1px 0 #ffffff10,0 18px 50px #0007;overflow:hidden}
+.monte-burger-hero::after{content:"";position:absolute;left:12%;right:12%;bottom:20px;height:18px;border-radius:50%;background:radial-gradient(ellipse at center,#00000088 0%,transparent 70%)}
+.monte-hero-stack{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;padding:0 0 6px}
+.monte-bun{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;width:min(92%,320px);padding:10px 20px;color:#fff6e8;text-shadow:0 1px 2px #0008;letter-spacing:.01em}
+.monte-bun span{font-size:12px;font-weight:800;opacity:.9}
+.monte-bun-top{min-height:58px;border-radius:58% 58% 26% 26%;background:linear-gradient(180deg,#f9c96e,#d4832f 70%,#955322);box-shadow:inset 0 -4px 0 #8e4f22,inset 0 5px 0 #fff2b2}
+.monte-bun-bottom{min-height:28px;border-radius:12px 12px 30px 30px;background:linear-gradient(180deg,#e6a85b,#bb6928);box-shadow:inset 0 3px 0 #fff0be}
+.monte-bun-baguete{border-radius:44px;background:linear-gradient(180deg,#f3cd81,#c87529 70%,#915021)}
+.monte-bun.is-empty{opacity:.5;filter:saturate(.7)}
+.monte-hero-layer{position:relative;display:flex;align-items:center;justify-content:center;width:min(88%,300px);min-height:24px;padding:4px 16px;border-radius:999px;font-weight:700;color:#fff;letter-spacing:.01em;border:1px solid #ffffff42;box-shadow:0 5px 12px #00000040,inset 0 1px 0 #ffffff22}
+.monte-hero-layer span{font-size:12px;text-shadow:0 1px 2px #0008}
+.monte-layer-qty{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;background:#00000040;padding:2px 7px;border-radius:999px;color:#fff5d0}
+.monte-hero-layer-proteina{background:linear-gradient(180deg,#7f4321,#452116)}
+.monte-hero-layer-queijo{background:linear-gradient(180deg,#ffd54c,#eb9d13);color:#3a250f}.monte-hero-layer-queijo span{text-shadow:none;color:#422709}
+.monte-hero-layer-salada{background:linear-gradient(180deg,#6dc14f,#2b8f3a)}
+.monte-hero-layer-molho{background:linear-gradient(180deg,#f1b46d,#c95f31)}
+.monte-hero-layer-extra{background:linear-gradient(180deg,#aa3d27,#711f18)}
+.monte-hero-style-bacon{background:repeating-linear-gradient(135deg,#9a1c18 0 12px,#f57a52 12px 22px,#f5d4bb 22px 28px)!important;color:#3f120d}
+.monte-hero-style-ovo{background:radial-gradient(circle at center,#f4c422 0 18%,#ffe189 19% 24%,#fff 25% 62%)!important;color:#4c3300}.monte-hero-style-ovo span{text-shadow:none;color:#5a3900}
+.monte-hero-style-cebola-roxa{background:linear-gradient(180deg,#d6b8ef,#9e5db0)!important}
+.monte-hero-style-barbecue{background:linear-gradient(180deg,#7a2c1e,#4c1d15)!important}
+.monte-hero-style-maionese,.monte-hero-style-catupiry,.monte-hero-style-mussarela{background:linear-gradient(180deg,#fff8ea,#e6d59d)!important;color:#503c1b}.monte-hero-style-maionese span,.monte-hero-style-catupiry span,.monte-hero-style-mussarela span{text-shadow:none;color:#51381b}
+.monte-preview-list{display:grid;gap:10px}.monte-preview-item,.monte-preview-empty-list{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #ffffff14;border-radius:14px;background:#2b221c}
+.monte-preview-item .monte-thumb{width:54px;height:42px;flex-basis:54px;border-radius:12px}.monte-preview-item .monte-thumb span{font-size:18px}
+.monte-preview-copy{min-width:0}.monte-preview-copy strong{display:block;font-size:13px;line-height:1.2;color:#fff}.monte-preview-copy small{display:block;font-size:11px;color:#cab8aa;line-height:1.35}
+.monte-preview-empty-list{font-size:12px;color:#ccb8a9;line-height:1.45}
+#monte-visual>strong{display:block;font-size:18px;margin-top:3px}#monte-visual>small{display:block;margin:5px 0 11px;color:#b9ad9e;font-size:12px;line-height:1.45}
+.monte-tags{display:flex;flex-wrap:wrap;gap:7px}.monte-tags span{font-size:11px;border-radius:999px;padding:6px 9px;background:#32271f;color:#eadfce;border:1px solid #ffffff10}
+@media(max-width:920px){.monte-preview-scene{grid-template-columns:1fr}.monte-burger-hero{min-height:280px}.monte-preview-list{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.monte-extra{padding:12px 10px;gap:10px}.monte-thumb{width:70px;height:58px;flex-basis:70px}.monte-thumb span{font-size:23px}.monte-card-copy strong{font-size:16px}.monte-card-copy p{font-size:12px}.monte-preview-scene{gap:10px}.monte-burger-hero{min-height:205px;padding:10px 10px 8px}.monte-bun-top{min-height:43px}.monte-bun-bottom{min-height:20px}.monte-bun span{font-size:10px}.monte-hero-layer{min-height:18px;padding:3px 12px}.monte-hero-layer span{font-size:10px}.monte-layer-qty{font-size:9px;padding:2px 5px}.monte-preview-list{grid-template-columns:1fr}.monte-preview-item,.monte-preview-empty-list{padding:7px 8px}.monte-preview-item .monte-thumb{width:46px;height:38px;flex-basis:46px}.monte-preview-copy strong{font-size:12px}.monte-preview-copy small{font-size:10px}.monte-tags span{font-size:10px;padding:5px 7px}}
+
+
+/* ===== v2.9.9 — preview 3D realista do Monte Seu Brutu's ===== */
+.monte-preview-scene-3d{grid-template-columns:minmax(0,1.15fr) 190px}
+.monte-burger-stage{position:relative;min-height:390px;border-radius:24px;overflow:hidden;background:radial-gradient(circle at 50% 0%,#7f4217 0%,#2a1a13 34%,#15110f 72%);box-shadow:inset 0 1px 0 #ffffff10,0 22px 48px #0008;padding:16px 18px 22px;display:flex;align-items:flex-end;justify-content:center}
+.monte-burger-stage-bg{position:absolute;inset:auto 6% 14px; height:24px;border-radius:50%;background:radial-gradient(ellipse at center,#00000095 0%,transparent 72%);filter:blur(2px)}
+.monte-stack3d{position:relative;z-index:2;width:min(100%,330px);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:0;transform:perspective(1100px) rotateX(8deg)}
+.monte-stack3d.is-empty{opacity:.82}
+.monte-stack3d-core{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1px}
+.monte-bun3d{position:relative;width:min(95%,320px);display:flex;align-items:center;justify-content:center;text-align:center;color:#fff7e9;text-shadow:0 2px 4px #0009;box-shadow:inset 0 2px 0 #fff2bf, inset 0 -5px 0 #8e4c1d, 0 8px 14px #0000003d;border:1px solid #d08c47}
+.monte-bun3d span{position:relative;z-index:2;font-size:12px;font-weight:800;letter-spacing:.01em}
+.monte-bun3d-top{min-height:74px;padding:12px 26px 18px;border-radius:54% 54% 26% 26%/70% 70% 30% 30%;background:linear-gradient(180deg,#ffd781 0%,#ecb45b 42%,#c06f28 100%)}
+.monte-bun3d-top::before{content:"";position:absolute;left:15%;right:15%;top:13px;bottom:20px;border-radius:inherit;background:radial-gradient(circle at 16% 30%,#fff5ca 0 5px,transparent 6px),radial-gradient(circle at 28% 24%,#f2d89b 0 4px,transparent 5px),radial-gradient(circle at 43% 34%,#fff1bb 0 4px,transparent 5px),radial-gradient(circle at 59% 23%,#f2d89b 0 5px,transparent 6px),radial-gradient(circle at 73% 31%,#fff5ca 0 4px,transparent 5px),radial-gradient(circle at 84% 24%,#e8cb87 0 4px,transparent 5px)}
+.monte-bun3d-bottom{min-height:28px;margin-top:2px;border-radius:12px 12px 34px 34px/24px 24px 16px 16px;background:linear-gradient(180deg,#e8ae64 0%,#ce7f34 100%)}
+.monte-bun3d-baguete{border-radius:44px;background:linear-gradient(180deg,#f6d58d 0%,#d38636 45%,#a95c23 100%)}
+.monte-stack-layer{position:relative;width:min(92%,296px);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.monte-stack-pieces{position:relative;width:100%;min-height:18px;display:flex;align-items:center;justify-content:center}
+.monte-stack-label{position:absolute;right:-22px;top:50%;transform:translate(100%,-50%);white-space:nowrap;font-size:10px;font-weight:800;color:#ffe9c8;background:#2b2019d8;border:1px solid #ffffff26;border-radius:999px;padding:5px 8px;box-shadow:0 5px 12px #0006}
+.monte-piece{position:relative;display:block;box-shadow:0 4px 9px #0000004f,inset 0 1px 0 #ffffff30}
+.monte-group-proteina .monte-stack-pieces{min-height:26px}.monte-group-queijo .monte-stack-pieces{min-height:18px}.monte-group-salada .monte-stack-pieces{min-height:22px}.monte-group-molho .monte-stack-pieces{min-height:14px}.monte-group-extra .monte-stack-pieces{min-height:22px}
+.monte-hero-placeholder-3d{width:min(92%,280px);padding:20px 18px;border-radius:18px;background:#241915cc;border:1px dashed #c88f53;color:#ebceb0;line-height:1.5;text-align:center;box-shadow:inset 0 1px 0 #ffffff10}
+.monte-stack-hamburguer-bovino .piece-patty,.monte-stack-frango .piece-frango,.monte-stack-costela .piece-costela{width:88%;height:24px;border-radius:999px}
+.monte-stack-hamburguer-bovino .piece-patty{background:radial-gradient(circle at 20% 30%,#9f5e32 0 6%,transparent 7%),radial-gradient(circle at 48% 54%,#5b2818 0 8%,transparent 9%),radial-gradient(circle at 72% 35%,#4a1f13 0 6%,transparent 7%),linear-gradient(180deg,#7b4022,#4b2417)}
+.monte-stack-frango .piece-frango{background:radial-gradient(circle at 24% 36%,#ffd696 0 6%,transparent 7%),radial-gradient(circle at 68% 52%,#d48d4e 0 7%,transparent 8%),linear-gradient(180deg,#e4bd7f,#ae703b)}
+.monte-stack-costela .piece-costela{height:18px;width:80%;margin-top:-2px;background:radial-gradient(circle at 25% 50%,#b15c38 0 8%,transparent 9%),radial-gradient(circle at 55% 40%,#824022 0 9%,transparent 10%),radial-gradient(circle at 76% 60%,#5e2c1b 0 8%,transparent 9%),linear-gradient(180deg,#9a5230,#5d2e1d)}
+.monte-stack-cheddar .piece-cheddar{width:92%;height:16px;background:linear-gradient(180deg,#ffd94f,#f1a014);border-radius:10px 10px 22px 22px;clip-path:polygon(2% 0,100% 0,94% 80%,82% 100%,66% 76%,48% 100%,30% 78%,18% 100%,4% 74%)}
+.monte-stack-mussarela .piece-mussarela,.monte-stack-catupiry .piece-catupiry{width:90%;height:14px;background:linear-gradient(180deg,#fffef5,#f0e0b5);border-radius:12px 12px 20px 20px;clip-path:polygon(2% 0,100% 0,96% 73%,83% 100%,71% 74%,56% 100%,44% 76%,28% 100%,18% 75%,2% 100%)}
+.monte-stack-alface .piece-alface{width:78%;height:16px;margin-top:-1px;background:radial-gradient(circle at 15% 40%,#9de66d 0 24%,transparent 25%),radial-gradient(circle at 38% 30%,#7cd34b 0 24%,transparent 25%),radial-gradient(circle at 58% 45%,#5db53d 0 24%,transparent 25%),radial-gradient(circle at 80% 35%,#85d957 0 24%,transparent 25%),linear-gradient(180deg,#8fe45c,#2f913b);border-radius:20px;filter:drop-shadow(0 2px 2px #0004)}
+.monte-stack-tomate .piece-tomate{width:58px;height:20px;border-radius:50%;margin-inline:-5px;background:radial-gradient(circle at 50% 45%,#ff8d76 0 30%,#de3b22 31% 100%)}
+.monte-stack-cebola-roxa .piece-cebola-roxa{width:54px;height:20px;border-radius:50%;margin-inline:-7px;border:4px solid #ae69c0;background:radial-gradient(circle at center,transparent 0 42%,#ead6f0 43% 56%,transparent 57%)}
+.monte-stack-maionese .piece-maionese,.monte-stack-barbecue .piece-barbecue,.monte-stack-molho-casa .piece-molho-casa{width:92%;height:10px;border-radius:999px}
+.monte-stack-maionese .piece-maionese{background:repeating-linear-gradient(90deg,#fffde7 0 18px,#efe6ba 18px 36px)}
+.monte-stack-barbecue .piece-barbecue{background:repeating-linear-gradient(90deg,#7b2e1d 0 18px,#522116 18px 36px)}
+.monte-stack-molho-casa .piece-molho-casa{background:repeating-linear-gradient(90deg,#f3af63 0 18px,#d16b34 18px 36px)}
+.monte-stack-bacon .piece-bacon{width:90px;height:12px;border-radius:999px;transform:rotate(var(--rot, -7deg));margin-inline:-8px;background:repeating-linear-gradient(90deg,#9f2019 0 16px,#ef7a50 16px 28px,#f2ccb1 28px 35px)}
+.monte-stack-bacon .p2{--rot:6deg}.monte-stack-bacon .p3{--rot:-3deg}.monte-stack-bacon .p4{--rot:8deg}
+.monte-stack-ovo .piece-ovo{width:96px;height:32px;border-radius:999px;background:radial-gradient(circle at 50% 50%,#f0bd20 0 18%,#f8df8d 19% 26%,#fff 27% 70%,#d8d3c8 71% 100%)}
+.monte-stack-cebola-caramelizada .piece-cebola-caramelizada{width:56px;height:18px;border-radius:50%;margin-inline:-7px;border:4px solid #8f4525;background:radial-gradient(circle at center,transparent 0 44%,#e3b481 45% 56%,transparent 57%)}
+.monte-preview-list{align-content:start}
+@media(max-width:1080px){.monte-stack-label{display:none}}
+@media(max-width:920px){.monte-preview-scene-3d{grid-template-columns:1fr}.monte-burger-stage{min-height:310px}.monte-preview-list{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.monte-burger-stage{min-height:228px;padding:10px 10px 16px}.monte-bun3d-top{min-height:54px;padding:8px 18px 14px}.monte-bun3d span{font-size:10px}.monte-bun3d-bottom{min-height:22px}.monte-stack-layer{width:min(94%,240px)}.monte-stack-hamburguer-bovino .piece-patty,.monte-stack-frango .piece-frango{height:18px}.monte-stack-costela .piece-costela{height:14px}.monte-stack-cheddar .piece-cheddar,.monte-stack-mussarela .piece-mussarela,.monte-stack-catupiry .piece-catupiry{height:12px}.monte-stack-tomate .piece-tomate{width:42px;height:14px}.monte-stack-cebola-roxa .piece-cebola-roxa,.monte-stack-cebola-caramelizada .piece-cebola-caramelizada{width:40px;height:14px;border-width:3px}.monte-stack-bacon .piece-bacon{width:64px;height:10px}.monte-stack-ovo .piece-ovo{width:70px;height:24px}.monte-preview-list{grid-template-columns:1fr}}
