@@ -14,6 +14,7 @@ export class Hero {
     this.rider=buildHero();this.rider.position.set(0,.75,-.03);this.rider.rotation.y=0;
     this.rider.scale.setScalar(.78);dragon.visual.add(this.rider);this.rider.visible=false;
     dragon.rider=this.rider; // Preserve the player when swapping dragon visuals.
+    dragon.hero=this; // Refit saddle after either asynchronous GLB has loaded.
     this.mounted=false;this.walkTime=0;this.moveSpeed=0;this.fallVelocity=0;this.slopeClock=0;this.slope={pitch:0,roll:0};
     // HeroAssetUI owns auto-loading (bundled GLB or remembered import) so
     // concurrent loader calls never swap the meshes and skinned rigs twice.
