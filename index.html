@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#071a25">
+  <meta name="description" content="Asas de Brumária: explore ilhas, monte em seu dragão e complete missões.">
+  <title>Asas de Brumária v1.4.18 — Aventura de Dragões</title>
+  <link rel="stylesheet" href="./src/ui/style.css">
+</head>
+<body>
+  <div id="game" aria-label="Mundo do jogo em 3D"></div>
+  <div id="hud">
+    <div class="hud-top">
+      <div class="brand"><span class="brand-icon">◆</span><div><strong>ASAS DE BRUMÁRIA</strong><small>VOE · DESCUBRA · AMANSE DRAGÕES</small></div></div>
+      <div class="top-pills"><span id="mode-pill">EXPLORAÇÃO</span><span id="weather-pill">CÉU ABERTO</span><span id="clock-pill">10:19</span><span id="fps-pill">60 FPS</span><span id="controller-status" aria-live="polite">TECLADO / TOQUE</span><button id="gpu-toggle" type="button" title="Preferência de GPU, resolução e sombras">⚙ GPU</button><button id="quality-toggle" type="button" title="Alternar qualidade gráfica">GRÁFICOS: AUTO · G</button></div>
+    </div>
+    <div class="mission-card"><div class="eyebrow"><span class="pulse"></span> MISSÃO ATIVA <span id="quest-index">01 / 04</span></div><h2 id="quest-title">A PRIMEIRA CONEXÃO</h2><p id="quest-desc">Aproxime-se do dragão e monte nele.</p><div id="quest-progress"></div><div id="quest-guide" aria-live="off">SIGA O OBJETIVO MARCADO NO MAPA</div></div>
+    <div class="map-panel"><div class="map-head"><span>MAPA DAS ILHAS</span><span class="map-north">N ↑</span></div><canvas id="mini-map" width="160" height="160" aria-label="Minimapa"></canvas><div class="map-footer" id="waypoint">OBJETIVO A 0m</div></div>
+    <div id="toast" aria-live="polite"></div>
+    <button id="stable-toggle" class="stable-toggle" type="button" aria-label="Abrir estábulo de dragões">🐉 ESTÁBULO <span>T</span></button>
+    <div id="expedition-status" class="expedition-status">MARCOS 0/5 · AMIZADES 0/3</div>
+    <div id="mountain-status" class="mountain-status">🏔 MAPA DE MONTANHAS A LESTE</div>
+    <div id="contract-status" class="contract-status hidden" aria-live="polite"></div>
+    <div id="training-status" class="training-status hidden" aria-live="polite"></div>
+    <div id="dragon-model-status" class="dragon-model-status" data-state="loading" role="status" aria-live="polite">Carregando Fúria da Noite 3D…</div>
+    <div id="interaction" class="hidden">E · MONTAR NO DRAGÃO</div>
+    <div id="target-lock" class="target-lock hidden">◆ SENTINELA NA MIRA</div><div class="crosshair">+</div><div id="hurt-overlay" class="hurt-overlay"></div>
+    <div class="bottom-hud"><div class="status-card"><div class="stat-head"><span>ENERGIA DO DRAGÃO</span><span id="energy-number">100%</span></div><div class="energy-track"><div id="energy-bar"></div></div><div class="stat-head health-head"><span id="health-label">RESISTÊNCIA DA FÚRIA DA NOITE</span><span id="health-number">100%</span></div><div class="energy-track health-track"><div id="health-bar"></div></div><div class="stat-row"><span id="speed-text">NO SOLO</span><span id="altitude-text">ALT 0 m</span><span id="dodge-status">ESQUIVA · EM VOO</span></div></div><div id="keyboard-help"><b>W A S D</b> MOVER NA DIREÇÃO DA CÂMERA <span>•</span> <b>ESPAÇO</b> SUBIR <span>•</span> <b>CTRL</b> DESCER <span>•</span> <b>E</b> INTERAGIR <span>•</span> <b>F</b> FOGO <span>•</span> <b>Q</b> ESQUIVAR (VOANDO) <span>•</span> <b>SHIFT</b> TURBO / ANDAR DEVAGAR <span>•</span> <b>T</b> ESTÁBULO <span>•</span> <b>P</b> SALVAR <span>•</span> <b>C</b> CLIMA <span>•</span> <b>N</b> HORÁRIO <span>•</span> <b>G</b> GRÁFICOS <span>•</span> <b>⚙ GPU</b> VÍDEO <span>•</span> <b>V</b> CÂMERA ATRÁS · ARRASTE / RODA</div></div>
+    <div id="gamepad-help" class="gamepad-help">🎮 ANALÓGICO E: MOVER · ANALÓGICO D: CÂMERA · A: INTERAGIR · X: FOGO · Y/START: ESTÁBULO · LB/RB: DESCER/SUBIR · LT/RT: FREAR/ACELERAR · L3: TURBO · R3: ESQUIVA · B: VOLTAR</div>
+    <div class="mobile-controls" id="mobile-controls">
+      <div class="touch-dpad"><button data-hold="w" class="pad-up" aria-label="Avançar">▲</button><button data-hold="a" class="pad-left" aria-label="Virar à esquerda">◀</button><button data-hold="s" class="pad-down" aria-label="Recuar">▼</button><button data-hold="d" class="pad-right" aria-label="Virar à direita">▶</button></div>
+      <div class="touch-actions"><button class="touch-action small" data-hold="ctrl">DESCER</button><button class="touch-action small" data-hold="shift">TURBO</button><button class="touch-action dodge" data-tap="q">ESQUIVA</button><button class="touch-action fire" data-tap="f">FOGO</button><button class="touch-action climb" data-hold="space">SUBIR</button><button class="touch-action mount" data-tap="e">MONTAR</button></div>
+    </div>
+  </div>
+  <section id="gpu-panel" class="gpu-panel hidden" aria-label="Opções de vídeo e GPU">
+    <div class="gpu-panel-title"><strong>⚙ CONFIGURAÇÕES DE VÍDEO</strong><button id="gpu-close" type="button" aria-label="Fechar configurações">✕</button></div>
+    <p>GPU em uso (informação fornecida pelo navegador): <strong id="gpu-device">Consultando…</strong></p>
+    <label>Preferência de GPU (solicitação ao navegador)
+      <select id="gpu-preference"><option value="default">Automático (navegador)</option><option value="high-performance">Preferir alto desempenho</option><option value="low-power">Preferir baixo consumo</option></select></label>
+    <label>Resolução interna <select id="gpu-resolution"><option value="0.5">50% · PC fraco</option><option value="0.75">75% · equilibrado</option><option value="1">100% · padrão</option></select></label>
+    <label class="gpu-check"><input id="gpu-shadows" type="checkbox"> Sombras dinâmicas</label>
+    <label class="gpu-check"><input id="gpu-antialias" type="checkbox"> Suavização de serrilhado (antialias)</label>
+    <p id="gpu-note">O navegador decide qual GPU física usar. Para escolher entre integrada e dedicada, configure também o Windows/driver. As preferências só serão aplicadas após reiniciar a página.</p>
+    <button id="gpu-apply" type="button">SALVAR, APLICAR E REINICIAR</button>
+  </section>
+  <div id="npc-dialogue" class="npc-dialogue hidden" role="dialog" aria-label="Conversa com morador" aria-modal="false"><div class="npc-dialogue-heading"><strong id="npc-name">MORADOR</strong><span id="npc-role"></span></div><p id="npc-text"></p><button id="npc-close" type="button">CONTINUAR · E</button></div>
+  <div id="stable" class="stable-screen hidden" role="dialog" aria-label="Estábulo e treinamento" aria-modal="true">
+    <section class="stable-card">
+      <div class="stable-heading"><div><small>VILA DE BRUMÁRIA</small><h2>ESTÁBULO DOS DRAGÕES</h2><p>Treine habilidades, descubra espécies e domine os circuitos aéreos.</p></div><button id="stable-close" class="stable-close" type="button" aria-label="Fechar estábulo">✕</button></div>
+      <section class="hero-glb-panel" aria-label="Importar modelo 3D do personagem">
+        <strong>NOVO HERÓI ANIMADO · A PÉ E SOBRE O DRAGÃO</strong>
+        <p>O novo personagem usa as animações de caminhar, correr, montar, cavalgar, decolar, voar, planar, atacar, pousar e desmontar. Se o modelo ainda não apareceu, clique em IMPORTAR GLB e escolha <b>personagem_animado_montaria.glb</b>. A importação permanece salva no navegador.</p>
+        <input id="hero-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
+        <div class="hero-glb-buttons"><button id="hero-glb-import" type="button">IMPORTAR GLB</button><button id="hero-glb-demo" type="button">TESTAR MODELO DEMO</button><button id="hero-glb-reset" type="button">VOLTAR AO ORIGINAL</button></div>
+        <p id="hero-glb-status" data-state="neutral" role="status" aria-live="polite">Selecione um GLB. O arquivo é salvo somente neste navegador, quando possível.</p>
+      </section>
+      <section class="hero-glb-panel" aria-label="Testar modelo 3D GLB do dragão">
+        <strong>DRAGÃO 3D · TESTE DE MODELO EXTERNO</strong>
+        <p>Importe um dragão GLB rigado do seu computador para comparar com o original durante voo, pouso e combate. As mecânicas continuam iguais. Modelo CC0 sugerido: <a href="https://opengameart.org/content/cethiels-dragon-3d" target="_blank" rel="noopener noreferrer">Cethiel's Dragon 3D</a> (o ZIP exige conversão para GLB no Blender).</p>
+        <input id="dragon-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
+        <div class="hero-glb-buttons"><button id="dragon-glb-import" type="button">IMPORTAR DRAGÃO GLB</button><button id="dragon-glb-demo" type="button">TESTAR DRAGÃO DEMO ANIMADO</button><button id="dragon-glb-cc0" type="button">USAR DRAGÃO CC0 REAL</button><button id="dragon-glb-reset" type="button">VOLTAR AO DRAGÃO ORIGINAL</button></div>
+        <p id="dragon-glb-status" role="status" aria-live="polite" data-state="neutral">O arquivo é opcional. Sem GLB, o jogo mantém todos os modelos e animações originais.</p>
+      </section>
+      <section class="hero-glb-panel" aria-label="Carregar Fúrias da Noite e da Luz">
+        <strong>MODELOS DAS FÚRIAS · 49 OSSOS E 8 ANIMAÇÕES</strong>
+        <p>Carregue o GLB de cada Fúria uma vez neste navegador. A Fúria da Noite é sua montaria inicial; a Fúria da Luz continua desbloqueável com pontos. O jogo guarda os dois arquivos separadamente quando o navegador permite.</p>
+        <input id="night-fury-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
+        <input id="light-fury-glb-file" type="file" accept=".glb,model/gltf-binary" hidden>
+        <div class="hero-glb-buttons">
+          <button id="night-fury-glb-import" type="button">CARREGAR FÚRIA DA NOITE</button>
+          <button id="light-fury-glb-import" type="button">CARREGAR FÚRIA DA LUZ</button>
+        </div>
+        <p id="fury-glb-status" data-state="neutral" role="status" aria-live="polite">Se os modelos ainda não aparecem, escolha os arquivos .glb do pacote de animações enviado.</p>
+      </section>
+      <div id="stable-village-note" class="stable-note"></div>
+      <div class="stable-balance"><strong id="train-points">0</strong> PONTOS DE TREINAMENTO <span id="train-circuits">0 circuitos</span></div>
+      <div id="discovery-list" class="discovery-list">Marcos encontrados: 0/5</div>
+      <h3>QUADRO DE MISSÕES · <span id="daily-day">DIA 1</span></h3>
+      <p class="daily-board-note">Fale com Iara, Lume, Borin ou Nara para aceitar tarefas. A cada novo dia surgem novas rotas e recompensas.</p>
+      <div id="daily-board" class="daily-board" aria-label="Missões diárias disponíveis"></div>
+      <div id="wild-list" class="wild-list" aria-label="Dragões selvagens para amansar"></div>
+      <div class="preview-panel"><canvas id="stable-preview-canvas" aria-label="Modelo 3D giratório do dragão selecionado"></canvas><div class="preview-info"><strong id="stable-preview-name">Fúria da Noite · Dragão Inicial</strong><small id="stable-preview-caption">Arraste para girar · Visualização 3D dos dragões</small><label for="stable-preview-motion">Testar animação:</label><select id="stable-preview-motion" aria-label="Animação do dragão na prévia"><option value="fly">Voar (Fly)</option><option value="glide">Planar (Glide)</option><option value="idle">Parado (Idle)</option><option value="walk">Andar (Walk)</option><option value="attack">Atacar (Attack)</option><option value="hurt">Reagir (Hurt)</option><option value="takeoff">Decolar (Takeoff)</option><option value="land">Pousar (Landing)</option></select></div></div>
+      <h3>SEUS DRAGÕES</h3><div id="species-list" class="species-list"></div>
+      <h3>EVOLUÇÃO DAS HABILIDADES</h3><div id="skill-list" class="skill-list"></div>
+      <div class="training-footer"><div><strong>DESAFIO DOS VENTOS</strong><small>Três aros dourados em 95 segundos. Ganhe +1 ponto ao completar.</small></div><button id="train-start" type="button">INICIAR CIRCUITO</button></div>
+      <div class="training-footer advanced-footer"><div><strong>CIRCUITO DA TEMPESTADE</strong><small>Cinco aros em 80 segundos, velocidade mínima de 18 m/s. Recompensa +2 pontos.</small></div><button id="train-advanced" type="button">CIRCUITO AVANÇADO</button></div>
+      <p class="stable-tip">Complete missões para ganhar pontos. Troque de dragão e melhore atributos somente na vila. O progresso é salvo automaticamente.</p>
+    </section>
+  </div>
+  <div id="start-screen" class="modal-screen"><div class="start-art">✦ <span>✦</span> ✦</div><div class="modal-content"><div class="pretitle">UMA JORNADA ORIGINAL INSPIRADA EM AVENTURAS DE DRAGÕES</div><h1>ASAS DE<br><em>BRUMÁRIA</em></h1><p>Explore ilhas esquecidas, treine seu dragão, enfrente sentinelas inimigas , resgate filhotes perdidos e conquiste a confiança de dragões selvagens.</p><div class="features"><span>◈ Mundo 3D</span><span>◈ Voo livre</span><span>◈ 7 missões + contratos + expedição às montanhas</span><span>◈ Dia e noite dinâmicos</span></div><button id="start-btn">COMEÇAR A AVENTURA <span>→</span></button><button id="new-game-btn" class="new-game-btn hidden" type="button">CRIAR NOVA PARTIDA (APAGA O SAVE)</button><small>Teclado · Controle Xbox/PlayStation/USB/Bluetooth (Gamepad API) · Toque · Áudio opcional</small></div></div>
+  <div id="benchmark-controls" class="hidden" aria-label="Comparar desempenho dos gráficos">
+    <button id="benchmark-toggle" type="button">COMPARAR FPS (B)</button>
+    <button id="benchmark-copy" type="button" disabled>COPIAR RESULTADOS</button>
+    <pre id="benchmark-report" role="status" aria-live="polite">Pressione B para comparar FPS nos modos LEVE, EQUILIBRADO e DETALHADO.</pre>
+  </div>
+  <pre id="performance-panel" class="hidden" role="status" aria-live="off"></pre>
+  <div id="fatal" class="fatal hidden"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
