@@ -69,6 +69,7 @@ export function addMissingRiderClips(scene,clips=[],{repairMounted=false}={}){
   const byName=new Set(authored.map(c=>c.name.toLowerCase()));
   const bones=Object.fromEntries(Object.entries(BONES)
     .map(([alias,name])=>[alias,scene.getObjectByName(name)
+      ??scene.getObjectByName(name.replace(/[:./]/g,''))
       ??scene.getObjectByName(name.replace(/[:./]/g,'_'))]).filter(([,bone])=>bone?.isBone));
   // Models with other skeletons retain their authored animation/fallback.
   if(!bones.hips||!bones.lthigh||!bones.rthigh||!bones.larm||!bones.rarm)return clips;
