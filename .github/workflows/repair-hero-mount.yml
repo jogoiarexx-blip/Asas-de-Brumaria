@@ -1,0 +1,38 @@
+name: Corrigir poses do novo cavaleiro GLB
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - tools/fix_hero_mounted_glb.py
+      - .github/workflows/repair-hero-mount.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fix-cavaleiro-sela
+  cancel-in-progress: false
+
+jobs:
+  update-glb:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Regravar 10 clipes preservando os 5 originais
+        run: python3 tools/fix_hero_mounted_glb.py assets/models/personagem_animado_montaria.glb
+      - name: Publicar GLB corrigido
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/models/personagem_animado_montaria.glb
+          if git diff --cached --quiet; then
+            echo 'GLB com pose corrigida ja esta no repositório.'
+          else
+            git commit -m 'fix(hero): bake forward-facing riding poses in production GLB'
+            git push origin HEAD:main
+          fi
