@@ -22,6 +22,19 @@ test('camera smoothly follows a faster dragon but preserves manual zoom',()=>{
  assert.equal(zoomed.lookAhead,fly.lookAhead);
 });
 
+test('portrait mobile camera retains enough horizontal space for both enlarged wings',()=>{
+ const desktop=dragonCameraFraming({riding:true,visualHeight:3.35,
+   visualWingspan:9.35,speed:0,zoom:.65,aspect:16/9});
+ const phone=dragonCameraFraming({riding:true,visualHeight:3.35,
+   visualWingspan:9.35,speed:0,zoom:.65,aspect:.46});
+ assert.ok(phone.distance>desktop.distance,
+   'narrow screens need extra space around wings');
+ const safeWidth=2*phone.distance*Math.tan((67*Math.PI/180)/2)*.46*.83;
+ assert.ok(safeWidth>=9.35-1e-8,{safeWidth,phone});
+ const walk=dragonCameraFraming({riding:false,zoom:.65,aspect:.46});
+ assert.equal(walk.distance,11.5*.65,'on-foot mobile camera remains unchanged');
+});
+
 test('pedestrian framing and input direction remain unchanged',()=>{
  const expected={distance:11.5,baseHeight:6.15,anchorHeight:2.7,lookAhead:1.45,lookHeight:2};
  assert.deepEqual(dragonCameraFraming({riding:false,visualHeight:3.35,visualWingspan:9.35}),expected);
