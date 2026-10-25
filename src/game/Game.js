@@ -804,7 +804,7 @@ export class Game {
     const visual=this.dragon.externalDragonModel;
     const framing=dragonCameraFraming({riding,airborne,speed:this.dragon.speed,
       visualHeight:visual?.visualHeight,visualWingspan:visual?.visualWingspan,
-      zoom:this.cameraOrbit.zoom});
+      zoom:this.cameraOrbit.zoom,aspect:this.camera.aspect});
     const offset=cameraOffset({forwardX:0,forwardZ:-1,distance:framing.distance,yaw,pitch:this.cameraOrbit.pitch});
     const camPos=new THREE.Vector3(focus.x+offset.x,focus.y+framing.baseHeight+offset.y,focus.z+offset.z);
     camPos.y=Math.max(camPos.y,this.world.groundHeightAt(camPos.x,camPos.z)+3.5);
