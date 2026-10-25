@@ -25,8 +25,21 @@ try{
  },null,{timeout:50000});
  const result=await page.evaluate(async()=>{
   const g=window.__saddleQAGame,d=g.dragon,h=g.hero;
+  const foot=h.glbClips[0];
+  const leg=h.glbRoots[0].getObjectByName('mixamorigLeftUpLeg')
+    ??h.glbRoots[0].getObjectByName('mixamorig_LeftUpLeg');
+  const startLeg=leg?.quaternion.clone();
+  for(let i=0;i<40;i++)h.update(1/60,{axis:()=>0,isDown:()=>false},i/60);
+  const idleProof={exists:!!foot.actions.idle,active:foot.active===foot.actions.idle,
+    stationaryLeg:startLeg&&leg?leg.quaternion.angleTo(startLeg):null};
   d.mount();h.setMounted(true);
   const THREE=await import('three');
+  const {dragonCameraFraming}=await import('./src/game/dragonCameraFraming.js');
+  const model=d.externalDragonModel;
+  const frame=dragonCameraFraming({riding:true,airborne:false,
+    speed:d.speed,visualHeight:model.visualHeight,visualWingspan:model.visualWingspan});
+  for(let i=0;i<90;i++)g.updateCamera(1/60);
+  const actualCameraDistance=g.camera.position.distanceTo(d.group.position);
   const newSize=d.externalDragonModel;
   const mountSize={
     riderScale:h.rider.scale.x,
@@ -57,7 +70,7 @@ try{
   const ground=sample('ground'),flight=sample('cruise'),landing=sample('landing');
   return {ground,flight,landing,oldBodyHidden:!h.rider.userData.body.visible,
     parentValid:h.rider.parent===d.visual,saddle:d.externalDragonModel.saddle,
-    mountSize};
+    mountSize,idleProof,frame,actualCameraDistance};
  });
  for(const [name,p] of Object.entries({ground:result.ground,flight:result.flight,landing:result.landing})){
   assert.ok(p.handAheadLeft>.13&&p.handAheadRight>.13,`${name}: hands backwards: ${JSON.stringify(p)}`);
@@ -70,6 +83,12 @@ try{
  assert.ok(result.mountSize.dragonVisualHeight>3.2&&result.mountSize.dragonVisualHeight<3.46,
    'Fury is too small to carry a full-size rider: '+JSON.stringify(result.mountSize));
  assert.ok(result.mountSize.dragonWingspan>8.6);
+ assert.equal(result.idleProof.exists,true,'GLB original lacks a standing idle');
+ assert.equal(result.idleProof.active,true,'hero stands with foot idle animation');
+ assert.ok(result.idleProof.stationaryLeg!==null&&result.idleProof.stationaryLeg<.005,
+   'standing character should not march on the spot: '+JSON.stringify(result.idleProof));
+ assert.ok(result.frame.distance>18,'camera too close to enlarged dragon: '+JSON.stringify(result.frame));
+ assert.ok(result.actualCameraDistance>12,'3D camera still clips into large dragon');
  assert.equal(result.oldBodyHidden,true);
  assert.equal(result.parentValid,true);
  assert.equal(result.ground.clip,'rideIdle');
