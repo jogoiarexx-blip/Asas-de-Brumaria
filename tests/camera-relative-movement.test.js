@@ -65,7 +65,8 @@ test('integration: Game, Dragon and Hero use identical camera yaw and collisions
   const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
   const game=read('../src/game/Game.js'),dragon=read('../src/entities/Dragon.js'),hero=read('../src/entities/Hero.js');
   assert.match(game,/this\.input\.cameraYaw=this\.cameraOrbit\.yaw/);
-  assert.match(game,/forwardX:0,forwardZ:-1,distance:back,yaw/);
+  assert.match(game,/forwardX:0,forwardZ:-1,distance:framing\.distance,yaw/);
+  assert.match(game,/dragonCameraFraming\(/);
   assert.match(game,/resolveCameraPosition\(/);
   assert.match(dragon,/cameraRelativeMove\(horizontalAxis,travel,input\.cameraYaw\)/);
   assert.match(dragon,/moveFlightWithCollisions\(/);
