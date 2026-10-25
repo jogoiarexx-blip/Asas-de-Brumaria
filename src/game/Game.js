@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './Input.js';
 import {CameraOrbit,cameraOffset} from './CameraOrbit.js';
+import {dragonCameraFraming} from './dragonCameraFraming.js';
 import {resolveCameraPosition} from '../utils/spatialSweep.js';
 import {safeDismountSpot} from '../utils/surfaces.js';
 import {recoverFreePosition,obstacleBlocks} from '../utils/collision.js';
@@ -800,22 +801,23 @@ export class Game {
     const yaw=this.cameraOrbit.yaw;
     const forwardX=-Math.sin(yaw),forwardZ=-Math.cos(yaw);
     const airborne=riding&&this.dragon.airborne;
-    const back=(riding?15+this.dragon.speed*.085:11.5)*this.cameraOrbit.zoom;
-    const offset=cameraOffset({forwardX:0,forwardZ:-1,distance:back,yaw,pitch:this.cameraOrbit.pitch});
-    const baseHeight=riding?(airborne?7.4:5.9):6.15;
-    const camPos=new THREE.Vector3(focus.x+offset.x,focus.y+baseHeight+offset.y,focus.z+offset.z);
+    const visual=this.dragon.externalDragonModel;
+    const framing=dragonCameraFraming({riding,airborne,speed:this.dragon.speed,
+      visualHeight:visual?.visualHeight,visualWingspan:visual?.visualWingspan,
+      zoom:this.cameraOrbit.zoom});
+    const offset=cameraOffset({forwardX:0,forwardZ:-1,distance:framing.distance,yaw,pitch:this.cameraOrbit.pitch});
+    const camPos=new THREE.Vector3(focus.x+offset.x,focus.y+framing.baseHeight+offset.y,focus.z+offset.z);
     camPos.y=Math.max(camPos.y,this.world.groundHeightAt(camPos.x,camPos.z)+3.5);
     // Collisions and landscape keep their full sweep checks even on tight turns.
     const followTarget=this.camera.position.clone().lerp(camPos,smoothFollow(airborne?3.8:riding?5.3:6.3,dt));
-    const cameraAnchor={x:focus.x,y:focus.y+(riding?3.6:2.7),z:focus.z};
+    const cameraAnchor={x:focus.x,y:focus.y+framing.anchorHeight,z:focus.z};
     const safeCamera=resolveCameraPosition(cameraAnchor,followTarget,this.world.obstacles,
       (x,z)=>this.world.heightAt(x,z),{radius:.45,groundClearance:1.1});
     this.camera.position.set(safeCamera.x,safeCamera.y,safeCamera.z);
     // Look a few meters ahead along the VIEW, not the actor's previous yaw.
     // Maintain independent pitch, avoid head bob and drifting off-screen.
-    const lookAhead=riding?(airborne?6.5:4.3):1.45;
-    const lookAt=new THREE.Vector3(focus.x+forwardX*lookAhead,
-      focus.y+(riding?2.15:2),focus.z+forwardZ*lookAhead);
+    const lookAt=new THREE.Vector3(focus.x+forwardX*framing.lookAhead,
+      focus.y+framing.lookHeight,focus.z+forwardZ*framing.lookAhead);
     this._camTarget??=lookAt.clone();
     this._camTarget.lerp(lookAt,smoothFollow(airborne?4.0:6.2,dt));
     this.camera.lookAt(this._camTarget);
