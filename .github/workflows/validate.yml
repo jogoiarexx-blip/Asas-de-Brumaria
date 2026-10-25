@@ -46,6 +46,7 @@ jobs:
           node tests/browser-smoke.mjs
           node tests/browser-camera-movement.mjs
           node tests/browser-hero-mounted.mjs
+          node tests/browser-hero-saddle.mjs
           node tests/browser-fury-assets.mjs
           node tests/browser-fury-auto.mjs
           node tests/browser-missions.mjs
