@@ -27,6 +27,14 @@ try{
   const g=window.__saddleQAGame,d=g.dragon,h=g.hero;
   d.mount();h.setMounted(true);
   const THREE=await import('three');
+  const newSize=d.externalDragonModel;
+  const mountSize={
+    riderScale:h.rider.scale.x,
+    footScale:h.group.scale.x,
+    dragonVisualHeight:newSize.visualHeight,
+    dragonWingspan:newSize.visualWingspan,
+    species:d.speciesId
+  };
   const bone=key=>h.glbRoots[1].getObjectByName('mixamorig'+key)
     ??h.glbRoots[1].getObjectByName('mixamorig_'+key)
     ??h.glbRoots[1].getObjectByName('mixamorig:'+key);
@@ -48,13 +56,20 @@ try{
   };
   const ground=sample('ground'),flight=sample('cruise'),landing=sample('landing');
   return {ground,flight,landing,oldBodyHidden:!h.rider.userData.body.visible,
-    parentValid:h.rider.parent===d.visual,saddle:d.externalDragonModel.saddle};
+    parentValid:h.rider.parent===d.visual,saddle:d.externalDragonModel.saddle,
+    mountSize};
  });
  for(const [name,p] of Object.entries({ground:result.ground,flight:result.flight,landing:result.landing})){
   assert.ok(p.handAheadLeft>.13&&p.handAheadRight>.13,`${name}: hands backwards: ${JSON.stringify(p)}`);
   assert.ok(Math.abs(p.pelvisClearance)<.16,`${name}: saddle gap: ${JSON.stringify(p)}`);
   assert.ok(Math.abs(p.riderZ-p.saddleZ)<.24,`${name}: rider shifted backward: ${JSON.stringify(p)}`);
  }
+ assert.ok(Math.abs(result.mountSize.riderScale-result.mountSize.footScale)<.0001,
+   'The hero changed size on mount: '+JSON.stringify(result.mountSize));
+ assert.ok(Math.abs(result.mountSize.riderScale-1)<.0001);
+ assert.ok(result.mountSize.dragonVisualHeight>3.2&&result.mountSize.dragonVisualHeight<3.46,
+   'Fury is too small to carry a full-size rider: '+JSON.stringify(result.mountSize));
+ assert.ok(result.mountSize.dragonWingspan>8.6);
  assert.equal(result.oldBodyHidden,true);
  assert.equal(result.parentValid,true);
  assert.equal(result.ground.clip,'rideIdle');
