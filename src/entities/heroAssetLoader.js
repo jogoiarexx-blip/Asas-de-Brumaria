@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {inspectGLB} from './glbValidation.js';
 import {addMissingRiderClips,mountedMotionState} from './heroRiderAnimation.js';
+import {fitHeroSaddle} from './heroSaddleFit.js';
 
 const VERSION='0.180.0';
 const CDN=[`https://cdn.jsdelivr.net/npm/three@${VERSION}/examples/jsm/`,`https://unpkg.com/three@${VERSION}/examples/jsm/`];
@@ -38,6 +39,11 @@ function disposeModels(hero){
  for(const g of geometries)g.dispose();for(const t of textures)t.dispose();for(const m of materials)m.dispose();
  hero.glbRoots=[];hero.glbClips=[];hero.externalModel=null;hero.externalMixer=null;hero.externalClips=null;
  hero.riderVisualReady=false;
+ if(hero.rider?.userData?.preGLBMount){
+   hero.rider.position.copy(hero.rider.userData.preGLBMount);
+   delete hero.rider.userData.preGLBMount;
+ }
+ if(hero.rider?.userData){delete hero.rider.userData.glbHip;delete hero.rider.userData.saddleFit;}
 }
 function makeVariant(scene,yaw){
  const box=new THREE.Box3().setFromObject(scene),size=box.getSize(new THREE.Vector3());
@@ -70,8 +76,8 @@ const clipName=(name='')=>{
  if(/dance/.test(n))return 'dance';
  return null;
 };
-function mixAnimations(scene,sourceClips){
- const clips=addMissingRiderClips(scene,sourceClips);
+function mixAnimations(scene,sourceClips,{repairMounted=false}={}){
+ const clips=repairMounted?addMissingRiderClips(scene,sourceClips,{repairMounted:true}):sourceClips;
  const mixer=new THREE.AnimationMixer(scene),actions={};
  for(const clip of clips){const slot=clipName(clip.name);if(slot&&!actions[slot])actions[slot]=mixer.clipAction(clip);}
  const active=actions.idle??actions.walk??Object.values(actions)[0]??null;
@@ -93,12 +99,21 @@ export async function installHeroGLB(hero,bytes,{yaw=0,onStatus=()=>{}}={}){
  const mountedScene=cloneSkinned?cloneSkinned(gltf.scene):(await new GLTFLoader().parseAsync(raw,'')).scene;
  const foot=makeVariant(gltf.scene,yaw),rider=makeVariant(mountedScene,yaw);
  const footAnim=mixAnimations(gltf.scene,gltf.animations??[]);
- const rideAnim=mixAnimations(mountedScene,gltf.animations??[]);
+ const rideAnim=mixAnimations(mountedScene,gltf.animations??[],{repairMounted:true});
  disposeModels(hero);
  hero.group.add(foot);hero.rider.add(rider);
+ hero.rider.updateMatrixWorld(true);
+ const hipBone=mountedScene.getObjectByName('mixamorig_Hips')
+   ??mountedScene.getObjectByName('mixamorig:Hips');
+ if(hipBone?.isBone){
+   const hips=hero.rider.worldToLocal(hipBone.getWorldPosition(new THREE.Vector3()));
+   hero.rider.userData.glbHip={x:hips.x,y:hips.y,z:hips.z};
+   hero.rider.userData.preGLBMount=hero.rider.position.clone();
+ }
  hero.group.userData.body.visible=false;hero.rider.userData.body.visible=false;
  hero.glbRoots=[foot,rider];hero.glbClips=[footAnim,rideAnim];hero.glbMixers=[footAnim.mixer,rideAnim.mixer];
  hero.riderVisualReady=true;
+ fitHeroSaddle(hero);
  hero.mountAnimationRemaining=hero.mounted?.83:0;hero.dismountAnimationRemaining=0;
  hero.externalHeroInfo={...info,animations:(gltf.animations??[]).map(a=>a.name),
    mappedRiding:Object.keys(rideAnim.actions).filter(name=>name.startsWith('ride')||name==='mount'||name==='dismount')};
