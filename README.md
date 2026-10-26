@@ -505,7 +505,7 @@ Durante a perseguição, os inimigos reutilizam vetores temporários para cálcu
 
 A vegetação deixa de usar um único lote espalhado pelo mapa inteiro: árvores, rochas e arbustos passam a ser distribuídos em lotes por ilha, o que permite ao Three.js descartar lotes fora da câmera e ocultar detalhes de ilhas muito distantes. A distância aumenta com a altitude e usa margem de transição para evitar alternância incessante na borda do alcance. **Colisão, terreno, missões e objetos interativos não são ocultados por essa técnica.**
 
-**Diagnóstico F3:** agora também informa quantas ilhas estão exibindo vegetação detalhada e a quantidade de lotes das nuvens. Qualidade DETALHADA mantém a vegetação de todas as ilhas visível, sem corte por distância.
+**Diagnóstico F3:** agora também informa quantas ilhas estão exibindo vegetação detalhada e a quantidade de lotes das nuvens. Qualidade DETALHADA mantém a vegetação próxima com todos os detalhes e oculta apenas lotes decorativos muito distantes (a partir de cerca de 520 m, com margem e ajuste pela altitude); terreno e colisões permanecem ativos.
 
 **Validação:** 219 testes automatizados aprovados (206 existentes + 13 novos), verificação de imports e sintaxe. O desempenho real em GPU fraca ainda precisa ser medido no navegador; não há promessa de FPS específico.
 
@@ -810,3 +810,14 @@ asas-de-brumaria/
 ## Próximas prioridades
 
 Modelos GLB rigados individualmente para cada espécie, física aerodinâmica aprofundada e árvores de diálogo com escolhas ainda não estão implementados.
+
+
+## Expansão das Sete Ilhas — revisão de estrutura, gráficos e desempenho
+
+O arquipélago principal agora possui **sete ilhas exploráveis**. As duas regiões inéditas, **Arquipélago dos Cristais** (X≈-320, Z≈95) e **Ilha das Cinzas** (X≈332, Z≈-110), incluem relevo, vegetação, formações de cristal/basalto com colisores e monumentos descobríveis. Os dois biomas usam **cores de vértice e instanciamento**, sem texturas externas adicionais. As cinco ilhas originais e as sete missões principais continuam no lugar, inclusive nos salvamentos anteriores.
+
+Depois de concluir **dois circuitos de treinamento**, abra o estábulo com **T** e escolha **Travessia das Sete Ilhas**. Esta fase opcional tem **sete checkpoints**, 165 segundos, velocidade mínima de 14 m/s e recompensa de quatro pontos de treinamento. O radar destaca a próxima baliza; os dois monumentos novos concedem pontos de exploração uma vez cada.
+
+**Qualidade sem sobrecarregar o renderizador:** a vegetação decorativa de ilhas distantes deixa de ser desenhada até no perfil detalhado; os novos cristais e pilares de basalto usam só **dois lotes instanciados**; os 15 checkpoints compartilham quatro geometrias e quatro materiais. Quando a taxa de quadros permanece entre 30 e 46 FPS, o modo AUTO diminui a densidade de pixels em passos discretos de 4%, até 16%, **sem reduzir a qualidade de texturas, modelos, sombras ou física**. A resolução retorna gradualmente com desempenho recuperado. Em quedas graves, continuam valendo os perfis gráficos existentes.
+
+A revisão não promete um ganho fixo de FPS: use o benchmark do jogo e o painel **F3** para verificar chamadas de desenho, triângulos e desempenho no seu dispositivo. Os testes de código incluem continuação de saves, desbloqueio do circuito, novas ilhas e controles de qualidade; testes de navegador validam a aplicação renderizada via GitHub Actions.
