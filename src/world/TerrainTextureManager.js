@@ -62,6 +62,14 @@ export class TerrainTextureManager {
     this.renderer=renderer;
     this.materials=new Map();
     this.loader=loader??new THREE.TextureLoader();
+    // Tiny neutral placeholder compiles the textured Lambert variant before
+    // the first flight. Switching to a photo map no longer changes shader
+    // defines (or shows a flash of plain procedural terrain).
+    this.placeholder=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);
+    this.placeholder.colorSpace=THREE.SRGBColorSpace;
+    this.placeholder.magFilter=THREE.NearestFilter;
+    this.placeholder.minFilter=THREE.NearestFilter;
+    this.placeholder.needsUpdate=true;
     this.scheduleIdle=idle??deferIdle;
     this.loading=new Map(); // Resident maps only, no discarded pending promises.
     this.queue=[];this.queued=new Set();this.busy=false;
@@ -76,6 +84,7 @@ export class TerrainTextureManager {
     if(!TERRAIN_KINDS.includes(kind))throw Error('Unknown terrain kind');
     const group=this.materials.get(kind)??[];
     group.push(material);this.materials.set(kind,group);
+    if(!material.map){material.map=this.placeholder;material.needsUpdate=true;}
     if(this.tier&&this.activeKinds.has(kind))this.requestKind(kind,this.tier);
   }
   _token(kind){return this.revision.get(kind)??0;}
@@ -169,10 +178,13 @@ export class TerrainTextureManager {
     for(const material of this.materials.get(kind)??[]){
       if(channel==='diff'){
         if(material.map!==texture){
+          const hadNormal=!!material.normalMap;
           material.map=texture;
           if(tier==='mobile')material.normalMap=null;
           material.color.setScalar(texture?1.65:1);
-          material.needsUpdate=true;
+          // Diffuse source changes are uniform/texture bindings, not new
+          // WebGL shader programs; only normal-map presence affects defines.
+          if(hadNormal&&!material.normalMap)material.needsUpdate=true;
         }
       }else if(material.normalMap!==texture){
         material.normalMap=texture;material.needsUpdate=true;
@@ -195,9 +207,11 @@ export class TerrainTextureManager {
   releaseKind(kind){
     this._invalidate(kind);
     for(const material of this.materials.get(kind)??[]){
-      if(material.map||material.normalMap){
-        material.map=null;material.normalMap=null;
-        material.color.setScalar(1);material.needsUpdate=true;
+      if(material.map!==this.placeholder||material.normalMap){
+        const hadNormal=!!material.normalMap;
+        material.map=this.placeholder;material.normalMap=null;
+        material.color.setScalar(1);
+        if(hadNormal)material.needsUpdate=true;
       }
     }
     for(const [url,texture] of this.loading){
