@@ -1,19 +1,11 @@
 import * as THREE from 'three';
+import {TERRAIN_LOD,coastDistance,prioritizeIslandLevels} from './TerrainTextureLOD.js';
 
-/** Locally hosted Poly Haven CC0 textures with bounded asynchronous streaming.
- *
- * 1. Look ahead before a new island enters view.
- * 2. Download/decode a SINGLE map at a time, not five simultaneous 2K maps.
- * 3. Pre-upload one map during browser idle time (renderer.initTexture).
- * 4. Retain the existing painted terrain until the replacement is ready.
- * 5. Reuse maps during island-boundary crossings; delayed eviction prevents
- *    unload/reload thrash. Terrain physics and mesh geometry are untouched.
- */
+/** Poly Haven CC0 island terrain: 512px far, 1024px mid, 2048px + normals near.
+ * Shared biome textures use one GPU image but independent per-island materials. */
 export const TERRAIN_KINDS=Object.freeze(['meadow','beach','stone','ash','crystal']);
 export const TERRAIN_TEXTURE_ROOT='./assets/textures/terrain/';
-export function textureTier(quality){
-  return quality==='quality'?'desktop':'mobile';
-}
+export function textureTier(quality){return quality==='quality'?'desktop':'mobile';}
 export function terrainKind(island){
   if(island?.biome==='ash')return 'ash';
   if(island?.biome==='crystal')return 'crystal';
@@ -23,110 +15,131 @@ export function terrainKind(island){
 }
 export function textureFile(kind,channel,tier){
   if(!TERRAIN_KINDS.includes(kind)||!['diff','normal'].includes(channel)
-    ||!['mobile','desktop'].includes(tier))throw Error('Unknown terrain PBR map');
+    ||!['low','mobile','desktop'].includes(tier)||channel==='normal'&&tier==='low')
+    throw Error('Unknown terrain PBR map');
   return `${TERRAIN_TEXTURE_ROOT}${kind}_${channel}_${tier}.webp`;
 }
-
-// Begin fetching well before the island enters the visible camera frustum.
-// Hysteresis prevents churning while circling a coast or rapidly orbiting.
 export const TERRAIN_STREAMING=Object.freeze({
-  prefetchDistance:245,releaseDistance:365,evictionSeconds:18
+  prefetchDistance:TERRAIN_LOD.mediumEnter,
+  releaseDistance:TERRAIN_LOD.lowLeave,
+  evictionSeconds:TERRAIN_LOD.evictionSeconds
 });
 export function desiredTerrainKinds(observer,islands,previous=new Set()){
   if(!observer||!Number.isFinite(observer.x)||!Number.isFinite(observer.z))
     return new Set(previous);
-  const wanted=new Set();
-  for(const island of islands){
-    const kind=terrainKind(island);
-    const dx=observer.x-island.x,dz=observer.z-island.z;
-    const margin=previous.has(kind)?TERRAIN_STREAMING.releaseDistance
-      :TERRAIN_STREAMING.prefetchDistance;
-    if(dx*dx+dz*dz<Math.pow((island.r??0)+margin,2))wanted.add(kind);
-  }
-  return wanted;
+  return new Set(islands.filter(i=>coastDistance(observer,i)<=
+    (previous.has(terrainKind(i))?TERRAIN_LOD.lowLeave:TERRAIN_LOD.lowEnter))
+    .map(terrainKind));
 }
 const deferIdle=callback=>{
-  if(typeof globalThis.requestIdleCallback==='function'){
+  if(typeof globalThis.requestIdleCallback==='function')
     globalThis.requestIdleCallback(callback,{timeout:3500});
-  }else{
-    // Safari fallback. Exactly one upload per event-loop slice.
-    setTimeout(()=>callback({didTimeout:true,timeRemaining:()=>8}),48);
-  }
+  else setTimeout(()=>callback({didTimeout:true,timeRemaining:()=>8}),48);
 };
 
-/** Scheduler accepts injectable loader/idle callbacks for reproducible tests.
- * GPU upload is never called inside the game's frame() render/update loop.
- */
 export class TerrainTextureManager {
   constructor(renderer=null,{loader=null,idle=null}={}){
     this.renderer=renderer;
-    this.materials=new Map();
     this.loader=loader??new THREE.TextureLoader();
-    // Tiny neutral placeholder compiles the textured Lambert variant before
-    // the first flight. Switching to a photo map no longer changes shader
-    // defines (or shows a flash of plain procedural terrain).
+    this.scheduleIdle=idle??deferIdle;
     this.placeholder=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);
     this.placeholder.colorSpace=THREE.SRGBColorSpace;
-    this.placeholder.magFilter=THREE.NearestFilter;
-    this.placeholder.minFilter=THREE.NearestFilter;
     this.placeholder.needsUpdate=true;
-    this.scheduleIdle=idle??deferIdle;
-    this.loading=new Map(); // Resident maps only, no discarded pending promises.
-    this.queue=[];this.queued=new Set();this.busy=false;
-    this.tier=null;this.serial=0;this.failed=new Set();
-    this.activeKinds=new Set(['meadow']);
-    this.revision=new Map();
-    this.lastSeen=new Map();
-    this.idleEvictions=new Set();
-    this.stats={requests:0,uploads:0,evictions:0,discarded:0};
+    // Prepare the near-tier normal shader once during graphics warmup.
+    this.neutralNormal=new THREE.DataTexture(new Uint8Array([128,128,255,255]),1,1);
+    this.neutralNormal.needsUpdate=true;
+    this.materials=new Map();
+    this.registrations=new Map(); // island name -> {island,kind,material}
+    this.levels=new Map();        // island name -> target LOD
+    this.activeKinds=new Set();
+    this.loading=new Map();       // URL -> shared resident GPU-ready texture
+    this.queue=[];this.queued=new Map();this.busy=false;
+    this.tier=null;this.quality='balanced';this.serial=0;
+    this.failed=new Set();this.lastSeen=new Map();this.retireTimers=new Map();
+    this.focus=null;this.islands=[];
+    this.stats={requests:0,uploads:0,evictions:0,discarded:0,upgrades:0,downgrades:0};
   }
-  register(kind,material){
+  register(kind,material,island=null){
     if(!TERRAIN_KINDS.includes(kind))throw Error('Unknown terrain kind');
     const group=this.materials.get(kind)??[];
     group.push(material);this.materials.set(kind,group);
+    const id=island?.name??`${kind}-legacy-${group.length}`;
+    this.registrations.set(id,{island:island??null,kind,material});
     if(!material.map){material.map=this.placeholder;material.needsUpdate=true;}
-    if(this.tier&&this.activeKinds.has(kind))this.requestKind(kind,this.tier);
   }
-  _token(kind){return this.revision.get(kind)??0;}
-  _invalidate(kind){this.revision.set(kind,this._token(kind)+1);}
-  _valid(job){
-    return this.activeKinds.has(job.kind)&&job.tier===this.tier
-      &&job.token===this._token(job.kind);
+  _desiredURLs(){
+    const needed=new Set();
+    for(const [id,level] of this.levels){
+      const item=this.registrations.get(id);
+      if(!item||!level)continue;
+      needed.add(textureFile(item.kind,'diff',level));
+      if(level==='desktop')needed.add(textureFile(item.kind,'normal','desktop'));
+      if(item.material.map===this.placeholder)
+        needed.add(textureFile(item.kind,'diff','low'));
+    }
+    return needed;
   }
-  _enqueue(kind,channel,tier,priority=0){
-    const url=textureFile(kind,channel,tier),token=this._token(kind);
-    if(this.queued.has(url)||this.loading.has(url))return;
-    this.queued.add(url);
-    this.queue.push({kind,channel,tier,url,token,priority});
-    this.queue.sort((a,b)=>a.priority-b.priority);
-    this._pump();
+  _queueJob(kind,channel,tier,priority){
+    const url=textureFile(kind,channel,tier);
+    if(this.loading.has(url)||this.failed.has(url))return;
+    const queued=this.queued.get(url);
+    if(queued){queued.priority=Math.min(queued.priority,priority);return;}
+    const job={kind,channel,tier,url,priority};
+    this.queued.set(url,job);this.queue.push(job);
   }
-  requestKind(kind,tier=this.tier,priority=0){
-    if(!tier||!this.activeKinds.has(kind))return;
-    const diff=textureFile(kind,'diff',tier);
-    // Reuse resident maps without network and without another GPU upload.
-    const resident=this.loading.get(diff);
-    if(resident){
-      this._attach(kind,'diff',resident,tier);
-      if(tier==='desktop')this._enqueue(kind,'normal',tier,priority+1);
-    }else this._enqueue(kind,'diff',tier,priority);
+  _requestForIsland(entry,distance){
+    const {kind,material,island}=entry,level=this.levels.get(island?.name);
+    if(!level)return;
+    // Start on a cheap preview. Never decode many 2K maps at once.
+    if(material.map===this.placeholder)this._queueJob(kind,'diff','low',distance-20);
+    const priority=distance+(level==='low'?40:level==='mobile'?10:0);
+    this._queueJob(kind,'diff',level,priority);
+    if(level==='desktop')this._queueJob(kind,'normal','desktop',priority+50);
+  }
+  _applyLevel(id){
+    const entry=this.registrations.get(id),level=this.levels.get(id);
+    if(!entry||!level)return;
+    const {kind,material}=entry;
+    // Keep the previous photo until its replacement has been GPU-prewarmed.
+    const desired=this.loading.get(textureFile(kind,'diff',level));
+    const preview=this.loading.get(textureFile(kind,'diff','low'));
+    const map=desired??(material.map===this.placeholder?preview:null);
+    if(map&&material.map!==map){
+      const before=material.map?.image?.width??0,after=map.image?.width??0;
+      material.map=map;material.color.setScalar(1.65);
+      if(after>before)this.stats.upgrades++;
+      if(after<before)this.stats.downgrades++;
+    }
+    const normal=(this.quality==='quality'
+      ?(level==='desktop'?this.loading.get(textureFile(kind,'normal','desktop')):null)??this.neutralNormal
+      :null);
+    if(material.normalMap!==normal){
+      material.normalMap=normal;material.needsUpdate=true;
+    }
+  }
+  _attachTexture(kind,channel,tier,texture){
+    for(const [id,entry] of this.registrations){
+      if(entry.kind!==kind||!this.levels.has(id))continue;
+      const level=this.levels.get(id);
+      if((channel==='normal'&&level==='desktop')||channel==='diff'&&
+        (level===tier||tier==='low'&&entry.material.map===this.placeholder))
+        this._applyLevel(id);
+    }
   }
   async _pump(){
     if(this.busy)return;
     this.busy=true;
     try{
       while(this.queue.length){
+        this.queue.sort((a,b)=>a.priority-b.priority);
         const job=this.queue.shift();this.queued.delete(job.url);
-        if(!this._valid(job)||this.loading.has(job.url))continue;
-        let texture=null;
+        if(!this._desiredURLs().has(job.url)||this.loading.has(job.url)||this.failed.has(job.url))continue;
+        let texture;
         try{
           this.stats.requests++;
-          // TextureLoader's promise gives the browser time to fetch/decode.
-          // Other 2K images are NOT requested concurrently.
           texture=await this.loader.loadAsync(job.url);
           texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
-          texture.colorSpace=job.channel==='diff'
-            ?THREE.SRGBColorSpace:THREE.NoColorSpace;
+          texture.colorSpace=job.channel==='diff'?THREE.SRGBColorSpace:THREE.NoColorSpace;
           texture.anisotropy=job.channel==='diff'?8:4;
           texture.generateMipmaps=true;
           texture.minFilter=THREE.LinearMipmapLinearFilter;
@@ -134,140 +147,110 @@ export class TerrainTextureManager {
         }catch(error){
           if(!this.failed.has(job.url)){
             this.failed.add(job.url);
-            console.warn('[Terrain CC0] Procedural fallback for missing '+job.url,
-              error?.message??error);
+            console.warn('[Terrain CC0] Procedural fallback for missing '+job.url,error?.message??error);
           }
           continue;
         }
-        if(!this._valid(job)){texture.dispose();this.stats.discarded++;continue;}
-        // Avoid a large first-use WebGL upload during flight. A single
-        // prewarm is scheduled for the browser idle period.
+        if(!this._desiredURLs().has(job.url)){
+          texture.dispose();this.stats.discarded++;continue;
+        }
         await new Promise(resolve=>{
           const warm=deadline=>{
             if(deadline&&!deadline.didTimeout&&deadline.timeRemaining()<9){
               this.scheduleIdle(warm);return;
             }
-            if(!this._valid(job)){texture.dispose();this.stats.discarded++;resolve();return;}
-          try{
-            if(typeof this.renderer?.initTexture==='function'){
-              this.renderer.initTexture(texture);
-              this.stats.uploads++;
+            if(!this._desiredURLs().has(job.url)){
+              texture.dispose();this.stats.discarded++;resolve();return;
             }
-          }catch(error){
-            console.warn('[Terrain CC0] GPU prewarm unavailable; normal renderer fallback.',
-              error?.message??error);
-          }
-          this.loading.set(job.url,texture);
-          this._attach(job.kind,job.channel,texture,job.tier);
-          // Evict obsolete variants after a new resolution is installed,
-          // rather than permanently retaining 1K + 2K for one island.
-          this.scheduleIdle(()=>this._pruneKind(job.kind));
-          resolve();
+            try{
+              this.renderer?.initTexture?.(texture);
+              if(typeof this.renderer?.initTexture==='function')this.stats.uploads++;
+            }catch(error){
+              console.warn('[Terrain CC0] GPU prewarm unavailable; normal renderer fallback.',error?.message??error);
+            }
+            this.loading.set(job.url,texture);
+            this._attachTexture(job.kind,job.channel,job.tier,texture);
+            this.scheduleIdle(()=>this._pruneUnused());
+            resolve();
           };
           this.scheduleIdle(warm);
         });
-        // A high-resolution normal map is the last job: the diffuse has
-        // already appeared, and one map is warmed/uploaded per idle slice.
-        if(job.channel==='diff'&&job.tier==='desktop'&&this._valid(job))
-          this._enqueue(job.kind,'normal',job.tier,job.priority+1);
       }
     }finally{this.busy=false;if(this.queue.length)this._pump();}
   }
-  _attach(kind,channel,texture,tier){
-    if(!this.activeKinds.has(kind)||this.tier!==tier)return;
-    for(const material of this.materials.get(kind)??[]){
-      if(channel==='diff'){
-        if(material.map!==texture){
-          const hadNormal=!!material.normalMap;
-          material.map=texture;
-          if(tier==='mobile')material.normalMap=null;
-          material.color.setScalar(texture?1.65:1);
-          // Diffuse source changes are uniform/texture bindings, not new
-          // WebGL shader programs; only normal-map presence affects defines.
-          if(hadNormal&&!material.normalMap)material.needsUpdate=true;
-        }
-      }else if(material.normalMap!==texture){
-        material.normalMap=texture;material.needsUpdate=true;
-      }
-    }
-  }
-  _pruneKind(kind){
-    // Keep maps still bound to an island material. Releasing stale quality
-    // variants does not remove the new image or force network re-fetch.
-    const inUse=new Set();
-    for(const material of this.materials.get(kind)??[]){
-      if(material.map)inUse.add(material.map);
-      if(material.normalMap)inUse.add(material.normalMap);
+  _pruneUnused(){
+    const keep=new Set();
+    for(const entry of this.registrations.values()){
+      if(entry.material.map)keep.add(entry.material.map);
+      if(entry.material.normalMap)keep.add(entry.material.normalMap);
     }
     for(const [url,texture] of this.loading){
-      if(!url.includes('/'+kind+'_')||inUse.has(texture))continue;
+      if(keep.has(texture))continue;
       this.loading.delete(url);texture.dispose();this.stats.evictions++;
     }
   }
-  releaseKind(kind){
-    this._invalidate(kind);
-    for(const material of this.materials.get(kind)??[]){
-      if(material.map!==this.placeholder||material.normalMap){
-        const hadNormal=!!material.normalMap;
-        material.map=this.placeholder;material.normalMap=null;
-        material.color.setScalar(1);
-        if(hadNormal)material.needsUpdate=true;
-      }
-    }
-    for(const [url,texture] of this.loading){
-      if(!url.includes('/'+kind+'_'))continue;
-      this.loading.delete(url);texture.dispose();this.stats.evictions++;
-    }
+  _retire(id){
+    if(this.retireTimers.has(id))return;
+    const timer=setTimeout(()=>{
+      this.retireTimers.delete(id);
+      if(this.levels.has(id))return;
+      const elapsed=(typeof performance!=='undefined'?performance.now():Date.now())-(this.lastSeen.get(id)??0);
+      if(elapsed<TERRAIN_LOD.evictionSeconds*1000){this._retire(id);return;}
+      const material=this.registrations.get(id)?.material;
+      if(!material)return;
+      material.map=this.placeholder;material.color.setScalar(1);
+      const normal=this.quality==='quality'?this.neutralNormal:null;
+      if(material.normalMap!==normal){material.normalMap=normal;material.needsUpdate=true;}
+      this.scheduleIdle(()=>this._pruneUnused());
+    },TERRAIN_LOD.evictionSeconds*1000);
+    timer.unref?.();
+    this.retireTimers.set(id,timer);
   }
-  // Called at the existing 0.24 s world-detail cadence, not every render.
   updateFocus(observer,islands=[]){
     if(!observer||!Number.isFinite(observer.x)||!Number.isFinite(observer.z))return;
-    const wanted=desiredTerrainKinds(observer,islands,this.activeKinds);
+    this.focus={x:observer.x,z:observer.z};this.islands=islands;
+    const current=prioritizeIslandLevels(observer,islands,this.quality,this.levels);
+    const previous=this.levels;
+    const wanted=new Map();
     const now=typeof performance!=='undefined'?performance.now():Date.now();
-    for(const kind of wanted)this.lastSeen.set(kind,now);
-    const previous=this.activeKinds;
-    if(previous.size===wanted.size&&[...wanted].every(k=>previous.has(k)))return;
-    this.activeKinds=wanted;
-    this.serial++;
-    for(const kind of wanted){
-      if(!previous.has(kind)){
-        this._invalidate(kind);
-        const distance=Math.min(...islands.filter(i=>terrainKind(i)===kind)
-          .map(i=>Math.hypot(observer.x-i.x,observer.z-i.z)));
-        this.requestKind(kind,this.tier,distance);
+    for(const {island,level} of current){
+      if(!level||!this.registrations.has(island.name))continue;
+      wanted.set(island.name,level);this.lastSeen.set(island.name,now);
+      const timer=this.retireTimers.get(island.name);
+      if(timer){clearTimeout(timer);this.retireTimers.delete(island.name);}
+    }
+    this.levels=wanted;
+    this.activeKinds=new Set([...wanted.keys()].map(id=>this.registrations.get(id).kind));
+    if([...wanted].some(([id,level])=>previous.get(id)!==level)||previous.size!==wanted.size)
+      this.serial++;
+    for(const {island,edge,level} of current){
+      if(!level||!wanted.has(island.name))continue;
+      const entry=this.registrations.get(island.name);
+      this._applyLevel(island.name);
+      this._requestForIsland({...entry,island},edge);
+    }
+    for(const id of previous.keys())if(!wanted.has(id)){
+      const entry=this.registrations.get(id);
+      const preview=entry&&this.loading.get(textureFile(entry.kind,'diff','low'));
+      if(entry&&preview&&entry.material.map!==preview){
+        entry.material.map=preview;entry.material.color.setScalar(1.65);
+        entry.material.normalMap=this.quality==='quality'?this.neutralNormal:null;
+        entry.material.needsUpdate=true;
+        this.scheduleIdle(()=>this._pruneUnused());
       }
+      this._retire(id);
     }
-    for(const kind of previous)if(!wanted.has(kind)){
-      this._invalidate(kind);
-      if(this.idleEvictions.has(kind))continue;
-      this.idleEvictions.add(kind);
-      // Keep decoded textures resident for 18 s so sharp turns never re-fetch.
-      this.scheduleIdle(()=>{
-        this.idleEvictions.delete(kind);
-        const seen=this.lastSeen.get(kind)??0;
-        const age=(typeof performance!=='undefined'?performance.now():Date.now())-seen;
-        if(!this.activeKinds.has(kind)&&age>=TERRAIN_STREAMING.evictionSeconds*1000)
-          this.releaseKind(kind);
-        else if(!this.activeKinds.has(kind)){
-          setTimeout(()=>{
-            const last=this.lastSeen.get(kind)??0;
-            const idle=(typeof performance!=='undefined'?performance.now():Date.now())-last;
-            if(!this.activeKinds.has(kind)&&idle>=TERRAIN_STREAMING.evictionSeconds*1000)
-              this.scheduleIdle(()=>{if(!this.activeKinds.has(kind))this.releaseKind(kind);});
-          },Math.max(0,TERRAIN_STREAMING.evictionSeconds*1000-age)+30);
-        }
-      });
-    }
+    if(this.queue.length)this._pump();
   }
   setQuality(quality){
     const tier=textureTier(quality);
-    if(this.tier===tier)return;
-    this.tier=tier;this.serial++;
-    for(const kind of this.activeKinds){
-      this._invalidate(kind);
-      // Keep current photo visible until the next tier is prewarmed.
-      // Prevents a flash of untextured terrain when quality changes.
-      this.requestKind(kind,tier);
+    if(this.quality===quality&&this.tier===tier)return;
+    this.quality=quality;this.tier=tier;this.serial++;
+    // Avoid a late normal-map shader compilation on first island approach.
+    for(const entry of this.registrations.values()){
+      const normal=quality==='quality'?this.neutralNormal:null;
+      if(entry.material.normalMap!==normal){entry.material.normalMap=normal;entry.material.needsUpdate=true;}
     }
+    if(this.focus)this.updateFocus(this.focus,this.islands);
   }
 }
