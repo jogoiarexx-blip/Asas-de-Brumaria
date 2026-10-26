@@ -339,7 +339,7 @@ export class Game {
   }
   saveGame(manual=false){
     if(!this.started&&!manual)return false;
-    const p=this.dragon.group.position,h=this.hero.group.position;
+    const p=this.dragon.group.position,h=this.hero._dismountMotion?.end??this.hero.group.position;
     const payload={version:1,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
       contracts:this.contracts.snapshot(),weather:this.weather.snapshot(),dayNight:this.dayNight.snapshot(),discoveries:this.discovery.snapshot(),
       wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),
@@ -370,7 +370,7 @@ export class Game {
       {groundAt:(x,z)=>this.world.groundHeightAt(x,z,.52)});
     const heroX=safeHero?.x??p.heroX,heroZ=safeHero?.z??p.heroZ;
     this.hero.group.position.set(heroX,this.world.groundHeightAt(heroX,heroZ,.52),heroZ);
-    if(p.mounted){this.dragon.mount();this.hero.setMounted(true);}
+    if(p.mounted){this.dragon.mount();this.hero.setMounted(true,{animate:false});}
     this.health=p.health;
   }
   applySceneQuality(){
@@ -605,8 +605,11 @@ export class Game {
     }
     const spot=safeDismountSpot({x,z},{obstacles:this.world.obstacles,walkable:(a,b)=>this.world.walkable(a,b),groundAt:(a,b)=>this.world.groundHeightAt(a,b,.52)});
     if(!spot){this.ui.toast('Não há espaço livre para desmontar aqui. Mova Nimbo para um local aberto.');this.audio.play('error');return;}
-    this.hero.group.position.set(spot.x,spot.y,spot.z);
-    this.dragon.dismount();this.hero.setMounted(false);this.ui.toast('Você desmontou do dragão.');this.saveGame();
+    this.dragon.dismount();
+    this.hero.setMounted(false,{dismountTarget:spot});
+    // Procedural fallback has no mounted GLB; keep legacy instant dismount.
+    if(!this.hero._dismountMotion)this.hero.group.position.set(spot.x,spot.y,spot.z);
+    this.ui.toast('Você desmontou do dragão.');this.saveGame();
   }
   getProjectile(owner){
     // Reuse the entire projectile record and its velocity vector, not just the mesh.
