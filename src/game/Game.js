@@ -8,6 +8,7 @@ import {recoverFreePosition,obstacleBlocks} from '../utils/collision.js';
 import { World } from '../world/World.js';
 import { Dragon } from '../entities/Dragon.js';
 import { EnemySquad } from '../entities/EnemyDragon.js';
+import {FrontierActivities} from '../systems/FrontierActivities.js';
 import { Hero } from '../entities/Hero.js';
 import {HeroAssetUI} from '../ui/HeroAssetUI.js';
 import {DragonAssetUI} from '../ui/DragonAssetUI.js';
@@ -96,6 +97,7 @@ export class Game {
     });
     this.dragonAssetUI.onReset=()=>this.speciesModels.select(this.progression.species);
     this.enemies=new EnemySquad(this.scene,this.world);
+    this.frontier=new FrontierActivities(this.scene,this.world,this.savedData?.frontier);
     this.effects=new Effects(this.scene);
     this.applySceneQuality();
     this.contracts=new VillageContracts(this.savedData?.contracts,this.dayNight.state.day);
@@ -254,13 +256,16 @@ export class Game {
     const tier=this.graphics.tier;
     this.wildDragons.setDetail(observer,tier,camera,forward);
     this.enemies.setDetail(observer,tier,camera,forward);
+    this.frontier.setDetail(observer,tier,camera,forward);
     this.villagers.setDetail(observer,tier,camera,forward);
     const levels=[...this.wildDragons.creatures.map(c=>c.visualLevel),
       ...this.enemies.enemies.filter(e=>e.active&&e.alive).map(e=>e.visualLevel),
+      ...this.frontier.activeGuardians.map(e=>e.visualLevel),
       ...this.villagers.npcs.map(n=>n.root.visible?'full':'hidden')];
     this.actorStats=sceneActorStats(levels);
     this.actorStats.proxied=this.wildDragons.creatures.filter(c=>c.lowDetail.visible&&c.group.visible).length+
-      this.enemies.enemies.filter(e=>e.proxy.visible&&e.group.visible).length;
+      this.enemies.enemies.filter(e=>e.proxy.visible&&e.group.visible).length+
+      this.frontier.activeGuardians.filter(e=>e.proxy.visible&&e.group.visible).length;
   }
   bindOrbitControls(){
     // Orbit only on the canvas: HUD buttons and the stable panel remain clickable.
@@ -342,6 +347,7 @@ export class Game {
     if(!this.started&&!manual)return false;
     const p=this.dragon.group.position,h=this.hero._dismountMotion?.end??this.hero.group.position;
     const payload={version:1,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
+      frontier:this.frontier.snapshot(),
       contracts:this.contracts.snapshot(),weather:this.weather.snapshot(),dayNight:this.dayNight.snapshot(),discoveries:this.discovery.snapshot(),
       wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),
       player:{x:p.x,y:p.y,z:p.z,yaw:this.dragon.yaw,health:this.health,energy:this.dragon.energy,mounted:this.dragon.riding,airborne:this.dragon.airborne,heroX:h.x,heroZ:h.z}};
@@ -351,6 +357,7 @@ export class Game {
   }
   restoreSave(data){
     this.missions.restore(data.mission);
+    this.frontier.restore(data.frontier);
     this.contracts.restore(data.contracts);this.contracts.syncDay(this.dayNight.state.day);this.villagers.refresh(this.contracts);
     const p={...data.player};
     // If the game was closed during a streamed map, restore at its gateway.
@@ -660,7 +667,8 @@ export class Game {
     let bestDot=.77,bestFound=false;
     // No arrays or cloned vectors on every fire input.
     const candidates=this.inMountain&&this.mountain?(this.expedition.phase==='boats'?this.mountain.boats:this.expedition.phase==='boss'?[this.mountain.boss]:[]):
-      this.missions.stage===3?this.missions.targets:this.missions.stage===4?this.enemies.enemies:[];
+      this.missions.stage===3?this.missions.targets:this.missions.stage===4?
+        [...this.enemies.enemies,...this.frontier.activeGuardians]:this.frontier.activeGuardians;
     const shooter=this.dragon.group.position;
     for(const candidate of candidates){
       if(this.inMountain&&this.expedition.phase==='boats'&&!candidate.visible)continue;
@@ -783,12 +791,37 @@ export class Game {
             }
           }
         }
-      } else if((this.missions.stage===4||this.inMountain)&&this.dragon.riding&&segmentSphereHit(from,to,this.dragon.group.position,4.2)){
+        if(!hit&&!this.inMountain){
+          const strike=this.frontier.hitGuardian(from,to,this.progression.stats.fireDamage);
+          if(strike){
+            hit=true;this.audio.play('hit');
+            this.effects.burst(strike.position,strike.reward?'fire':'impact',strike.reward?18:7);
+            if(strike.reward){
+              this.progression.grant(strike.reward);this.saveGame();
+              this.ui.toast(`${strike.name} derrotado! +${strike.reward} pontos de treino.`,5);
+              this.ui.renderStable(this);
+            }else this.ui.toast(`${strike.name}: ${Math.ceil(strike.health)} de resistência`,2);
+          }
+        }
+      } else if((this.missions.stage===4||this.inMountain||this.frontier.activeGuardians.length>0)&&this.dragon.riding&&segmentSphereHit(from,to,this.dragon.group.position,4.2)){
         this.takeDamage(16);hit=true;
       }
       if(hit||bullet.life<=0||to.y<-.9)this.recycleProjectileAt(i);
     }
     if(this.needsProjectileClear){this.clearProjectiles();this.needsProjectileClear=false;}
+  }
+  handleFrontierEvent(event){
+    if(event.type==='relic'){
+      this.audio.play('pickup');
+      this.effects.burst(new THREE.Vector3(event.position.x,event.position.y,event.position.z),'rescue',8);
+      this.ui.toast(`${event.label} recuperado · ${event.count}/3 em ${event.name}.`,4);
+      this.saveGame();
+    }else if(event.type==='relic-complete'){
+      this.progression.grant(event.points);
+      this.audio.play('complete');
+      this.ui.toast(`EXPEDIÇÃO CONCLUÍDA — ${event.name}! +${event.points} pontos de treino.`,7);
+      this.saveGame();this.ui.renderStable(this);
+    }
   }
   updateDiscoveries(){
     const p=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
@@ -954,6 +987,9 @@ export class Game {
       this.missions.update(dt,this.elapsed,this.dragon,text=>this.ui.toast(text));
       this.updateContracts();
       this.updateDiscoveries();
+      const frontierEvents=this.frontier.update(dt,this.elapsed,this.dragon,
+        (origin,direction)=>this.spawnProjectile(origin,direction,'enemy'),this.missions.stage>=3);
+      for(const event of frontierEvents)this.handleFrontierEvent(event);
       this.villagers.update(dt,this.elapsed);
       this.wildDragons.update(dt,this.elapsed,this.hero.group.position,this.dragon.riding,this.hero.moveSpeed);
       const trainMsg=this.training.update(dt,this.elapsed,this.dragon);
