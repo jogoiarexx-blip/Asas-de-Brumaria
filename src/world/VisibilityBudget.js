@@ -1,6 +1,8 @@
 /** Distance-based scene detail, independent from SNES-like gameplay physics.
  * Hide only decorative foliage/grass, never collision geometry, NPCs or quests. */
-export const DETAIL_RANGES=Object.freeze({economy:135,balanced:250,quality:Infinity});
+// Even on Ultra, distant foliage has no useful pixel footprint. Terrain and
+// colliders remain full fidelity, while decorative instances stop rendering.
+export const DETAIL_RANGES=Object.freeze({economy:135,balanced:250,quality:520});
 
 export function detailRadius(tier,height=0){
   const base=DETAIL_RANGES[tier];
@@ -10,7 +12,7 @@ export function detailRadius(tier,height=0){
 }
 
 export function visibleIslandFoliage(observer,island,tier,wasVisible=false){
-  if(tier==='quality'||!(tier in DETAIL_RANGES))return true;
+  if(!(tier in DETAIL_RANGES))return true;
   if(!observer)return true;
   const range=island.r+detailRadius(tier,observer.y)+(wasVisible?24:0);
   const dx=observer.x-island.x,dz=observer.z-island.z;
