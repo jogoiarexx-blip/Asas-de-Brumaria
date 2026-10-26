@@ -5,6 +5,7 @@ import {SPECIES,SKILLS} from '../systems/Progression.js';
 import {CONTRACTS} from '../systems/VillageContracts.js';
 import {CIRCUITS} from '../systems/Training.js';
 import {LANDMARKS} from '../systems/Discovery.js';
+import {LANDMARKS} from '../systems/Discovery.js';
 import {WILD_DRAGON_DEFS} from '../systems/WildBonds.js';
 export class UI {
   constructor(){
@@ -30,6 +31,7 @@ export class UI {
     document.getElementById('stable-close').addEventListener('click',()=>game.toggleStable());
     document.getElementById('train-start').addEventListener('click',()=>game.startTraining());
     document.getElementById('train-advanced').addEventListener('click',()=>game.startTraining('advanced'));
+    document.getElementById('train-frontier').addEventListener('click',()=>game.startTraining('frontier'));
     document.getElementById('stable-preview-motion').addEventListener('change',event=>{
       game.stablePreview?.setMotion(event.target.value);
     });
@@ -89,7 +91,7 @@ export class UI {
       row.append(title,status);board.append(row);
     }
     document.getElementById('train-points').textContent=p.points;
-    document.getElementById('discovery-list').textContent=`Marcos encontrados: ${game.discovery.total}/5 · Dragões selvagens: ${game.wildBonds.total}/3. Cada amizade rende +1 ponto.`;
+    document.getElementById('discovery-list').textContent=`Marcos encontrados: ${game.discovery.total}/${LANDMARKS.length} · Dragões selvagens: ${game.wildBonds.total}/3. Cada amizade rende +1 ponto.`;
     document.getElementById('train-circuits').textContent=p.circuits+' circuitos';
     const wildList=document.getElementById('wild-list');wildList.replaceChildren();
     for(const creature of WILD_DRAGON_DEFS){
@@ -132,6 +134,9 @@ export class UI {
     const advanced=document.getElementById('train-advanced');
     advanced.disabled=!atVillage||game.training.active||game.training.cooldown>0||p.circuits<1;
     advanced.textContent=p.circuits<1?'DESBLOQUEIA APÓS 1 TREINO':game.training.cooldown>0?`RECARGA ${Math.ceil(game.training.cooldown)}s`:'CIRCUITO AVANÇADO';
+    const frontier=document.getElementById('train-frontier');
+    frontier.disabled=!atVillage||game.training.active||game.training.cooldown>0||p.circuits<2;
+    frontier.textContent=p.circuits<2?'DESBLOQUEIA APÓS 2 TREINOS':game.training.cooldown>0?`RECARGA ${Math.ceil(game.training.cooldown)}s`:'TRAVESSIA DAS SETE ILHAS';
   }
   showDialogue(name,role,text){
     document.getElementById('npc-name').textContent=name;
@@ -173,7 +178,7 @@ export class UI {
     this.lastMountain=game.inMountain;
     this.weatherPill.textContent=game.weather.mode.label+(dragon.riding&&dragon.airborne&&dragon.windDrift>.1?` · RAJADAS ${dragon.windDrift.toFixed(1)}m/s`:``);
     this.clockPill.textContent=`DIA ${game.dayNight.state.day} · ${game.dayNight.clock}`;
-    this.expeditionStatus.textContent=`MARCOS ${game.discovery.total}/5 · AMIZADES ${game.wildBonds.total}/3`;
+    this.expeditionStatus.textContent=`MARCOS ${game.discovery.total}/${LANDMARKS.length} · AMIZADES ${game.wildBonds.total}/3`;
     const phase=dragon.pose==='takeoff'?'DECOLAGEM':dragon.pose==='landing'?'POUSO':dragon.airborne?'VOO LIVRE':'MONTADO';
     this.mode.textContent=dragon.riding?`${phase} · ${SPECIES[game.progression.species].name.toUpperCase()}`:'EXPLORAÇÃO';
     const energyPct=100*dragon.energy/(game.progression.stats.maxEnergy);
