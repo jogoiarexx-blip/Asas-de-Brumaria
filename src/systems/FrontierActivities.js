@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {EnemyDragon} from '../entities/EnemyDragon.js';
 import {segmentSphereHit} from './combatMath.js';
-import {FRONTIER_ZONES,markerId,normalizeFrontier,frontierVisible,frontierClaimable} from './FrontierRules.js';
+import {FRONTIER_ZONES,markerId,normalizeFrontier,frontierVisible,frontierClaimable,nearestFrontierObjective} from './FrontierRules.js';
 
 /** Two optional airborne treasure runs and a pair of region sentinels.
  * Never touches the existing mission/enemy squad, so old saves remain valid.
@@ -137,6 +137,21 @@ export class FrontierActivities {
         reward:dead?zone.guardianReward:0};
     }
     return null;
+  }
+  /** Used by the HUD and minimap only; never creates a guardian or mesh. */
+  objective(position,combatUnlocked=false){
+    const candidate=nearestFrontierObjective(position,{found:this.found,
+      defeated:this.defeated,combatUnlocked});
+    if(!candidate)return null;
+    if(candidate.kind==='relic'){
+      const point=this.markers.get(candidate.zone)?.points.find(p=>p.id===candidate.id);
+      return point?{...candidate,y:point.y}:null;
+    }
+    const guard=this.guardians.get(candidate.zone);
+    const zone=FRONTIER_ZONES.find(z=>z.id===candidate.zone);
+    return {...candidate,x:guard?.position.x??candidate.x,
+      y:guard?.position.y??this.world.heightAt(candidate.x,candidate.z)+28,
+      z:guard?.position.z??candidate.z,label:zone?.guardian??candidate.label};
   }
   summary(){
     return FRONTIER_ZONES.map(z=>{
