@@ -201,14 +201,21 @@ export class UI {
     const mountainTarget=game.inMountain&&game.mountain?(game.expedition.phase==='boats'?
       game.mountain.boats.find((boat,i)=>game.expedition.boatHealth[i]>0)?.position:
       game.expedition.phase==='boss'?game.mountain.boss.position:{x:753,y:50,z:35}):null;
-    const target=mountainTarget??game.training.waypoint??contractTarget??missions.waypoint(dragon);
+    // Optional local targets only take navigation priority while flying
+    // near that frontier island, never during story expeditions or training.
+    const frontierTarget=!game.inMountain&&!game.training.active&&!contractTarget
+      ?game.frontier.objective(position,missions.stage>=3):null;
+    const target=mountainTarget??game.training.waypoint??contractTarget??frontierTarget??missions.waypoint(dragon);
     const bearing=headingToObjective(position,target,dragon.riding?dragon.yaw:hero.group.rotation.y);
     const enemyForGuide=!game.inMountain&&missions.stage===4?game.enemies.nearest(dragon.group.position):null;
     this.questGuide.textContent=missionNextStep({stage:missions.stage,progress:missions.progress,riding:dragon.riding,
       carriedIndex:missions.carriedIndex,rescueHold:missions.rescueHold,
       nearestEnemyHealth:enemyForGuide?.health,inMountain:game.inMountain,expeditionPhase:game.expedition.phase,
       bossHealth:game.expedition.bossHealth,activeContract:contractTarget,activeContractType:contractKey,training:game.training.active});
-    const waypointType=game.inMountain?'EXPEDIÇÃO':game.training.active?'TREINO':contractTarget?'CONTRATO':'OBJETIVO';
+    if(frontierTarget)this.questGuide.textContent=frontierTarget.kind==='relic'
+      ?`FRONTEIRA · ${frontierTarget.label} · ${frontierTarget.remaining} pendente(s) · atravesse em voo.`
+      :`FRONTEIRA · ${frontierTarget.label} · pressione F para lançar fogo e use Q para esquivar.`;
+    const waypointType=game.inMountain?'EXPEDIÇÃO':game.training.active?'TREINO':contractTarget?'CONTRATO':frontierTarget?'FRONTEIRA':'OBJETIVO';
     this.waypoint.textContent=bearing?`${bearing.symbol} ${waypointType} · ${bearing.distance} m · ${bearing.direction}`:
       missions.complete?'ARQUIPÉLAGO LIBERADO':missions.stage===6?'VOLTE À VILA · TECLA T':'ENCONTRE O PRÓXIMO OBJETIVO';
     const portal=document.getElementById('mountain-status');
@@ -218,11 +225,18 @@ export class UI {
     if(activeContract)this.contractStatus.textContent=`${contract.title} · ${state.collected.filter(Boolean).length}/${contract.points.length}${state.status==='ready'?' · VOLTE AO NPC':contract.requiresFire?' · USE FOGO':''}`;
     this.trainingStatus.classList.toggle('hidden',!game.training.active);
     if(game.training.active)this.trainingStatus.textContent=`TREINO ${CIRCUITS[game.training.mode].label} · ${game.training.progress}/${game.training.definition.checkpoints.length} · ${Math.ceil(game.training.seconds)}s`;
-    const enemy=!game.inMountain&&missions.stage===4?game.enemies.nearest(dragon.group.position):null;
+    const campaignEnemy=!game.inMountain&&missions.stage===4?game.enemies.nearest(dragon.group.position):null;
+    const nearGuardians=game.inMountain?[]:game.frontier.activeGuardians;
+    const frontierEnemy=nearGuardians.reduce((best,e)=>!best||
+      e.position.distanceToSquared(dragon.group.position)<best.position.distanceToSquared(dragon.group.position)?e:best,null);
+    const enemy=campaignEnemy&&frontierEnemy
+      ?(campaignEnemy.position.distanceToSquared(dragon.group.position)
+        <frontierEnemy.position.distanceToSquared(dragon.group.position)?campaignEnemy:frontierEnemy)
+      :campaignEnemy??frontierEnemy;
     const toEnemy=enemy?enemy.position.clone().sub(dragon.group.position):null;
     const locked=dragon.riding&&toEnemy&&toEnemy.length()<165&&dragon.forward().dot(toEnemy.normalize())>.78;
     this.targetLock.classList.toggle('hidden',!locked);
-    if(locked)this.targetLock.textContent=`◆ SENTINELA NA MIRA · ${Math.ceil(enemy.health)}/${enemy.maxHealth}`;
+    if(locked)this.targetLock.textContent=`◆ ${enemy===frontierEnemy?'GUARDIÃO':'SENTINELA'} NA MIRA · ${Math.ceil(enemy.health)}/${enemy.maxHealth}`;
     const near=hero.group.position.distanceTo(dragon.group.position)<10.5;
     const nearNpc=!dragon.riding?game.villagers.nearby(hero.group.position,5.5):null;
     const nearWild=!dragon.riding&&!nearNpc?game.wildDragons.nearby(hero.group.position,8.2,true):null;
@@ -235,9 +249,9 @@ export class UI {
     if(mobileInteract)mobileInteract.textContent=nearNpc?'FALAR':nearWild?(calm.mood==='tranquilo'?'CARINHO':'ESPERAR'):dragon.riding?'DESCER':'MONTAR';
     const slowButton=document.querySelector('[data-hold="shift"]');
     if(slowButton)slowButton.textContent=dragon.riding?'TURBO':'DEVAGAR';
-    this.drawMap(position,target,dragon.yaw,missions,game.enemies,game.villagers,game.contracts,game.discovery,game.wildDragons,game.mountain,game.expedition);
+    this.drawMap(position,target,dragon.yaw,missions,game.enemies,game.villagers,game.contracts,game.discovery,game.wildDragons,game.mountain,game.expedition,game.frontier);
   }
-  drawMap(position,target,yaw,missions,enemies,villagers,contracts,discovery,wildDragons,mountain=null,expedition=null){
+  drawMap(position,target,yaw,missions,enemies,villagers,contracts,discovery,wildDragons,mountain=null,expedition=null,frontier=null){
     const ctx=this.ctx,W=this.mini.width,H=this.mini.height,s=0.34;
     ctx.clearRect(0,0,W,H);ctx.fillStyle='#0b3645';ctx.fillRect(0,0,W,H);
     const mx=x=>W/2+(x-position.x)*s, my=z=>H/2+(z-position.z)*s;
@@ -265,6 +279,27 @@ export class UI {
     }
     if(position.x<650)for(const npc of villagers.npcs){ctx.fillStyle='#ffcf82';ctx.fillRect(mx(npc.root.position.x)-2,my(npc.root.position.z)-2,4,4);}
     if(position.x<650)for(const m of villagers.markers){if(!m.group.visible)continue;ctx.fillStyle=m.id==='correio'?'#f3c88a':'#89ffc3';ctx.beginPath();ctx.arc(mx(m.group.position.x),my(m.group.position.z),3,0,Math.PI*2);ctx.fill();}
+    // Remaining fragments stay visible on the radar even when the story
+    // objective is elsewhere. Drawn by Canvas2D, never a GPU draw call.
+    if(position.x<650&&frontier){
+      for(const record of frontier.markers.values()){
+        const c=record.zone.id==='crystal'?'#83f3ff':'#ffae7b';
+        for(const point of record.points){
+          if(frontier.found.has(point.id))continue;
+          const x=mx(point.x),y=my(point.z);
+          if(x<0||x>W||y<0||y>H)continue;
+          ctx.strokeStyle=c;ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x+5,y);
+          ctx.lineTo(x,y+5);ctx.lineTo(x-5,y);ctx.closePath();ctx.stroke();
+        }
+      }
+      for(const guard of frontier.activeGuardians){
+        const x=mx(guard.position.x),y=my(guard.position.z);
+        if(x<0||x>W||y<0||y>H)continue;
+        ctx.strokeStyle='#ff748b';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.stroke();
+      }
+    }
     if(target){const tx=mx(target.x),ty=my(target.z);ctx.save();ctx.shadowColor='#ffdb8d';ctx.shadowBlur=14;ctx.fillStyle='#ffe3a0';ctx.beginPath();ctx.arc(tx,ty,5,0,Math.PI*2);ctx.fill();ctx.restore();}
     ctx.save();ctx.translate(W/2,H/2);ctx.rotate(-yaw);ctx.fillStyle='#f3fff8';ctx.strokeStyle='#133944';ctx.lineWidth=1.8;
     ctx.beginPath();ctx.moveTo(0,-8);ctx.lineTo(-5,7);ctx.lineTo(0,4);ctx.lineTo(5,7);ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
