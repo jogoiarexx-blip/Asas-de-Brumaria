@@ -105,7 +105,7 @@ export class World {
     // Vertex colors and the original mesh remain the fallback if assets fail.
     // Texture layer has no additional geometry/draw calls.
     const material=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
-    this.terrainTextures.register(terrainKind(island),material);
+    this.terrainTextures.register(terrainKind(island),material,island);
     const mesh=new THREE.Mesh(geo,material);mesh.receiveShadow=true;sceneAdd(this.scene,mesh);
     const amount=island.r>75?89:35;
     for(let i=0;i<amount;i++) {
