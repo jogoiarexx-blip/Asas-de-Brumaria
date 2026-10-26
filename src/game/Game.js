@@ -6,6 +6,7 @@ import {resolveCameraPosition} from '../utils/spatialSweep.js';
 import {safeDismountSpot} from '../utils/surfaces.js';
 import {recoverFreePosition,obstacleBlocks} from '../utils/collision.js';
 import { World } from '../world/World.js';
+import {ISLANDS} from '../world/config.js';
 import { Dragon } from '../entities/Dragon.js';
 import { EnemySquad } from '../entities/EnemyDragon.js';
 import {FrontierActivities} from '../systems/FrontierActivities.js';
@@ -245,7 +246,7 @@ export class Game {
     document.getElementById('performance-panel').textContent=performanceSnapshot({
       fps,renderer:this.renderer,projectiles:this.projectiles.length,effects:active,
       tier:this.graphics.tier,mounted:this.dragon.riding,
-      visibleIslands:this.world.visibleIslandCount,totalIslands:5,
+      visibleIslands:this.world.visibleIslandCount,totalIslands:ISLANDS.length,
       actorsVisible:this.actorStats.visible,actorsLimited:this.actorStats.limited,
       actorsProxied:this.actorStats.proxied??0});
   }
@@ -815,7 +816,8 @@ export class Game {
       this.audio.play('pickup');
       this.effects.burst(new THREE.Vector3(event.position.x,event.position.y,event.position.z),'rescue',8);
       this.ui.toast(`${event.label} recuperado · ${event.count}/3 em ${event.name}.`,4);
-      this.saveGame();
+      // Completion is awarded and saved atomically in the next event.
+      if(event.count<3)this.saveGame();
     }else if(event.type==='relic-complete'){
       this.progression.grant(event.points);
       this.audio.play('complete');
