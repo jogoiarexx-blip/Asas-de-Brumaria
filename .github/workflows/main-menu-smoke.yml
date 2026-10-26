@@ -1,0 +1,41 @@
+name: Menu principal — teste visual rápido
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - src/ui/mainMenu.css
+      - src/game/Game.js
+      - assets/menu/**
+      - tests/browser-main-menu.mjs
+      - .github/workflows/main-menu-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  main-menu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar renderer 3D e Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1 three@0.180.0
+          npx playwright install --with-deps chromium
+          mkdir -p vendor
+          cp node_modules/three/build/three.module.js vendor/three.module.js
+          cp node_modules/three/build/three.core.js vendor/three.core.js
+      - name: Comprovar menu parado, PC e celular, configurações e partida
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/brumaria-menu-server.log 2>&1 &
+          node tests/browser-main-menu.mjs
+      - name: Guardar capturas do novo menu
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: menu-principal-pc-celular
+          path: artifacts/menu-principal-*.png
+          if-no-files-found: ignore
