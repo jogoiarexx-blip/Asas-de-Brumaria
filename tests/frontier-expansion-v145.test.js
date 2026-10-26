@@ -68,6 +68,20 @@ test('far island detail is culled without hiding terrain on quality profile',()=
  const src=source('../src/world/World.js');
  assert.match(src,/this\.world|this\.scene|this\.obstacles/);
 });
+test('new biome geometry uses only two instanced batches and integrates with streaming',()=>{
+ const world=source('../src/world/World.js');
+ const training=source('../src/systems/Training.js');
+ assert.match(world,/buildBiomeAccents\(\)/);
+ assert.match(world,/this\.biomeAccentsByIsland\.set\(island\.name,mesh\)/);
+ assert.match(world,/new THREE\.InstancedMesh\(geometry,material,count\)/);
+ assert.match(world,/this\.addObstacle\(x,ground,z,crystal\?/);
+ assert.match(world,/if\(accents\)accents\.visible=/);
+ assert.match(training,/this\.ringResources=\{ringGeometry,ringMaterial\}/);
+ assert.match(training,/frontier:new THREE\.MeshBasicMaterial/);
+ const expected=Object.values(CIRCUITS).reduce((n,c)=>n+c.checkpoints.length,0);
+ assert.equal(expected,15);
+});
+
 test('adaptive sub-tier resolution reduces only pixel fill; full graphics tier and shadows stay intact',()=>{
  const renderer={ratio:0,setPixelRatio(r){this.ratio=r;},shadowMap:{enabled:false,needsUpdate:false}};
  const gfx=new GraphicsQuality(renderer,2,false,8,{getItem:()=>null,setItem:()=>{}});
