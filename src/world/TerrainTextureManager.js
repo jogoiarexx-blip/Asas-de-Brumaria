@@ -25,15 +25,17 @@ export class TerrainTextureManager {
   constructor(){
     this.materials=new Map();
     this.loader=new THREE.TextureLoader();
-    this.loading=new Map();this.resolved=new Map();
+    this.loading=new Map();
     this.tier=null;this.serial=0;this.failed=new Set();
+    // Boot on the refuge without allocating 2K maps for remote islands.
+    this.activeKinds=new Set(['meadow']);
   }
   register(kind,material){
     if(!TERRAIN_KINDS.includes(kind))throw Error('Unknown terrain kind');
     const group=this.materials.get(kind)??[];
     group.push(material);
     this.materials.set(kind,group);
-    if(this.tier)this.applyToKind(kind,this.tier,this.serial);
+    if(this.tier&&this.activeKinds.has(kind))void this.applyToKind(kind,this.tier,this.serial);
   }
   async get(kind,channel,tier){
     const url=textureFile(kind,channel,tier);
@@ -62,7 +64,7 @@ export class TerrainTextureManager {
     // The normal map is reserved for the high-detail preset to save
     // texture bandwidth and GPU memory on mobile.
     const normal=base&&tier==='desktop'?await this.get(kind,'normal',tier):null;
-    if(serial!==this.serial)return;
+    if(serial!==this.serial||!this.activeKinds.has(kind))return;
     for(const material of this.materials.get(kind)??[]){
       if(material.map!==base||material.normalMap!==normal){
         material.map=base;
@@ -74,11 +76,46 @@ export class TerrainTextureManager {
       }
     }
   }
+  releaseKind(kind){
+    // A distant island keeps its original painted terrain; release actual GPU
+    // textures, including pending loads, to cap memory during long flights.
+    for(const material of this.materials.get(kind)??[]){
+      material.map=null;material.normalMap=null;
+      material.color.setScalar(1);material.needsUpdate=true;
+    }
+    for(const [url,promise] of this.loading){
+      if(!url.includes('/'+kind+'_'))continue;
+      this.loading.delete(url);
+      void promise.then(texture=>texture?.dispose());
+    }
+  }
+  updateFocus(observer,islands=[]){
+    if(!observer||!Number.isFinite(observer.x)||!Number.isFinite(observer.z))return;
+    const next=new Set();
+    for(const island of islands){
+      const kind=terrainKind(island);
+      const previous=this.activeKinds.has(kind);
+      const radius=island.r+(previous?260:190);
+      const dx=observer.x-island.x,dz=observer.z-island.z;
+      if(dx*dx+dz*dz<radius*radius)next.add(kind);
+    }
+    if(next.size===this.activeKinds.size&&[...next].every(k=>this.activeKinds.has(k)))return;
+    const previous=this.activeKinds;
+    this.activeKinds=next;
+    const serial=++this.serial;
+    for(const kind of previous)if(!next.has(kind))this.releaseKind(kind);
+    if(this.tier)for(const kind of next)void this.applyToKind(kind,this.tier,serial);
+  }
   setQuality(quality){
     const tier=textureTier(quality);
     if(this.tier===tier)return;
     this.tier=tier;
     const serial=++this.serial;
-    for(const kind of this.materials.keys())void this.applyToKind(kind,tier,serial);
+    // Explicit tier switch removes old maps before loading new ones, instead
+    // of retaining full 2K normals alongside their mobile counterparts.
+    for(const kind of this.activeKinds){
+      this.releaseKind(kind);
+      void this.applyToKind(kind,tier,serial);
+    }
   }
 }
