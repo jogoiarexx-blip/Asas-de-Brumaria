@@ -21,7 +21,7 @@ function naturalIslandHeight(island,x,z){
 const VILLAGE_HEIGHT=naturalIslandHeight(ISLANDS[0],8,7);
 
 export class World {
-  constructor(scene) {
+  constructor(scene,renderer=null) {
     this.scene = scene;
     this.elapsed = 0;
     this.clouds = [];
