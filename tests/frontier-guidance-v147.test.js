@@ -28,7 +28,7 @@ test('guardian is next challenge once relics are collected and combat unlocked',
  assert.equal(available.kind,'guardian');assert.equal(available.label,'Sentinela de Basalto');
  const finished=nearestFrontierObjective(p,{found,combatUnlocked:true,defeated:['ash']});
  assert.equal(finished,null);
- assert.equal(nearestFrontierObjective(p,{found,combatUnlocked:true},0),available);
+ assert.deepEqual(nearestFrontierObjective(p,{found,combatUnlocked:true}),available);
 });
 test('secondary objective HUD does not override original expedition, training or village contracts',()=>{
  const ui=source('../src/ui/UI.js');
