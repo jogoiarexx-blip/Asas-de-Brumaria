@@ -14,6 +14,7 @@ export class Input {
     });
     window.addEventListener('keyup',event=>this.down.delete(normalized(event.key)));
     window.addEventListener('blur',()=>{this.down.clear();this.justPressed.clear();});
+    document.addEventListener?.('visibilitychange',()=>{if(document.hidden){this.down.clear();this.justPressed.clear();}});
     document.querySelectorAll('[data-hold]').forEach(button=>{
       const key=button.dataset.hold;
       const release=event=>{event.preventDefault();this.down.delete(key);button.classList.remove('active');};
