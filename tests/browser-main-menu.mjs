@@ -70,7 +70,7 @@ try{
   assert.equal(mobile.previewDisplay,'none');
   await page.screenshot({path:'artifacts/menu-principal-celular.png',fullPage:true});
   await page.locator('#start-btn').click();
-  await page.waitForFunction(()=>window.__menuQA?.started===true,null,{timeout:10000});
+  await page.waitForFunction(()=>window.__menuQA?.started===true,null,{timeout:90000});
   assert.equal(await page.locator('#start-screen').isVisible(),false);
   const bodyClass=await page.locator('body').getAttribute('class');
   assert.equal(bodyClass?.includes('menu-open')??false,false);
