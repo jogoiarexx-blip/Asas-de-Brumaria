@@ -30,7 +30,7 @@ export function textureFile(kind,channel,tier){
 // Begin fetching well before the island enters the visible camera frustum.
 // Hysteresis prevents churning while circling a coast or rapidly orbiting.
 export const TERRAIN_STREAMING=Object.freeze({
-  prefetchDistance:390,releaseDistance:545,evictionSeconds:18
+  prefetchDistance:245,releaseDistance:365,evictionSeconds:18
 });
 export function desiredTerrainKinds(observer,islands,previous=new Set()){
   if(!observer||!Number.isFinite(observer.x)||!Number.isFinite(observer.z))
@@ -133,8 +133,12 @@ export class TerrainTextureManager {
         if(!this._valid(job)){texture.dispose();this.stats.discarded++;continue;}
         // Avoid a large first-use WebGL upload during flight. A single
         // prewarm is scheduled for the browser idle period.
-        await new Promise(resolve=>this.scheduleIdle(deadline=>{
-          if(!this._valid(job)){texture.dispose();this.stats.discarded++;resolve();return;}
+        await new Promise(resolve=>{
+          const warm=deadline=>{
+            if(deadline&&!deadline.didTimeout&&deadline.timeRemaining()<9){
+              this.scheduleIdle(warm);return;
+            }
+            if(!this._valid(job)){texture.dispose();this.stats.discarded++;resolve();return;}
           try{
             if(typeof this.renderer?.initTexture==='function'){
               this.renderer.initTexture(texture);
@@ -146,8 +150,13 @@ export class TerrainTextureManager {
           }
           this.loading.set(job.url,texture);
           this._attach(job.kind,job.channel,texture,job.tier);
+          // Evict obsolete variants after a new resolution is installed,
+          // rather than permanently retaining 1K + 2K for one island.
+          this.scheduleIdle(()=>this._pruneKind(job.kind));
           resolve();
-        }));
+          };
+          this.scheduleIdle(warm);
+        });
         // A high-resolution normal map is the last job: the diffuse has
         // already appeared, and one map is warmed/uploaded per idle slice.
         if(job.channel==='diff'&&job.tier==='desktop'&&this._valid(job))
@@ -161,12 +170,26 @@ export class TerrainTextureManager {
       if(channel==='diff'){
         if(material.map!==texture){
           material.map=texture;
+          if(tier==='mobile')material.normalMap=null;
           material.color.setScalar(texture?1.65:1);
           material.needsUpdate=true;
         }
       }else if(material.normalMap!==texture){
         material.normalMap=texture;material.needsUpdate=true;
       }
+    }
+  }
+  _pruneKind(kind){
+    // Keep maps still bound to an island material. Releasing stale quality
+    // variants does not remove the new image or force network re-fetch.
+    const inUse=new Set();
+    for(const material of this.materials.get(kind)??[]){
+      if(material.map)inUse.add(material.map);
+      if(material.normalMap)inUse.add(material.normalMap);
+    }
+    for(const [url,texture] of this.loading){
+      if(!url.includes('/'+kind+'_')||inUse.has(texture))continue;
+      this.loading.delete(url);texture.dispose();this.stats.evictions++;
     }
   }
   releaseKind(kind){
@@ -212,8 +235,12 @@ export class TerrainTextureManager {
         if(!this.activeKinds.has(kind)&&age>=TERRAIN_STREAMING.evictionSeconds*1000)
           this.releaseKind(kind);
         else if(!this.activeKinds.has(kind)){
-          setTimeout(()=>{if(!this.activeKinds.has(kind))this.releaseKind(kind);},
-            Math.max(0,TERRAIN_STREAMING.evictionSeconds*1000-age));
+          setTimeout(()=>{
+            const last=this.lastSeen.get(kind)??0;
+            const idle=(typeof performance!=='undefined'?performance.now():Date.now())-last;
+            if(!this.activeKinds.has(kind)&&idle>=TERRAIN_STREAMING.evictionSeconds*1000)
+              this.scheduleIdle(()=>{if(!this.activeKinds.has(kind))this.releaseKind(kind);});
+          },Math.max(0,TERRAIN_STREAMING.evictionSeconds*1000-age)+30);
         }
       });
     }
