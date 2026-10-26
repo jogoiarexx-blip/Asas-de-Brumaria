@@ -87,7 +87,7 @@ export class World {
         const dz=(this.islandHeight(island,x,z+1.1)-this.islandHeight(island,x,z-1.1))*.45;
         const slope=clamp(Math.hypot(dx,dz)/3.2,0,1);
         const detail=Math.sin(x*.17+island.seed)*Math.cos(z*.13-island.seed);
-        const c=terrainPalette(y,slope,detail);
+        const c=terrainPalette(y,slope,detail,island.biome);
         colors.push(c[0],c[1],c[2]);
       }
     }
@@ -141,7 +141,9 @@ export class World {
     for(const island of ISLANDS) {
       const count=island.r>70?220:115;
       const mesh=new THREE.InstancedMesh(geometry,material,count);
-      const palette=island.name==='Ilha da Névoa'?[0x669c9a,0x86a79a,0x4a887e]:
+      const palette=island.biome==='crystal'?[0x66b5b7,0x82cad0,0x548f9e]:
+        island.biome==='ash'?[0x8b8074,0x6a7370,0x9b8a7b]:
+        island.name==='Ilha da Névoa'?[0x669c9a,0x86a79a,0x4a887e]:
         island.name==='Atol Esquecido'?[0xb7af62,0xc4be81,0x819d5b]:[0x68a977,0x91b76f,0x447f67];
       let placed=0;
       for(let attempts=0;attempts<count*5&&placed<count;attempts++){
