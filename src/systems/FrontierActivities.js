@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {EnemyDragon} from '../entities/EnemyDragon.js';
 import {segmentSphereHit} from './combatMath.js';
-import {FRONTIER_ZONES,FRONTIER_MARKERS,markerId,normalizeFrontier,frontierVisible,frontierClaimable} from './FrontierRules.js';
+import {FRONTIER_ZONES,markerId,normalizeFrontier,frontierVisible,frontierClaimable} from './FrontierRules.js';
 
 /** Two optional airborne treasure runs and a pair of region sentinels.
  * Never touches the existing mission/enemy squad, so old saves remain valid.
@@ -15,7 +15,7 @@ export class FrontierActivities {
     this.found=new Set();this.defeated=new Set();this.rewarded=new Set();
     this.guardians=new Map();
     this.markers=new Map();
-    this.hoverTime=0;this.detailClock=0;
+
     const geometry=new THREE.OctahedronGeometry(2.25,0);
     const ringGeometry=new THREE.TorusGeometry(4.5,.19,7,24);
     this.sharedGeometry=[geometry,ringGeometry];
@@ -79,7 +79,7 @@ export class FrontierActivities {
   update(dt,time,dragon,onShot=()=>{},dangerEnabled=true){
     const events=[],position=dragon?.group?.position;
     if(!position)return events;
-    this.hoverTime+=Math.max(0,dt);
+
     for(const zone of FRONTIER_ZONES){
       const record=this.markers.get(zone.id);
       const nearby=frontierVisible(position,zone,record.visible);
@@ -87,13 +87,9 @@ export class FrontierActivities {
         record.visible=nearby;
         record.cores.visible=nearby;record.rings.visible=nearby;
       }
-      // Animate one shared material per island rather than six per-item mixers.
-      if(nearby&&dt>0&&Math.floor(this.hoverTime*6)%2===0){
-        record.rings.material.opacity=1;
-      }
       if(nearby&&dragon.riding&&dragon.airborne){
         for(const p of record.points){
-          if(this.found.has(p.id)||!frontierClaimable(dragon,p,p))continue;
+          if(this.found.has(p.id)||!frontierClaimable(dragon,p))continue;
           this.found.add(p.id);
           this.refreshMatrices(record);
           const count=record.points.filter(point=>this.found.has(point.id)).length;
