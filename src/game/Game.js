@@ -25,7 +25,7 @@ import {VillageContracts,CONTRACTS} from '../systems/VillageContracts.js';
 import {VillageNPCs} from '../entities/VillageNPCs.js';
 import { smoothFollow } from '../utils/math.js';
 import {Weather} from '../systems/Weather.js';
-import {Discovery} from '../systems/Discovery.js';
+import {Discovery,LANDMARKS} from '../systems/Discovery.js';
 import {Landmarks} from '../world/Landmarks.js';
 import {DayNight} from '../systems/DayNight.js';
 import {StablePreview} from '../ui/StablePreview.js';
@@ -332,6 +332,7 @@ export class Game {
   }
   startTraining(mode='basic'){
     if(mode==='advanced'&&this.progression.circuits<1){this.ui.toast('Conclua primeiro o Desafio dos Ventos.');return;}
+    if(mode==='frontier'&&this.progression.circuits<2){this.ui.toast('Complete dois circuitos antes da Travessia das Sete Ilhas.');return;}
     if(!this.nearStable()){this.ui.toast('Para começar o circuito, retorne à vila e pouse.');return;}
     const result=this.training.start(mode);
     if(result.ok){this.ui.stable.classList.add('hidden');this.ui.toast(`${CIRCUITS[mode].label}: atravesse ${CIRCUITS[mode].checkpoints.length} aros em ${CIRCUITS[mode].seconds} segundos!`,6);this.saveGame();}
@@ -794,7 +795,7 @@ export class Game {
     const discovered=this.landmarks.tryDiscover(p,this.discovery);
     if(discovered){
       this.progression.grant(1);this.saveGame();this.audio.play('complete');
-      this.ui.toast(`Novo marco: ${discovered.name}! +1 ponto de treinamento (${this.discovery.total}/5).`,5);
+      this.ui.toast(`Novo marco: ${discovered.name}! +1 ponto de treinamento (${this.discovery.total}/${LANDMARKS.length}).`,5);
       this.ui.renderStable(this);
     }
   }
