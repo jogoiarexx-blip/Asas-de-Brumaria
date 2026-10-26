@@ -6,8 +6,10 @@ test('cinematic main menu is local, responsive and retains action identifiers',(
  const html=read('../index.html'),css=read('../src/ui/mainMenu.css');
  const art=read('../assets/menu/brumaria-sky.svg');
  for(const id of ['start-screen','menu-title','start-btn','start-btn-label','new-game-btn',
-   'menu-settings-btn','menu-load-status','menu-preview','menu-controls'])
+   'menu-settings-btn','menu-load-status'])
    assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/class="menu-preview"/);
+ assert.match(html,/class="menu-controls"/);
  assert.match(html,/body class="menu-open"/);
  assert.match(html,/src\/ui\/mainMenu\.css/);
  assert.match(css,/brumaria-sky\.svg/);
