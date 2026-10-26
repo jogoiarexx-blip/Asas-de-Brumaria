@@ -33,6 +33,10 @@ try{
   const idleProof={exists:!!foot.actions.idle,active:foot.active===foot.actions.idle,
     stationaryLeg:startLeg&&leg?leg.quaternion.angleTo(startLeg):null};
   d.mount();h.setMounted(true);
+  const mountStarted=!!h._mountMotion;
+  const mountFrom=h.rider.position.clone();
+  h.update(1/60,{axis:()=>0,isDown:()=>false},0);
+  const mountFirstStep=h.rider.position.distanceTo(mountFrom);
   const THREE=await import('three');
   const {dragonCameraFraming}=await import('./src/game/dragonCameraFraming.js');
   const model=d.externalDragonModel;
@@ -68,9 +72,26 @@ try{
      riderZ:h.rider.position.z,saddleZ:d.externalDragonModel.saddle.z};
   };
   const ground=sample('ground'),flight=sample('cruise'),landing=sample('landing');
+  const mountCompleted=!h._mountMotion;
+  const riderScaleAtExit=h.rider.scale.x;
+  const x=d.group.position.x+3.3,z=d.group.position.z+1.7;
+  const dest=new THREE.Vector3(x,g.world.groundHeightAt(x,z,.52),z);
+  d.dismount();h.setMounted(false,{dismountTarget:dest});
+  const startedExit=!!h._dismountMotion;
+  const exitDistanceStart=h.group.position.distanceTo(dest);
+  for(let i=0;i<12;i++)h.update(1/60,{axis:()=>1,isDown:()=>true},i/60);
+  const exitDistanceMiddle=h.group.position.distanceTo(dest);
+  for(let i=12;i<80;i++)h.update(1/60,{axis:()=>1,isDown:()=>true},i/60);
+  const exitDistanceEnd=h.group.position.distanceTo(dest);
+  const dismountCompleted=!h._dismountMotion;
+  const riderScaleAfter=h.rider.scale.x;
   return {ground,flight,landing,oldBodyHidden:!h.rider.userData.body.visible,
     parentValid:h.rider.parent===d.visual,saddle:d.externalDragonModel.saddle,
-    mountSize,idleProof,frame,actualCameraDistance};
+    mountSize,idleProof,frame,actualCameraDistance,
+    mountProof:{started:mountStarted,firstStep:mountFirstStep,completed:mountCompleted},
+    exitProof:{started:startedExit,begin:exitDistanceStart,mid:exitDistanceMiddle,
+      end:exitDistanceEnd,completed:dismountCompleted,
+      scaleRetained:riderScaleAtExit===riderScaleAfter}};
  });
  for(const [name,p] of Object.entries({ground:result.ground,flight:result.flight,landing:result.landing})){
   assert.ok(p.handAheadLeft>.13&&p.handAheadRight>.13,`${name}: hands backwards: ${JSON.stringify(p)}`);
@@ -89,6 +110,15 @@ try{
    'standing character should not march on the spot: '+JSON.stringify(result.idleProof));
  assert.ok(result.frame.distance>18,'camera too close to enlarged dragon: '+JSON.stringify(result.frame));
  assert.ok(result.actualCameraDistance>12,'3D camera still clips into large dragon');
+ assert.equal(result.mountProof.started,true,'mount must begin with continuous travel from the player');
+ assert.ok(result.mountProof.firstStep>.0001,'saddle mount did not move during first frame');
+ assert.equal(result.mountProof.completed,true,'mount did not arrive at the saddle');
+ assert.equal(result.exitProof.started,true,'safe dismount should animate instead of teleporting');
+ assert.ok(result.exitProof.begin>result.exitProof.mid&&result.exitProof.mid>0,
+   'dismount should approach saved ground position smoothly: '+JSON.stringify(result.exitProof));
+ assert.ok(result.exitProof.end<.00001,'dismount never reached certified destination');
+ assert.equal(result.exitProof.completed,true);
+ assert.equal(result.exitProof.scaleRetained,true);
  assert.equal(result.oldBodyHidden,true);
  assert.equal(result.parentValid,true);
  assert.equal(result.ground.clip,'rideIdle');
