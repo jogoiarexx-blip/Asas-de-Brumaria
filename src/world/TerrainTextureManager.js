@@ -13,7 +13,7 @@ export function terrainKind(island){
   if(island?.biome==='ash')return 'ash';
   if(island?.biome==='crystal')return 'crystal';
   if(island?.name==='Atol Esquecido')return 'beach';
-  if(island?.name==='Antigo Farol')return 'stone';
+  if(island?.name==='Ilha do Farol'||island?.name==='Ilha da Névoa')return 'stone';
   return 'meadow';
 }
 export function textureFile(kind,channel,tier){
