@@ -28,6 +28,9 @@ try{
     })};
   const events=[];
   dragon.mount();game.hero.setMounted(true,{animate:false});dragon.airborne=true;
+  const firstZone=FRONTIER_ZONES[0];
+  dragon.group.position.set(firstZone.x,game.world.heightAt(firstZone.x,firstZone.z)+29,firstZone.z);
+  const earlyNavigation=frontier.objective(dragon.group.position,false);
   // Purely controlled test: no level movement, user input or frame simulation.
   for(const zone of FRONTIER_ZONES){
     for(const record of frontier.markers.get(zone.id).points){
@@ -45,6 +48,10 @@ try{
     duplicate+=frontier.update(1/60,0,dragon,()=>{},false).length;
   }
   const restored=claimed;
+  const lastZone=FRONTIER_ZONES[1];
+  const relicsComplete=frontier.objective({x:lastZone.x,z:lastZone.z},false);
+  const guardianGuidance=frontier.objective({x:lastZone.x,z:lastZone.z},true);
+  const villageGuidance=frontier.objective({x:8,z:7},true);
   const clone=new (frontier.constructor)(game.scene,game.world,restored);
   const restoredState=clone.snapshot();
   clone.dispose();
@@ -67,7 +74,9 @@ try{
     guardsBefore,strike1:strike1?.type,strike2:strike2?.type,
     strike3:strike3?.type,guardDefeated:frontier.defeated.has(zone.id),
     guardVisibleFar:guard.group.visible,nowActive:frontier.activeGuardians.length,
-    fpsBudgetDrawCalls:initial.drawn.length*2};
+    fpsBudgetDrawCalls:initial.drawn.length*2,
+    earlyGuidance:earlyNavigation?.kind,guardianGuidance:guardianGuidance?.kind,
+    relicsComplete:relicsComplete===null,villageGuidance:villageGuidance===null};
  });
  assert.equal(out.initial.markers,0);
  assert.equal(out.initial.guardians,0,'enemies loaded before arriving');
@@ -77,6 +86,10 @@ try{
  assert.equal(out.events.filter(e=>e.type==='relic-complete').length,2);
  assert.equal(out.duplicate,0,'double rewards on entering same objective');
  assert.equal(out.restoreEqual,true);
+ assert.equal(out.earlyGuidance,'relic');
+ assert.equal(out.guardianGuidance,'guardian');
+ assert.equal(out.relicsComplete,true);
+ assert.equal(out.villageGuidance,true);
  assert.equal(out.guardsBefore,1);
  assert.equal(out.strike1,'guardian-hit');
  assert.equal(out.strike2,'guardian-defeated');
