@@ -812,7 +812,9 @@ export class Game {
     if(this.needsProjectileClear){this.clearProjectiles();this.needsProjectileClear=false;}
   }
   handleFrontierEvent(event){
-    if(event.type==='relic'){
+    if(event.type==='frontier-hint'){
+      this.ui.toast(`Nova exploração: ${event.name}! Sobrevoe os sinais luminosos para encontrar ${event.remaining} fragmentos.`,6);
+    }else if(event.type==='relic'){
       this.audio.play('pickup');
       this.effects.burst(new THREE.Vector3(event.position.x,event.position.y,event.position.z),'rescue',8);
       this.ui.toast(`${event.label} recuperado · ${event.count}/3 em ${event.name}.`,4);
