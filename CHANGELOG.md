@@ -1,3 +1,13 @@
+## v1.4.20 — Preparação gráfica progressiva ao iniciar a partida
+
+- Após INICIAR/CONTINUAR, a simulação permanece parada enquanto o jogo prepara os recursos 3D necessários; o menu 2D exibe barra de progresso e descrição da etapa atual.
+- Aguarda o modelo principal de dragão por tempo limitado; instancia antecipadamente guardiões inativos sem iniciar sua IA, preservando o progresso salvo.
+- Percorre personagens, inimigos invisíveis, criaturas, vegetação, terreno e efeitos. Evita recompilar variantes idênticas e considera instancing, skinning, cores de vértice e sombras.
+- Faz upload antecipado das texturas já prontas usando renderer.initTexture, e compila lotes de shaders com renderer.compileAsync usando materiais/geométricas reais em uma cena temporária; libera a cena provisória sem liberar os recursos do jogo.
+- Executa uma renderização 3D estática de preparação para iniciar recursos de sombras, sem rodar world.update, NPCs, animações ou física no menu.
+- O streaming de mapas de terreno segue em segundo plano pelo agendador existente; a qualidade gráfica escolhida é mantida e falhas de preparação não bloqueiam a partida.
+- Acrescenta 4 testes de regressão (total local: 519 testes aprovados).
+
 ## v1.4.19 — câmera de perseguição, HUD compacto e disparo intencional
 
 - A câmera acompanha suavemente a direção do dragão montado ou do personagem ao caminhar, sem ultrapassar ±180°. Arraste do mouse e analógico direito têm prioridade temporária para explorar os arredores; V realinha atrás do personagem.
