@@ -423,7 +423,10 @@ export class Game {
   initGPUOptions(){
     const panel=document.getElementById('gpu-panel');
     document.getElementById('gpu-toggle').addEventListener('click',()=>panel.classList.toggle('hidden'));
-    document.getElementById('gpu-close').addEventListener('click',()=>panel.classList.add('hidden'));
+    document.getElementById('gpu-close').addEventListener('click',()=>{
+      panel.classList.add('hidden');
+      if(!this.started)document.getElementById('menu-settings-btn').focus();
+    });
     document.getElementById('gpu-preference').value=this.gpuPrefs.preference;
     document.getElementById('gpu-resolution').value=String(this.gpuPrefs.resolution);
     document.getElementById('gpu-shadows').checked=this.gpuPrefs.shadows;
