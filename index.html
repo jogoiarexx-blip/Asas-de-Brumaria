@@ -7,8 +7,9 @@
   <meta name="description" content="Asas de Brumária: explore ilhas, monte em seu dragão e complete missões.">
   <title>Asas de Brumária v1.4.18 — Aventura de Dragões</title>
   <link rel="stylesheet" href="./src/ui/style.css">
+  <link rel="stylesheet" href="./src/ui/mainMenu.css">
 </head>
-<body>
+<body class="menu-open">
   <div id="game" aria-label="Mundo do jogo em 3D"></div>
   <div id="hud">
     <div class="hud-top">
@@ -90,7 +91,61 @@
       <p class="stable-tip">Complete missões para ganhar pontos. Troque de dragão e melhore atributos somente na vila. O progresso é salvo automaticamente.</p>
     </section>
   </div>
-  <div id="start-screen" class="modal-screen"><div class="start-art">✦ <span>✦</span> ✦</div><div class="modal-content"><div class="pretitle">UMA JORNADA ORIGINAL INSPIRADA EM AVENTURAS DE DRAGÕES</div><h1>ASAS DE<br><em>BRUMÁRIA</em></h1><p>Explore ilhas esquecidas, treine seu dragão, enfrente sentinelas inimigas , resgate filhotes perdidos e conquiste a confiança de dragões selvagens.</p><div class="features"><span>◈ Mundo 3D</span><span>◈ Voo livre</span><span>◈ 7 missões + contratos + expedição às montanhas</span><span>◈ Dia e noite dinâmicos</span></div><button id="start-btn">COMEÇAR A AVENTURA <span>→</span></button><button id="new-game-btn" class="new-game-btn hidden" type="button">CRIAR NOVA PARTIDA (APAGA O SAVE)</button><small>Teclado · Controle Xbox/PlayStation/USB/Bluetooth (Gamepad API) · Toque · Áudio opcional</small></div></div>
+  <section id="start-screen" class="modal-screen" role="main" aria-labelledby="menu-title">
+    <div class="menu-art" aria-hidden="true"></div>
+    <div class="menu-atmosphere" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div class="menu-frame">
+      <header class="menu-header">
+        <div class="menu-logo"><span class="menu-logo-glyph" aria-hidden="true">✦</span>
+          <span><strong>ASAS DE BRUMÁRIA</strong><small>UMA AVENTURA NAS ALTURAS</small></span>
+        </div>
+        <span class="menu-edition"><span aria-hidden="true">◆</span> CAPÍTULO · SETE ILHAS</span>
+      </header>
+      <div class="menu-main">
+        <div class="menu-hero modal-content">
+          <div class="menu-eyebrow"><span class="menu-eyebrow-line"></span> ENTRE NO MUNDO DE BRUMÁRIA</div>
+          <h1 id="menu-title">ASAS <span>DE</span><br><em>BRUMÁRIA</em></h1>
+          <div class="menu-rule"><span>✦</span></div>
+          <p class="menu-description">Além da névoa, sete ilhas aguardam seu chamado. Encontre seu dragão, domine os céus e escreva sua própria lenda.</p>
+          <div class="menu-tags"><span>EXPLORE</span><span>VOE</span><span>PROTEJA</span></div>
+          <div class="menu-actions">
+            <button id="start-btn" class="menu-play" type="button" disabled>
+              <span class="menu-play-symbol" aria-hidden="true">▶</span>
+              <span id="start-btn-label">INICIAR AVENTURA</span>
+              <span class="menu-play-arrow" aria-hidden="true">↗</span>
+            </button>
+            <div class="menu-secondary-actions">
+              <button id="new-game-btn" class="new-game-btn hidden" type="button">NOVA PARTIDA</button>
+              <button id="menu-settings-btn" class="menu-outline-btn" type="button">⚙ CONFIGURAÇÕES</button>
+            </div>
+          </div>
+          <div class="menu-status" role="status" aria-live="polite"><span class="menu-status-dot"></span><span id="menu-load-status">PREPARANDO O MUNDO…</span></div>
+        </div>
+        <aside class="menu-preview" aria-label="O que você vai encontrar">
+          <div class="menu-preview-heading"><span>O SEU DESTINO</span><span class="menu-small-star">✦</span></div>
+          <h2>UM MUNDO.<br>INFINITAS ALTURAS.</h2>
+          <p>Uma jornada de descoberta, liberdade e amizade entre dragões.</p>
+          <div class="menu-figures">
+            <div><strong>07</strong><span>ILHAS PARA<br>EXPLORAR</span></div>
+            <div><strong>03</strong><span>CIRCUITOS<br>AÉREOS</span></div>
+            <div><strong>02</strong><span>GUARDIÕES<br>DA FRONTEIRA</span></div>
+          </div>
+          <div class="menu-preview-foot"><span class="menu-preview-wave" aria-hidden="true">⌁</span> O céu é apenas o começo</div>
+        </aside>
+      </div>
+      <footer class="menu-footer">
+        <div class="menu-footer-left"><span>✦</span> UMA JORNADA DE DRAGÕES <span class="menu-divider">/</span> SEM CARREGAMENTO 3D NO MENU</div>
+        <details class="menu-controls"><summary>COMO JOGAR <span aria-hidden="true">⌄</span></summary>
+          <div class="menu-controls-panel">
+            <p><b>WASD</b> Mover · <b>Espaço / Ctrl</b> Subir / descer · <b>E</b> Montar</p>
+            <p><b>F</b> Fogo · <b>Q</b> Esquivar · <b>Shift</b> Turbo · <b>T</b> Estábulo</p>
+            <p>Compatível com teclado, controle e toque.</p>
+          </div>
+        </details>
+        <span class="menu-platforms">PC <span>•</span> CONTROLE <span>•</span> CELULAR</span>
+      </footer>
+    </div>
+  </section>
   <div id="benchmark-controls" class="hidden" aria-label="Comparar desempenho dos gráficos">
     <button id="benchmark-toggle" type="button">COMPARAR FPS (B)</button>
     <button id="benchmark-copy" type="button" disabled>COPIAR RESULTADOS</button>
