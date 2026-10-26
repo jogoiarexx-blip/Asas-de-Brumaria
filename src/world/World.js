@@ -28,6 +28,7 @@ export class World {
     this.obstacles = [];this.surfaces=[];
     this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
+    this.biomeAccentsByIsland=new Map();
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
     this.cloudWind=1;
@@ -63,7 +64,7 @@ export class World {
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
-    this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds();
+    this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds();
   }
   makeWaterTexture() {
     const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
@@ -108,6 +109,41 @@ export class World {
     for(let i=0;i<24;i++) {
       const a=rand()*Math.PI*2,d=island.r*(.84+rand()*.13),x=island.x+Math.cos(a)*d,z=island.z+Math.sin(a)*d;
       this.addRock(x,this.heightAt(x,z),z,.6+rand()*1.3);
+    }
+  }
+  /** Single instanced draw per new biome. New silhouettes use procedural
+   * vertices and per-instance color instead of 28 separate materials/textures.
+   * Collider coordinates are created once and do not affect flight physics. */
+  buildBiomeAccents() {
+    const dummy=new THREE.Object3D();
+    for(const island of ISLANDS){
+      if(!['crystal','ash'].includes(island.biome))continue;
+      const crystal=island.biome==='crystal',count=14;
+      const geometry=crystal?new THREE.OctahedronGeometry(1,0):new THREE.ConeGeometry(1,3,5);
+      const material=new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true});
+      const mesh=new THREE.InstancedMesh(geometry,material,count);
+      const palette=crystal?[0x81f3ff,0x49b8d8,0xbce9e9]:[0x65545a,0x8b655e,0x504b55];
+      for(let i=0;i<count;i++){
+        // A safe annulus around the center preserves the existing discovery
+        // monument and the center-of-island flight training checkpoints.
+        const theta=(i+.35)*Math.PI*2/count;
+        const r=island.r*(.49+.18*(i%3)/2);
+        const x=island.x+Math.cos(theta)*r,z=island.z+Math.sin(theta)*r;
+        const ground=this.heightAt(x,z);
+        const height=crystal?3.7+(i%4)*.65:3+(i%4)*.7;
+        dummy.position.set(x,ground+height*.5,z);
+        dummy.rotation.set(0,i*.8,crystal?.08*(i%3-1):0);
+        dummy.scale.set(crystal?1.13:1.25,crystal?height*.5:height/3,crystal?1.13:1.25);
+        dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
+        mesh.setColorAt(i,new THREE.Color(palette[i%palette.length]));
+        this.addObstacle(x,ground,z,crystal?1.2:1.05,height,crystal?'crystal-spire':'basalt-spire');
+      }
+      mesh.instanceMatrix.needsUpdate=true;
+      if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+      mesh.castShadow=false;mesh.receiveShadow=true;
+      mesh.computeBoundingSphere();
+      this.scene.add(mesh);
+      this.biomeAccentsByIsland.set(island.name,mesh);
     }
   }
   // Faixas de espuma e reflexos ao redor das cinco costas, sem mapas de textura externos.
@@ -381,6 +417,8 @@ export class World {
       if(!bloom)continue;
       const grass=this.grassByIsland.get(island.name);
       bloom.visible=(grass?.visible??true)&&this.detailTier!=='economy';
+      const accents=this.biomeAccentsByIsland.get(island.name);
+      if(accents)accents.visible=this.foliageByIsland.get(island.name)?.[0]?.visible??true;
       bloom.count=this.detailTier==='balanced'?Math.ceil(bloom.userData.totalCount*.65):bloom.userData.totalCount;
     }
     this.visibleIslandCount=state.visible;
