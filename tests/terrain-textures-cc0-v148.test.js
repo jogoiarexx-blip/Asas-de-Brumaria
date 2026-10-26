@@ -44,13 +44,13 @@ test('terrain integration retains vertex coloring, accurate UV mapping and dynam
  assert.match(world,/uv\.push\(x\/14,z\/14\)/);
  assert.match(world,/geo\.setAttribute\('uv'/);
  assert.match(world,/new THREE\.MeshLambertMaterial\(\{vertexColors:true,side:THREE\.DoubleSide\}\)/);
- assert.match(world,/this\.terrainTextures\.register\(terrainKind\(island\),material\)/);
+ assert.match(world,/this\.terrainTextures\.register\(terrainKind\(island\),material,island\)/);
  assert.match(world,/this\.terrainTextures\.setQuality\(tier\)/);
  assert.match(manager,/THREE\.SRGBColorSpace:THREE\.NoColorSpace/);
  assert.match(manager,/THREE\.LinearMipmapLinearFilter/);
  assert.match(manager,/this\.serial/);
- assert.match(manager,/texture\?1\.65:1/);
- assert.match(manager,/job\.channel==='diff'&&job\.tier==='desktop'/);
+ assert.match(manager,/material\.color\.setScalar\(1\.65\)/);
+ assert.match(manager,/level==='desktop'/);
  assert.match(manager,/return quality==='quality'\?'desktop':'mobile'/);
  assert.match(manager,/Procedural fallback for missing/);
 });
