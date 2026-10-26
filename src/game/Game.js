@@ -590,6 +590,9 @@ export class Game {
     }
   }
   mountOrDismount(){
+    // Repeated E during the 3D transfer used to cancel/restart the animation,
+    // displace the rider and save a position halfway between saddle and ground.
+    if(this.hero._mountMotion||this.hero._dismountMotion)return;
     if(!this.dragon.riding){
       const distance=this.hero.group.position.distanceTo(this.dragon.group.position);
       if(distance>10.5){this.ui.toast('Aproxime-se do dragão para montar.');this.audio.play('error');return;}
