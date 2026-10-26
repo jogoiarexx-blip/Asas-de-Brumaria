@@ -6,6 +6,7 @@ import {cameraRelativeMove,shortestYawDelta} from '../game/cameraMovement.js';
 import {groundFollow,terrainLean} from '../utils/groundPhysics.js';
 import {HERO_GLB_URL,HERO_MODEL_FACING_YAW} from './heroAssetConfig.js';
 import {loadOptionalHeroGLB,updateOptionalHeroGLB} from './heroAssetLoader.js';
+import {mountTransitionPoint,MOUNT_TRANSITION_SECONDS,DISMOUNT_TRANSITION_SECONDS} from './mountTransition.js';
 
 export class Hero {
   constructor(scene,world,dragon) {
@@ -22,16 +23,52 @@ export class Hero {
     // concurrent loader calls never swap the meshes and skinned rigs twice.
     this.mountAnimationRemaining=0;this.dismountAnimationRemaining=0;
   }
-  setMounted(value){
+  setMounted(value,{animate=true,dismountTarget=null}={}){
     if(this.mounted!==value){
-      this.mountAnimationRemaining=value?.86:0;
-      this.dismountAnimationRemaining=value?0:.77;
+      this._mountMotion=null;this._dismountMotion=null;
+      this.mountAnimationRemaining=value?MOUNT_TRANSITION_SECONDS:0;
+      this.dismountAnimationRemaining=value?0:DISMOUNT_TRANSITION_SECONDS;
       if(value&&this.riderVisualReady){
         this.rider.rotation.x=0;this.rider.rotation.z=0;
+        if(animate){
+          // Character's on-foot origin is expressed in the dragon's visual space.
+          // The GLB remains the same size in either mode; only its position moves.
+          this.dragon.visual.updateWorldMatrix(true,false);
+          this.group.updateWorldMatrix(true,false);
+          const start=this.dragon.visual.worldToLocal(this.group.getWorldPosition(new THREE.Vector3()));
+          const end=this.rider.position.clone();
+          this._mountMotion={start,end,elapsed:0,duration:MOUNT_TRANSITION_SECONDS};
+          this.rider.position.copy(start);
+        }
+      }else if(!value&&animate&&this.riderVisualReady&&dismountTarget){
+        // Game has already certified the landing zone with safeDismountSpot.
+        // Animate the visible mesh while keeping the logical save position safe.
+        this.rider.updateWorldMatrix(true,false);
+        const start=this.rider.getWorldPosition(new THREE.Vector3());
+        const end=new THREE.Vector3(dismountTarget.x,dismountTarget.y,dismountTarget.z);
+        this._dismountMotion={start,end,elapsed:0,duration:DISMOUNT_TRANSITION_SECONDS};
+        this.group.position.copy(start);
       }
     }
     this.mounted=value;
     this.group.visible=!value;this.rider.visible=value;this.fallVelocity=0;
+  }
+  advanceMountMotion(dt){
+    const motion=this._mountMotion;
+    if(!motion)return;
+    motion.elapsed=Math.min(motion.duration,motion.elapsed+Math.max(0,dt));
+    const p=mountTransitionPoint(motion.start,motion.end,motion.elapsed,motion.duration);
+    this.rider.position.set(p.x,p.y,p.z);
+    if(p.done){this.rider.position.copy(motion.end);this._mountMotion=null;}
+  }
+  advanceDismountMotion(dt){
+    const motion=this._dismountMotion;
+    if(!motion)return false;
+    motion.elapsed=Math.min(motion.duration,motion.elapsed+Math.max(0,dt));
+    const p=mountTransitionPoint(motion.start,motion.end,motion.elapsed,motion.duration,{arc:.23});
+    this.group.position.set(p.x,p.y,p.z);
+    if(p.done){this.group.position.copy(motion.end);this._dismountMotion=null;}
+    return true;
   }
   animate(model,pose,dt,now,mounted=false){
     const {legs,arms,cape,body,head}=model.userData;
@@ -74,6 +111,7 @@ export class Hero {
   }
   update(dt,input,time){
     if(this.mounted){
+      this.advanceMountMotion(dt);
       this.moveSpeed=0;
       this.animate(this.rider,poseForHero(time,1,true,false),dt,time,true);
       // The GLB rider follows the mount's bank/pitch without changing hitboxes,
@@ -83,6 +121,15 @@ export class Hero {
         this.rider.rotation.x=THREE.MathUtils.damp(this.rider.rotation.x,
           THREE.MathUtils.clamp(-this.dragon.verticalVelocity*.0025,-.065,.065),6,dt);
       }
+      updateOptionalHeroGLB(this,dt);
+      return;
+    }
+    if(this._dismountMotion){
+      // Never let WASD break the exit animation or move the saved character
+      // before it has reached the obstacle-checked dismount destination.
+      this.advanceDismountMotion(dt);
+      this.moveSpeed=0;
+      this.animate(this.group,poseForHero(this.walkTime,0,false,false),dt,time);
       updateOptionalHeroGLB(this,dt);
       return;
     }
