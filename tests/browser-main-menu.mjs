@@ -72,7 +72,8 @@ try{
   await page.locator('#start-btn').click();
   await page.waitForFunction(()=>window.__menuQA?.started===true,null,{timeout:10000});
   assert.equal(await page.locator('#start-screen').isVisible(),false);
-  assert.equal(await page.locator('body').getAttribute('class')?.includes('menu-open')??false,false);
+  const bodyClass=await page.locator('body').getAttribute('class');
+  assert.equal(bodyClass?.includes('menu-open')??false,false);
   await page.waitForTimeout(400);
   const after=await page.evaluate(()=>({...window.__menuRenderProbe}));
   assert.ok(after.render>0&&after.world>0&&after.dragon>0,
