@@ -120,7 +120,10 @@ export class Game {
     this.dragonModelReady=this.speciesModels.select(this.progression.species);
     this.ui.connectStable(this);
     this.stablePreview=null;
-    if(this.savedData){document.getElementById('start-btn').firstChild.textContent='CONTINUAR AVENTURA ';document.getElementById('new-game-btn').classList.remove('hidden');}
+    if(this.savedData){
+      document.getElementById('start-btn-label').textContent='CONTINUAR AVENTURA';
+      document.getElementById('new-game-btn').classList.remove('hidden');
+    }
     document.getElementById('new-game-btn').addEventListener('click',()=>this.newGame());
     this.projectiles=[];this.projectilePool=[];this._projectileFrom=new THREE.Vector3();this._projectileTo=new THREE.Vector3();this._fireStart=new THREE.Vector3();this._aimBest=new THREE.Vector3();this.clock=new THREE.Clock();this.started=false;this.elapsed=0;this.fpsTime=0;this.frames=0;
     this.health=100;this.maxHealth=100;this.hurtImmunity=0;this.hitFlash=0;this.needsProjectileClear=false;
@@ -145,6 +148,10 @@ export class Game {
       if(document.hidden){this.cancelBenchmark('Teste interrompido: aba em segundo plano.');this.saveGame();}
     });
     document.getElementById('start-btn').addEventListener('click',()=>this.start());
+    document.getElementById('menu-settings-btn').addEventListener('click',()=>{
+      document.getElementById('gpu-panel').classList.remove('hidden');
+      document.getElementById('gpu-close').focus();
+    });
     this.ui.updateQuest(this.missions);this.updateExpeditionUI();
     this.renderer.domElement.addEventListener('webglcontextlost',event=>{
       event.preventDefault();this.webglLost=true;this.cancelBenchmark('Teste interrompido: contexto WebGL perdido.');
@@ -160,6 +167,14 @@ export class Game {
       try{if(!this.frameError)this.frame();}
       catch(error){this.handleFrameFailure(error);}
     });
+    // Both new and returning players can click only once the game is ready.
+    const play=document.getElementById('start-btn');
+    play.disabled=false;
+    const status=document.querySelector('#start-screen .menu-status');
+    status?.classList.add('ready');
+    document.getElementById('menu-load-status').textContent=this.savedData
+      ?'PARTIDA ENCONTRADA · PRONTO PARA CONTINUAR'
+      :'MUNDO PREPARADO · PRONTO PARA EXPLORAR';
   }
   handleFrameFailure(error){
     if(this.frameError)return;
@@ -297,7 +312,11 @@ export class Game {
     },{passive:false});
   }
   start(){
-    this.started=true;document.getElementById('start-screen').classList.add('hidden');
+    if(this.started)return;
+    this.started=true;
+    document.body.classList.remove('menu-open');
+    document.getElementById('start-screen').classList.add('hidden');
+    this.clock.getDelta();this.fpsTime=0;this.frames=0;
     this.audio.unlock();this.ui.toast(this.savedData?'Progresso recuperado! Aperte T para acessar o estábulo.':'Encontre sua Fúria da Noite. Pressione E para montar!',5);
     this.input.clearActions();
   }
@@ -897,7 +916,7 @@ export class Game {
     if(shouldSkipRendering({hidden:document.hidden,webglLost:this.webglLost})){
       this.fpsTime=0;this.frames=0;this.input.clearActions();return;
     }
-    const dt=Math.min(realDt,.05);this.elapsed+=dt;
+    const dt=Math.min(realDt,.05);
     this.input.update();
     // Time the same static frame at each graphics tier. Pause simulation,
     // AI, physics and saves during the brief measurement, preventing scene
@@ -927,7 +946,13 @@ export class Game {
       if(Math.abs(look.x)>.001||Math.abs(look.y)>.001)this.cameraOrbit.drag(look.x*210*dt,look.y*150*dt);
     }
     if(!this.started && (this.input.consume('start')||this.input.consume('e'))){this.start();}
-
+    // The illustrated start menu never ticks AI, physics, clouds, camera,
+    // material streaming or WebGL. Gamepad Start/keyboard E still work.
+    if(!this.started){
+      this.input.clearActions();
+      return;
+    }
+    this.elapsed+=dt;
     this.world.update(dt,this.elapsed);
     this.landmarks.update(this.elapsed,this.discovery);
     if(this.started){
