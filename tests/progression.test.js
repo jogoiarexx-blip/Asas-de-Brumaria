@@ -44,7 +44,7 @@ test('save normaliza dados malformados sem posições infinitas',()=>{
   const save=normalizeSave({version:1,mission:{stage:99,progress:99,crystals:[true],targets:[],hatchlings:[],enemies:[4,-9,2]},progression:{points:5},player:{x:Infinity,y:-10,z:999,health:0,energy:10000,mounted:true,airborne:true}});
   assert.equal(save.mission.stage,7);assert.equal(save.mission.progress,0);
   assert.deepEqual(save.mission.enemies,[3,0,2]);
-  assert.equal(save.player.x,8);assert.equal(save.player.z,420);assert.equal(save.player.health,1);assert.equal(save.player.energy,250);
+  assert.equal(save.player.x,8);assert.equal(save.player.z,640);assert.equal(save.player.health,1);assert.equal(save.player.energy,250);
   assert.equal(save.player.mounted,true);
   const partial=normalizeSave({version:1,mission:{stage:4,progress:1,enemies:[1.5,3,3]},progression:{}});
   assert.deepEqual(partial.mission.enemies,[1.5,3,3]);

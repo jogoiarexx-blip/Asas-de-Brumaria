@@ -1,9 +1,10 @@
+import {stretchPointOnIsland} from '../world/IslandLayout.js';
 // Regras independentes de WebGL: a amizade não pode render pontos duplicados.
 export const WILD_DRAGON_DEFS=Object.freeze([
   {id:'brasa',name:'FAÍSCA',species:'brasa',island:'Ilha das Cascatas',temperament:'corajoso',x:-169,z:-110,color:0xd7683b},
   {id:'raio',name:'ZÉFIRO',species:'raio',island:'Ilha do Farol',temperament:'curioso',x:157,z:97,color:0x87a9ff},
   {id:'nimbo',name:'NEBLINA',species:'nimbo',island:'Ilha da Névoa',temperament:'tímido',x:-108,z:144,color:0x65d8bd}
-]);
+].map(def=>{const [x,,z]=stretchPointOnIsland([def.x,0,def.z],def.island);return Object.freeze({...def,x,z});}));
 const ids=WILD_DRAGON_DEFS.map(d=>d.id);
 const BOND_TARGET=3;
 export const PET_COOLDOWN_SECONDS=1.8;

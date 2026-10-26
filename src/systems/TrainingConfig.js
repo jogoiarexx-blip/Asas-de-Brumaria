@@ -1,3 +1,4 @@
+import {stretchPointOnIsland} from '../world/IslandLayout.js';
 // Definições sem Three.js, testáveis sem renderização.
 export const CIRCUITS=Object.freeze({
   basic:{label:'DESAFIO DOS VENTOS',seconds:95,reward:1,minSpeed:0,
@@ -7,7 +8,9 @@ export const CIRCUITS=Object.freeze({
   // Fase extra de exploração: conecta as duas ilhas inéditas.
   // As sete balizas criam uma rota de longa distância, com tempo suficiente
   // para procurar as costas e pousar sem ultrapassar a física original.
-  frontier:{label:'TRAVESSIA DAS SETE ILHAS',seconds:165,reward:4,minSpeed:14,
-    checkpoints:[[90,42,-34],[215,42,-143],[332,38,-105],[185,43,52],
-      [-28,44,102],[-183,41,138],[-320,38,95]]}
+  frontier:{label:'TRAVESSIA DAS SETE ILHAS',seconds:210,reward:4,minSpeed:14,
+    checkpoints:[[90,42,-34],stretchPointOnIsland([215,42,-143],'Atol Esquecido'),
+      stretchPointOnIsland([332,38,-105],'Ilha das Cinzas'),stretchPointOnIsland([185,43,52],'Ilha do Farol'),
+      stretchPointOnIsland([-28,44,102],'Ilha da Névoa'),stretchPointOnIsland([-183,41,138],'Ilha da Névoa'),
+      stretchPointOnIsland([-320,38,95],'Arquipélago dos Cristais')]}
 });

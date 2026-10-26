@@ -62,7 +62,7 @@ export class World {
     sunOrb.position.set(-400,270,-520); scene.add(sunOrb);this.sunOrb=sunOrb;
     const waterTexture = this.makeWaterTexture();
     this.waterTexture=waterTexture;
-    const water = new THREE.Mesh(new THREE.PlaneGeometry(1800,1800),new THREE.MeshPhongMaterial({color:0x287da2,shininess:115,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.095,transparent:false}));
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(2200,2200),new THREE.MeshPhongMaterial({color:0x287da2,shininess:115,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.095,transparent:false}));
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();

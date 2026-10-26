@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {stretchPointOnIsland} from '../world/IslandLayout.js';
 import {limitedTurn,pursuitYaw,shortestAngle} from '../systems/combatMath.js';
 import {approach,clamp} from '../utils/math.js';
 import {actorVisualLevel,shouldAnimateActor,enemySimulationStep} from '../systems/ActorLOD.js';
@@ -56,7 +57,11 @@ export const ENEMY_SPAWNS=[
   {x:-67,y:39,z:-177,color:0x774e6d,accent:0xb35c8e},
   {x:200,y:46,z:24,color:0x703b37,accent:0xce7d58},
   {x:-153,y:43,z:130,color:0x504f77,accent:0x8886cd}
-];
+].map((enemy,i)=>{
+  const island=['Ilha das Cascatas','Ilha do Farol','Ilha da Névoa'][i];
+  const [x,y,z]=stretchPointOnIsland([enemy.x,enemy.y,enemy.z],island);
+  return {...enemy,x,y,z};
+});
 export class EnemyDragon {
   constructor(scene,world,data,index){
     this.world=world;this.index=index;
@@ -110,8 +115,8 @@ export class EnemyDragon {
     this.group.rotation.y=this.yaw;
     const desiredSpeed=this.state==='chase'?plan.speed:16;
     this.speed=approach(this.speed,desiredSpeed,dt*9);
-    origin.x=clamp(origin.x-Math.sin(this.yaw)*this.speed*dt,-398,398);
-    origin.z=clamp(origin.z-Math.cos(this.yaw)*this.speed*dt,-398,398);
+    origin.x=clamp(origin.x-Math.sin(this.yaw)*this.speed*dt,-610,610);
+    origin.z=clamp(origin.z-Math.cos(this.yaw)*this.speed*dt,-610,610);
     const floor=this.world.heightAt(origin.x,origin.z)+15;
     origin.y=THREE.MathUtils.damp(origin.y,Math.max(floor,clamp(destination.y,22,88)),1.25,dt);
     // AI, cooldowns, movement and fire remain active at full frequency.

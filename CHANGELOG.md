@@ -1,3 +1,14 @@
+## v1.4.22 — Arquipélago ampliado (distância +50%)
+
+- Distância entre centros das sete ilhas aumentada em 50%, sem modificar raios, relevos, texturas nem a posição da vila do Refúgio.
+- Posicionamento de missões, filhotes, cristais, alvos, inimigos e dragões selvagens acompanha a ilha de origem; as rotas de voo continuam acessíveis.
+- As regiões opcionais de Cinzas e Cristais reposicionam guardiões, fragmentos e balizas sem alterar seus identificadores de progresso.
+- Contratos e prova de travessia também seguem as novas coordenadas. A travessia das sete ilhas passa a permitir 210 segundos em vez de 165.
+- Minimap adapta a escala quando o objetivo está distante; plano da água expandido para 2200 unidades.
+- Limites de movimento das sentinelas e área válida do save aumentados para a nova área; migração única de coordenadas antigas mantém progresso e pontos de retorno da montanha.
+- Texturas por distância e preparação de GPU das revisões anteriores preservadas.
+- Regressões: 527 testes Node.js aprovados localmente, incluindo três testes novos de disposição geográfica, pontos de missão e migração de save.
+
 ## v1.4.21 — LOD de texturas por distância, com memória controlada
 
 - Cada ilha determina sua própria qualidade de textura pela distância da costa, independentemente de outras ilhas do mesmo bioma.

@@ -1,9 +1,10 @@
+import {stretchPointOnIsland} from '../world/IslandLayout.js';
 /** Repeatable village jobs. Status is persisted, but completed jobs reopen
  * when the *in-game* day advances. The main story never resets. */
 export const CONTRACTS=Object.freeze({
   correio:{title:'CORREIO DOS CÉUS',npc:'iara',reward:2,requiresMount:true,
     description:'Entregue três mensagens nos faróis luminosos e volte para Iara.',
-    points:[[103,35,43],[166,37,106],[-119,35,152]]},
+    points:[[103,35,43],stretchPointOnIsland([166,37,106],'Ilha do Farol'),stretchPointOnIsland([-119,35,152],'Ilha da Névoa')]},
   ervas:{title:'ERVAS DO REFÚGIO',npc:'lume',reward:1,requiresMount:false,
     description:'Encontre três plantas curativas a pé e volte para Lume.',
     points:[[36,0,22],[47,0,-15],[-45,0,15]]},
@@ -12,13 +13,13 @@ export const CONTRACTS=Object.freeze({
     points:[[-29,0,-39],[41,0,40],[-39,0,14]]},
   socorro:{title:'SUPRIMENTOS DE EMERGÊNCIA',npc:'nara',reward:2,requiresMount:true,
     description:'Leve três caixas de suprimentos às ilhas afastadas e retorne para Nara.',
-    points:[[-182,30,-123],[168,35,104],[196,32,-160]]},
+    points:[stretchPointOnIsland([-182,30,-123],'Ilha das Cascatas'),stretchPointOnIsland([168,35,104],'Ilha do Farol'),stretchPointOnIsland([196,32,-160],'Atol Esquecido')]},
   patrulha:{title:'VIGÍLIA DOS HORIZONTES',npc:'tavi',reward:2,requiresMount:true,
     description:'Sobrevoe três balizas de patrulha entre as ilhas e informe Tavi ao regressar.',
-    points:[[-115,42,79],[121,44,32],[174,38,-110]]},
+    points:[stretchPointOnIsland([-115,42,79],'Ilha da Névoa'),stretchPointOnIsland([121,44,32],'Ilha do Farol'),stretchPointOnIsland([174,38,-110],'Atol Esquecido')]},
   brasas:{title:'CHAMAS DOS FARÓIS',npc:'suri',reward:3,requiresMount:true,requiresFire:true,
     description:'Monte no dragão e acenda com FOGO as três balizas laranjas das ilhas. Volte para Suri.',
-    points:[[105,38,43],[-154,42,-105],[190,42,-115]]}
+    points:[[105,38,43],stretchPointOnIsland([-154,42,-105],'Ilha das Cascatas'),stretchPointOnIsland([190,42,-115],'Atol Esquecido')]}
 });
 const safeStatus=value=>['idle','active','ready','done'].includes(value)?value:'idle';
 const dayNumber=value=>Number.isSafeInteger(value)?Math.min(1000000,Math.max(1,value)):1;

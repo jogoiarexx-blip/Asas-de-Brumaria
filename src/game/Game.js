@@ -420,7 +420,7 @@ export class Game {
   saveGame(manual=false){
     if(!this.started&&!manual)return false;
     const p=this.dragon.group.position,h=this.hero._dismountMotion?.end??this.hero.group.position;
-    const payload={version:1,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
+    const payload={version:1,layoutVersion:2,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
       frontier:this.frontier.snapshot(),
       contracts:this.contracts.snapshot(),weather:this.weather.snapshot(),dayNight:this.dayNight.snapshot(),discoveries:this.discovery.snapshot(),
       wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),

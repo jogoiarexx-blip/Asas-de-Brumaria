@@ -1,18 +1,19 @@
+import {stretchMarkerOnIsland} from '../world/IslandLayout.js';
 // Two optional encounters, independent of the original seven missions.
 // Fixed identifiers preserve checkpoints even when visual assets are updated.
 export const FRONTIER_ZONES=Object.freeze([
   Object.freeze({
     id:'crystal',name:'Arquipélago dos Cristais',
-    guardian:'Guardião de Quartzo',x:-320,z:95,
+    guardian:'Guardião de Quartzo',x:-480,z:142.5,
     color:0x65e5fd,accent:0xa6ffff,reward:2,guardianReward:2,
     // Deliberately within the existing 54 m island radius.
-    markers:Object.freeze([[-340,83],[-315,119],[-294,89]])
+    markers:Object.freeze([[-340,83],[-315,119],[-294,89]].map(point=>Object.freeze(stretchMarkerOnIsland(point,'Arquipélago dos Cristais'))))
   }),
   Object.freeze({
     id:'ash',name:'Ilha das Cinzas',
-    guardian:'Sentinela de Basalto',x:332,z:-110,
+    guardian:'Sentinela de Basalto',x:498,z:-165,
     color:0xf7a77a,accent:0xffd59c,reward:3,guardianReward:2,
-    markers:Object.freeze([[309,-126],[357,-111],[333,-86]])
+    markers:Object.freeze([[309,-126],[357,-111],[333,-86]].map(point=>Object.freeze(stretchMarkerOnIsland(point,'Ilha das Cinzas'))))
   })
 ]);
 export function markerId(zone,index){return zone.id+':'+index;}

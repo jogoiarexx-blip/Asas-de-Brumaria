@@ -7,7 +7,7 @@ test('local frontier objective is hidden outside its own island radius',()=>{
  assert.equal(nearestFrontierObjective({x:8,z:7}),null);
  assert.equal(nearestFrontierObjective({x:Infinity,z:7}),null);
  assert.equal(nearestFrontierObjective(null),null);
- const near=nearestFrontierObjective({x:-320,z:95});
+ const near=nearestFrontierObjective({x:FRONTIER_ZONES[0].x,z:FRONTIER_ZONES[0].z});
  assert.equal(near.zone,'crystal');assert.equal(near.kind,'relic');
  assert.equal(near.label,'Fragmento de Quartzo');assert.equal(near.remaining,3);
 });
