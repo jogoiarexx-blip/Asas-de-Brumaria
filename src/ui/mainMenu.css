@@ -1,0 +1,251 @@
+/* REV150 — cinematic, poster-style title screen.
+   Pure CSS + a 14KB original SVG: no WebGL, textures, GLBs or fonts loaded for art. */
+body.menu-open #game,
+body.menu-open #hud,
+body.menu-open #benchmark-controls{visibility:hidden}
+#start-screen.modal-screen{
+  position:fixed;inset:0;z-index:20;display:block;overflow:auto;
+  padding:0;overscroll-behavior:contain;touch-action:pan-y;
+  background:#071622;color:#f8f1df;isolation:isolate
+}
+#start-screen .menu-art{
+  position:fixed;inset:0;z-index:-3;pointer-events:none;
+  background:#092330 url('../../assets/menu/brumaria-sky.svg') center 47%/cover no-repeat;
+  transform:scale(1.012);animation:menu-reveal 1.6s ease-out both
+}
+#start-screen::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-2;
+  background:linear-gradient(90deg,#041522fa 0%,#061925ee 21%,#09212bc4 42%,
+      #0c263140 72%,#061822a3 100%),
+    linear-gradient(0deg,#071621fb 0%,transparent 37%,#07192555 100%)
+}
+#start-screen::after{
+  content:"";position:fixed;inset:12px;z-index:-1;pointer-events:none;
+  border:1px solid rgba(228,204,145,.17)
+}
+#start-screen .menu-atmosphere{position:fixed;inset:0;pointer-events:none;z-index:-1}
+#start-screen .menu-atmosphere span{
+  position:absolute;width:4px;height:4px;border-radius:50%;background:#f4d8a2;
+  box-shadow:0 0 18px #dcb77d90;opacity:.4;animation:menu-firefly 6s ease-in-out infinite
+}
+#start-screen .menu-atmosphere span:nth-child(1){top:21%;left:72%}
+#start-screen .menu-atmosphere span:nth-child(2){top:69%;left:57%;animation-delay:2.2s}
+#start-screen .menu-atmosphere span:nth-child(3){top:41%;left:94%;animation-delay:3.4s}
+#start-screen .menu-atmosphere span:nth-child(4){top:78%;left:77%;animation-delay:1.5s}
+#start-screen .menu-frame{
+  position:relative;width:min(1700px,100%);min-height:100dvh;margin:auto;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:clamp(30px,4.2vw,65px) clamp(27px,6.4vw,110px)
+}
+#start-screen .menu-header,#start-screen .menu-footer{
+  display:flex;justify-content:space-between;align-items:center;gap:20px
+}
+#start-screen .menu-logo{display:flex;align-items:center;gap:13px}
+#start-screen .menu-logo-glyph{
+  font:normal 38px Georgia,serif;line-height:1;color:#e3c58a;
+  filter:drop-shadow(0 0 15px rgba(240,207,147,.35))
+}
+#start-screen .menu-logo strong,#start-screen .menu-logo small{display:block}
+#start-screen .menu-logo strong{
+  font:700 14px 'Cinzel',Georgia,serif;letter-spacing:2px;color:#f9efd4
+}
+#start-screen .menu-logo small{
+  font:750 8px 'Nunito Sans',sans-serif;letter-spacing:3.4px;color:#b1c7c1;margin-top:5px
+}
+#start-screen .menu-edition{
+  border:1px solid #d5cfb355;border-radius:999px;padding:10px 16px;
+  font-size:10px;font-weight:850;letter-spacing:2px;color:#dfe4d5;background:#112f3b6e
+}
+#start-screen .menu-edition>span{color:#e5c88a;margin-right:8px}
+#start-screen .menu-main{
+  display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.72fr);
+  align-items:end;gap:clamp(26px,5vw,85px);
+  padding:clamp(25px,6vh,65px) 0 clamp(35px,6vh,65px)
+}
+#start-screen .menu-hero{width:min(650px,100%);margin:0}
+#start-screen .menu-eyebrow{
+  display:flex;align-items:center;gap:15px;color:#e0c38c;
+  font-size:11px;font-weight:900;letter-spacing:3px
+}
+#start-screen .menu-eyebrow-line{height:1px;width:32px;background:#e0c38c}
+#start-screen h1{
+  font:700 clamp(64px,7.5vw,124px)/.99 'Cinzel',Georgia,serif;
+  letter-spacing:-2px;margin:25px 0 7px;color:#fcf4e4;
+  text-shadow:0 8px 48px rgba(0,10,17,.6)
+}
+#start-screen h1>span{
+  display:inline;font-size:.45em;font-weight:600;letter-spacing:0;
+  vertical-align:17%;color:#d4bb88
+}
+#start-screen h1 em{font-style:normal;color:#e6c88f}
+#start-screen .menu-rule{display:flex;align-items:center;gap:15px;color:#e1bf7e;margin:20px 0}
+#start-screen .menu-rule::before,#start-screen .menu-rule::after{
+  content:"";height:1px;background:linear-gradient(90deg,#dfc17ea8,transparent)
+}
+#start-screen .menu-rule::before{width:95px}
+#start-screen .menu-rule::after{width:38px;opacity:.5}
+#start-screen .menu-description{
+  font:400 clamp(15px,1.4vw,18px)/1.78 'Nunito Sans',sans-serif;
+  color:#d4e2da;max-width:500px;margin:0;text-shadow:0 2px 12px #051925
+}
+#start-screen .menu-tags{display:flex;gap:13px;margin-top:28px;flex-wrap:wrap}
+#start-screen .menu-tags span{
+  display:flex;align-items:center;gap:9px;color:#bdd7ce;
+  font-size:10px;letter-spacing:2.2px;font-weight:900
+}
+#start-screen .menu-tags span::before{content:"◆";font-size:7px;color:#dfbd78}
+#start-screen .menu-tags span+span{border-left:1px solid #b6cbbb50;padding-left:13px}
+#start-screen .menu-actions{display:flex;align-items:flex-start;flex-direction:column;gap:12px;margin-top:37px}
+#start-screen #start-btn.menu-play{
+  width:min(395px,100%);min-width:0;min-height:65px;padding:12px 20px 12px 15px;
+  border:1px solid #f5db9f;outline:none;border-radius:5px;
+  display:flex;align-items:center;justify-content:space-between;gap:17px;
+  background:linear-gradient(125deg,#ffe4a8,#d5aa66);
+  color:#142932;box-shadow:0 13px 40px #0007,0 2px 0 #fff8 inset;
+  cursor:pointer;font:900 13px 'Nunito Sans',sans-serif;letter-spacing:1.5px;
+  transition:transform .18s,box-shadow .18s,background .18s
+}
+#start-screen #start-btn.menu-play:hover:not(:disabled){
+  transform:translateY(-3px);box-shadow:0 20px 55px #0008,0 2px 0 #fff8 inset
+}
+#start-screen #start-btn.menu-play:active:not(:disabled){transform:translateY(0)}
+#start-screen #start-btn.menu-play:disabled{opacity:.75;cursor:progress}
+#start-screen .menu-play-symbol{
+  display:grid;place-items:center;flex-shrink:0;
+  width:37px;height:37px;border:1px solid #4d5f4e54;
+  border-radius:50%;font-size:14px;padding-left:2px
+}
+#start-screen .menu-play-arrow{font-size:25px;font-weight:400;line-height:1}
+#start-screen .menu-secondary-actions{display:flex;flex-wrap:wrap;gap:10px;max-width:450px}
+#start-screen .menu-outline-btn,#start-screen #new-game-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:150px;margin:0;padding:12px 15px;border-radius:5px;
+  border:1px solid #d8d2b26b;color:#ebebd9;background:#061c2ab5;
+  font:800 10px 'Nunito Sans',sans-serif;letter-spacing:1.45px;
+  cursor:pointer;transition:background .2s,border-color .2s
+}
+#start-screen .menu-outline-btn:hover,#start-screen #new-game-btn:hover{
+  background:#234b52bd;border-color:#f2d398
+}
+#start-screen .menu-status{display:flex;align-items:center;gap:10px;
+  font-size:10px;letter-spacing:1.2px;font-weight:750;color:#a4c1bc;margin-top:20px
+}
+#start-screen .menu-status-dot{
+  width:7px;height:7px;border-radius:50%;background:#edcc86;box-shadow:0 0 10px #e5c17e90;
+  animation:menu-pulse 1.8s ease-in-out infinite
+}
+#start-screen .menu-status.ready .menu-status-dot{background:#8de0b6;animation:none;box-shadow:0 0 10px #6fd1ab60}
+#start-screen .menu-preview{
+  position:relative;width:min(380px,100%);justify-self:end;
+  padding:31px 30px 26px;background:linear-gradient(145deg,#0b2b3ace,#061923dc);
+  border:1px solid #e2d5b13d;border-top:2px solid #e0bd7d;
+  border-radius:5px 5px 14px 5px;
+  box-shadow:0 24px 55px #00101ba6;backdrop-filter:blur(9px)
+}
+#start-screen .menu-preview::before{
+  content:"";position:absolute;top:0;right:23px;width:1px;height:55px;
+  background:linear-gradient(#d2ad76,transparent);opacity:.55
+}
+#start-screen .menu-preview-heading{display:flex;justify-content:space-between;align-items:center;
+  color:#e4c58c;font-weight:900;font-size:10px;letter-spacing:2.8px}
+#start-screen .menu-small-star{font:normal 21px Georgia,serif}
+#start-screen .menu-preview h2{
+  font:700 26px/1.33 'Cinzel',Georgia,serif;letter-spacing:.4px;
+  color:#fcf0d6;margin:25px 0 12px
+}
+#start-screen .menu-preview p{color:#bed6d0;line-height:1.75;font-size:13px;max-width:300px;margin:0 0 30px}
+#start-screen .menu-figures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  border-top:1px solid #adbea947;border-bottom:1px solid #adbea947;
+  padding:20px 0;gap:13px}
+#start-screen .menu-figures>div{display:flex;flex-direction:column;gap:6px}
+#start-screen .menu-figures strong{font:700 29px 'Cinzel',Georgia,serif;color:#f6dd9f}
+#start-screen .menu-figures span{color:#a4c6c1;font-size:8px;font-weight:800;line-height:1.6;letter-spacing:1px}
+#start-screen .menu-preview-foot{display:flex;align-items:center;gap:10px;
+  margin-top:19px;color:#aecbba;font:italic 12px Georgia,serif;letter-spacing:.4px}
+#start-screen .menu-preview-wave{font-size:27px;line-height:12px;color:#d5bd84}
+#start-screen .menu-footer{
+  border-top:1px solid #d9d6b439;padding-top:20px;
+  font-size:9px;font-weight:850;letter-spacing:1.55px;color:#b0c6be
+}
+#start-screen .menu-footer-left>span:first-child{color:#e5ca91;margin-right:8px}
+#start-screen .menu-footer .menu-divider{margin:0 8px;opacity:.5}
+#start-screen .menu-platforms span{color:#dfc28c;margin:0 5px}
+#start-screen .menu-controls{position:relative}
+#start-screen .menu-controls summary{list-style:none;cursor:pointer;padding:9px 0;
+  color:#e0d9ba;font-weight:900;outline-offset:4px}
+#start-screen .menu-controls summary::-webkit-details-marker{display:none}
+#start-screen .menu-controls summary span{display:inline-block;margin-left:6px;font-size:14px}
+#start-screen .menu-controls[open] summary span{transform:rotate(180deg)}
+#start-screen .menu-controls-panel{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
+  z-index:3;width:min(330px,84vw);padding:15px 18px;background:#071e2bef;
+  border:1px solid #edd59b75;box-shadow:0 12px 35px #0009;border-radius:8px}
+#start-screen .menu-controls-panel p{
+  font-size:11px;color:#e3ece5;line-height:1.6;letter-spacing:.1px;
+  margin:4px 0 9px
+}
+#start-screen button:focus-visible,#start-screen summary:focus-visible{
+  outline:3px solid #fce1a4;outline-offset:4px
+}
+@keyframes menu-pulse{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes menu-firefly{0%,100%{transform:translate3d(0,0,0);opacity:.1}
+  50%{transform:translate3d(-15px,-13px,0);opacity:.8}}
+@keyframes menu-reveal{from{opacity:.3;transform:scale(1.05)}
+  to{opacity:1;transform:scale(1.012)}}
+@media(max-width:1030px){
+ #start-screen .menu-frame{padding:29px clamp(24px,4vw,45px)}
+ #start-screen .menu-main{grid-template-columns:minmax(0,1fr) minmax(225px,.65fr);gap:30px}
+ #start-screen h1{font-size:clamp(53px,7vw,88px)}
+ #start-screen .menu-preview{padding:23px 20px}
+ #start-screen .menu-preview h2{font-size:20px}
+ #start-screen .menu-figures strong{font-size:22px}
+}
+@media(max-width:720px){
+ #start-screen::before{background:linear-gradient(90deg,#061825f2,#071f2ad0 75%,#09222f90),
+   linear-gradient(0deg,#061621,#071c2425 55%,#04172488)}
+ #start-screen .menu-art{background-position:58% center}
+ #start-screen .menu-frame{padding:24px 23px 20px;min-height:100dvh}
+ #start-screen .menu-header{gap:9px}
+ #start-screen .menu-logo strong{font-size:11px;letter-spacing:1.3px}
+ #start-screen .menu-logo small{font-size:7px;letter-spacing:1.5px}
+ #start-screen .menu-logo-glyph{font-size:28px}
+ #start-screen .menu-edition{font-size:8px;padding:8px 9px;letter-spacing:.6px;white-space:nowrap}
+ #start-screen .menu-main{display:flex;flex-direction:column;align-items:stretch;gap:23px;padding:29px 0 24px}
+ #start-screen h1{font-size:clamp(52px,11.3vw,76px);margin:16px 0}
+ #start-screen .menu-eyebrow{font-size:9px;letter-spacing:1.8px}
+ #start-screen .menu-description{font-size:14px;line-height:1.65;max-width:440px}
+ #start-screen .menu-rule{margin:9px 0 16px}
+ #start-screen .menu-tags{margin-top:16px}
+ #start-screen .menu-tags span{font-size:8px;letter-spacing:1.4px}
+ #start-screen .menu-actions{margin-top:25px;gap:10px}
+ #start-screen #start-btn.menu-play{width:min(395px,100%);min-height:57px;font-size:12px}
+ #start-screen .menu-preview{display:none}
+ #start-screen .menu-footer{flex-wrap:wrap;font-size:8px;gap:10px}
+ #start-screen .menu-footer-left{display:none}
+ #start-screen .menu-controls-panel{left:0;transform:none;bottom:35px}
+}
+@media(max-width:375px){
+ #start-screen .menu-frame{padding:18px 17px}
+ #start-screen .menu-edition{display:none}
+ #start-screen h1{font-size:46px}
+ #start-screen .menu-eyebrow{letter-spacing:1px}
+ #start-screen .menu-description{font-size:12px}
+ #start-screen .menu-tags{gap:7px}
+ #start-screen .menu-tags span+span{padding-left:7px}
+}
+@media(max-height:610px) and (min-width:721px){
+ #start-screen .menu-frame{padding-top:19px;padding-bottom:15px}
+ #start-screen .menu-main{padding:16px 0;align-items:center}
+ #start-screen h1{font-size:clamp(49px,7vh,80px);margin:10px 0}
+ #start-screen .menu-rule{margin:8px 0}
+ #start-screen .menu-tags{margin-top:12px}
+ #start-screen .menu-actions{margin-top:17px}
+ #start-screen .menu-preview{padding:16px 20px}
+ #start-screen .menu-preview h2{font-size:18px;margin:10px 0}
+ #start-screen .menu-preview p{margin-bottom:10px}
+ #start-screen .menu-figures{padding:9px 0}
+}
+@media(prefers-reduced-motion:reduce){
+ #start-screen *,#start-screen *::before,#start-screen *::after{
+   animation:none!important;transition:none!important
+ }
+}
