@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Input } from './Input.js';
 import {CameraOrbit,cameraOffset} from './CameraOrbit.js';
+import {chaseCameraYaw} from './cameraMovement.js';
 import {dragonCameraFraming} from './dragonCameraFraming.js';
 import {resolveCameraPosition} from '../utils/spatialSweep.js';
 import {safeDismountSpot} from '../utils/surfaces.js';
@@ -67,7 +68,7 @@ export class Game {
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0x9bdbef);this.scene.fog=new THREE.FogExp2(0xa3e2ed,.00165);
     this.camera=new THREE.PerspectiveCamera(67,innerWidth/innerHeight,.15,1600);
     this.input=new Input();this.audio=new AudioSystem();this.ui=new UI();
-    this.cameraOrbit=new CameraOrbit();this.bindOrbitControls();this.controllerWasConnected=false;
+    this.cameraOrbit=new CameraOrbit();this.cameraManualUntil=0;this.bindOrbitControls();this.controllerWasConnected=false;
     this.graphics=new GraphicsQuality(this.renderer,window.devicePixelRatio||1,matchMedia('(pointer:coarse)').matches,navigator.deviceMemory??0);
     this.graphics.resolutionScale=this.gpuPrefs.resolution;this.graphics.shadowsAllowed=this.gpuPrefs.shadows;this.graphics.apply();
     this.initGPUOptions();this.updateGraphicsLabel();
@@ -301,7 +302,8 @@ export class Game {
     });
     canvas.addEventListener('pointermove',event=>{
       if(pointerId!==event.pointerId||!this.started)return;
-      this.cameraOrbit.drag(event.clientX-lastX,event.clientY-lastY);
+      const dx=event.clientX-lastX,dy=event.clientY-lastY;
+      if(Math.abs(dx)+Math.abs(dy)>0){this.cameraOrbit.drag(dx,dy);this.cameraManualUntil=performance.now()+2600;}
       lastX=event.clientX;lastY=event.clientY;
     });
     const release=event=>{if(pointerId===event.pointerId)pointerId=null;};
@@ -688,8 +690,7 @@ export class Game {
     if(this.dragon.fireCooldown>0)return;
     const stats=this.progression.stats;
     if(this.dragon.energy<stats.fireCost){this.ui.toast('Energia insuficiente para lançar fogo.');return;}
-    // Only spend stamina when an actual projectile can be scheduled.
-    this.dragon.triggerAttack();
+    // The attack animation must never play before a real fire action succeeds.
     this.projectileMaterials.player.color.setHex(this.progression.species==='brasa'?0xff6542:this.progression.species==='raio'?0x9dd8ff:0xffb65a);
     const direction=this.dragon.forward();
     // Assistência de mira limitada ao campo frontal. Exige apontar para o alvo.
@@ -725,6 +726,7 @@ export class Game {
     if(bestFound)direction.lerp(this._aimBest,.86).normalize();
     const start=this.dragon.group.localToWorld(this._fireStart.set(0,.48,-4.4));
     if(this.spawnProjectile(start,direction,'player')){
+      this.dragon.triggerAttack();
       this.dragon.fireCooldown=stats.fireCooldown;this.dragon.energy-=stats.fireCost;
       this.effects.burst(start,'fire',7);
     }
@@ -867,9 +869,13 @@ export class Game {
   updateCamera(dt){
     const riding=this.dragon.riding;
     const focus=riding?this.dragon.group.position:this.hero.group.position;
-    // Orbit yaw is a WORLD heading, independent of the dragon's steering.
-    // Rotating the view changes where W moves without dragging the camera
-    // back toward the old movement direction every frame.
+    // Third-person chase: smoothly align to the dragon/hero heading after
+    // steering. A dragged mouse or right-stick camera gets a 2.6s override.
+    const actorYaw=riding?this.dragon.yaw:this.hero.group.rotation.y;
+    const actorMoving=riding?(this.dragon.airborne||this.dragon.speed>.6):this.hero.moveSpeed>.15;
+    if(actorMoving && performance.now()>=this.cameraManualUntil){
+      this.cameraOrbit.yaw=chaseCameraYaw(this.cameraOrbit.yaw,actorYaw,dt,riding?4.2:3.8);
+    }
     const yaw=this.cameraOrbit.yaw;
     const forwardX=-Math.sin(yaw),forwardZ=-Math.cos(yaw);
     const airborne=riding&&this.dragon.airborne;
@@ -946,7 +952,10 @@ export class Game {
     }
     if(this.input.lookAxis && this.started && this.ui.stable.classList.contains('hidden') && !this.ui.dialogueOpen){
       const look=this.input.lookAxis;
-      if(Math.abs(look.x)>.001||Math.abs(look.y)>.001)this.cameraOrbit.drag(look.x*210*dt,look.y*150*dt);
+      if(Math.abs(look.x)>.06||Math.abs(look.y)>.06){
+        this.cameraOrbit.drag(look.x*210*dt,look.y*150*dt);
+        this.cameraManualUntil=performance.now()+2600;
+      }
     }
     if(!this.started && (this.input.consume('start')||this.input.consume('e'))){this.start();}
     // The illustrated start menu never ticks AI, physics, clouds, camera,
@@ -974,7 +983,7 @@ export class Game {
       if(this.input.consume('c')){this.weather.cycle();this.saveGame();this.ui.toast(`Clima: ${this.weather.mode.label}`,3);}
       if(this.input.consume('g'))this.cycleGraphics();
       if(this.input.consume('f3'))this.toggleDiagnostics();
-      if(this.input.consume('v')){this.cameraOrbit.reset();this.cameraOrbit.yaw=this.dragon.riding?this.dragon.yaw:this.hero.group.rotation.y;this.ui.toast('Câmera atrás do personagem.');}
+      if(this.input.consume('v')){this.cameraOrbit.reset();this.cameraOrbit.yaw=this.dragon.riding?this.dragon.yaw:this.hero.group.rotation.y;this.cameraManualUntil=0;this.ui.toast('Câmera atrás do personagem.');}
       if(this.input.consume('n')){this.dayNight.jumpHours(3);if(this.contracts.syncDay(this.dayNight.state.day))this.villagers.refresh(this.contracts);this.saveGame();this.ui.toast(`Dia ${this.dayNight.state.day} · Hora ${this.dayNight.clock}`,3);}
       if(!this.ui.stable.classList.contains('hidden')){
         if(this.input.consume('menuup')||this.input.consume('menuleft'))this.navigateStable(-1);
@@ -989,7 +998,7 @@ export class Game {
         return;
       } else {
       if(this.input.consume('e')){if(this.ui.dialogueOpen)this.ui.hideDialogue();else if(!this.interactVillager()&&!this.interactWildDragon())this.mountOrDismount();}
-      if(this.input.consume('f'))this.fire();
+      if(!this.ui.dialogueOpen&&this.input.consume('f'))this.fire();
       if(!this.ui.dialogueOpen&&this.input.consume('q')){
         const sideways=this.input.axis('a','d');
         if(this.dragon.tryDodge(sideways)){
