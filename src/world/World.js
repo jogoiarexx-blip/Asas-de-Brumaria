@@ -4,6 +4,7 @@ import { seededRandom, clamp } from '../utils/math.js';
 import { obstacleCeiling } from '../utils/collision.js';
 import { surfaceHeightAt,flattenVillageGround } from '../utils/surfaces.js';
 import {terrainPalette} from './TerrainPalette.js';
+import {TerrainTextureManager,terrainKind} from './TerrainTextureManager.js';
 import {treeVariant,treeCrownPose} from './TreeVariation.js';
 import {applyIslandVisibility,shouldRefreshClouds,wrappedCloudX} from './VisibilityBudget.js';
 const brown = new THREE.MeshLambertMaterial({color:0x855b37});
@@ -29,6 +30,7 @@ export class World {
     this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
     this.biomeAccentsByIsland=new Map();
+    this.terrainTextures=new TerrainTextureManager();
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
     this.cloudWind=1;
@@ -76,7 +78,7 @@ export class World {
     texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(18,18);texture.colorSpace=THREE.SRGBColorSpace;return texture;
   }
   buildIsland(island) {
-    const N=84,R=27,pos=[],colors=[],indices=[];
+    const N=84,R=27,pos=[],colors=[],uv=[],indices=[];
     // Subtle patches and steep-edge rock blending add definition using existing vertex colors.
     for(let ring=0;ring<=R;ring++) {
       const rr=ring/R*island.r;
@@ -84,6 +86,9 @@ export class World {
         const a=j/N*Math.PI*2,x=island.x+Math.cos(a)*rr,z=island.z+Math.sin(a)*rr;
         const y=this.islandHeight(island,x,z);
         pos.push(x,y,z);
+        // Continuous world-space UVs avoid visible seams across rings;
+        // tile every ~14 metres rather than stretching one image per island.
+        uv.push(x/14,z/14);
         const dx=(this.islandHeight(island,x+1.1,z)-this.islandHeight(island,x-1.1,z))*.45;
         const dz=(this.islandHeight(island,x,z+1.1)-this.islandHeight(island,x,z-1.1))*.45;
         const slope=clamp(Math.hypot(dx,dz)/3.2,0,1);
@@ -95,8 +100,13 @@ export class World {
     for(let ring=0;ring<R;ring++)for(let j=0;j<N;j++){
       const a=ring*(N+1)+j,b=a+N+1;indices.push(a,a+1,b,a+1,b+1,b);
     }
-    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setIndex(indices);geo.computeVertexNormals();
-    const mesh=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));mesh.receiveShadow=true;sceneAdd(this.scene,mesh);
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();
+    // Vertex colors and the original mesh remain the fallback if assets fail.
+    // Texture layer has no additional geometry/draw calls.
+    const material=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
+    this.terrainTextures.register(terrainKind(island),material);
+    const mesh=new THREE.Mesh(geo,material);mesh.receiveShadow=true;sceneAdd(this.scene,mesh);
     const amount=island.r>75?89:35;
     for(let i=0;i<amount;i++) {
       const a=rand()*Math.PI*2,d=Math.sqrt(rand())*island.r*.8;
@@ -403,6 +413,7 @@ export class World {
     this.cloudElapsed=0;
   }
   setDetailQuality(tier){
+    this.terrainTextures.setQuality(tier);
     this.detailTier=tier;
     this.detailElapsed=Infinity;
     this.cloudElapsed=Infinity;
