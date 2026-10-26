@@ -75,7 +75,7 @@ export class Game {
     this.expedition=new ExpeditionProgress(this.savedData?.expedition);this.mountain=null;this.mountainLoading=null;this.inMountain=false;this.bossAttackState={elapsed:0,warned:false};this.bossAttackCount=0;this.bossWarnedPattern=null;this.bossCounterTime=0;this._bossVolleyVector=new THREE.Vector3();this._bossShotDirection=new THREE.Vector3();this._bossPredicted=new THREE.Vector3();this._groundContactPosition=new THREE.Vector3();this.gateLoadingWarned=false;this.gateWarned=false;this.mountainRetryUntil=0;
     this.portal=this.makeMountainPortal();
     this.progression=new Progression(this.savedData?.progression);this.autoSaveTime=0;this.lastSaveOk=null;
-    this.world=new World(this.scene);
+    this.world=new World(this.scene,this.renderer);
     this.weather=new Weather(this.scene,this.world,this.camera,this.savedData?.weather);
     this.dayNight=new DayNight(this.scene,this.world,this.savedData?.dayNight);
     this.discovery=new Discovery(this.savedData?.discoveries);
