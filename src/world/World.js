@@ -422,6 +422,8 @@ export class World {
     this.detailElapsed+=Math.max(0,dt);
     if(this.detailElapsed<.24)return;
     this.detailElapsed=0;
+    // Stream photograph textures using existing 0.24s island visibility cadence.
+    this.terrainTextures.updateFocus(observer,ISLANDS);
     const state=applyIslandVisibility(observer,this.detailTier,ISLANDS,this.foliageByIsland,this.grassByIsland);
     for(const island of ISLANDS){
       const bloom=this.flowersByIsland.get(island.name);
