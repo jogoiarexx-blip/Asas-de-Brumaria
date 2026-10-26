@@ -210,3 +210,11 @@ body:has(#controller-status.connected) .gamepad-help{opacity:.92}
  #hud .status-card .stat-head{font-size:8px}#hud .stable-toggle{right:8px;top:195px;bottom:auto;padding:7px}
 }
 @media(max-height:560px) and (orientation:landscape){#hud .bottom-hud{bottom:69px}#hud .status-card{width:166px}#hud .stable-toggle{top:155px}}
+
+/* Graphics startup progress stays inside the 2D menu; 3D simulation is paused. */
+.graphics-preparation{margin-top:15px;padding:13px 14px;border-radius:12px;border:1px solid #8ccfc088;background:#061e2fc9;color:#d5efe8;max-width:400px}
+.graphics-preparation.hidden{display:none!important}
+.graphics-preparation-heading{display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;color:#f0d6a0}
+.graphics-preparation-track{margin-top:9px;overflow:hidden;height:8px;border-radius:12px;background:#1a4953}
+#graphics-preparation-bar{display:block;height:100%;width:0;background:linear-gradient(90deg,#76bfaf,#f0d6a0);border-radius:12px;transition:width .17s ease}
+.graphics-preparation p{font-size:11px;margin:9px 0 5px}.graphics-preparation small{color:#9ed1c6;font-size:10px}
