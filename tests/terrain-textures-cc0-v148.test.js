@@ -49,8 +49,8 @@ test('terrain integration retains vertex coloring, accurate UV mapping and dynam
  assert.match(manager,/THREE\.SRGBColorSpace:THREE\.NoColorSpace/);
  assert.match(manager,/THREE\.LinearMipmapLinearFilter/);
  assert.match(manager,/this\.serial/);
- assert.match(manager,/base\?1\.65:1/);
- assert.match(manager,/tier==='desktop'\?await this\.get\(kind,'normal',tier\):null/);
+ assert.match(manager,/texture\?1\.65:1/);
+ assert.match(manager,/job\.channel==='diff'&&job\.tier==='desktop'/);
  assert.match(manager,/return quality==='quality'\?'desktop':'mobile'/);
  assert.match(manager,/Procedural fallback for missing/);
 });
