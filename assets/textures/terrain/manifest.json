@@ -1,0 +1,278 @@
+{
+  "source": "Poly Haven",
+  "license": "CC0-1.0",
+  "license_url": "https://polyhaven.com/license",
+  "importer": "tools/import_polyhaven_textures.py",
+  "materials": {
+    "meadow": {
+      "asset": "forrest_ground_01",
+      "page": "https://polyhaven.com/a/forrest_ground_01",
+      "channels": {
+        "diff": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/forrest_ground_01/forrest_ground_01_diff_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 537632,
+              "sha256": "1451ef85b7f907a198d6bf15aac4d55ab59c9fac1c0d8e07b1a9afa7d6d7f185",
+              "filename": "meadow_diff_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1794482,
+              "sha256": "1c0a4eec62b539d0188e45b1788bf887a27b8d7cbfbc4a280d47c0a9504523c3",
+              "filename": "meadow_diff_desktop.webp"
+            }
+          }
+        },
+        "normal": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/forrest_ground_01/forrest_ground_01_nor_gl_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 751116,
+              "sha256": "6d3fd607ede5d58d56e088499f46ab2862c4067e7702a5a35d708df556462b06",
+              "filename": "meadow_normal_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 2807828,
+              "sha256": "387e5f7d76b703404d47197cb7e146cab13c3e959c4ad8d48bb8cbb7562c08fe",
+              "filename": "meadow_normal_desktop.webp"
+            }
+          }
+        }
+      }
+    },
+    "beach": {
+      "asset": "coast_sand_02",
+      "page": "https://polyhaven.com/a/coast_sand_02",
+      "channels": {
+        "diff": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/coast_sand_02/coast_sand_02_diff_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 402576,
+              "sha256": "ad913bae64cc193ff0b848ac710c2cb4f33fc5b9a0c2eeb3e28daf16b578f8b3",
+              "filename": "beach_diff_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1379442,
+              "sha256": "981926aea5c084b86413a8090eee87c02a83e376d9f83a2d6384c200661dacea",
+              "filename": "beach_diff_desktop.webp"
+            }
+          }
+        },
+        "normal": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/coast_sand_02/coast_sand_02_nor_gl_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 507076,
+              "sha256": "ab1d77482bebdbd0018077fd21b6388a1b328daab6741766bf0bad190fc9fedb",
+              "filename": "beach_normal_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1997376,
+              "sha256": "5a8a5010a40f68bcd4926d663e26063a4f8c79e265b3f780723c20944aa8814c",
+              "filename": "beach_normal_desktop.webp"
+            }
+          }
+        }
+      }
+    },
+    "stone": {
+      "asset": "rocky_terrain_02",
+      "page": "https://polyhaven.com/a/rocky_terrain_02",
+      "channels": {
+        "diff": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocky_terrain_02/rocky_terrain_02_diff_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 300384,
+              "sha256": "544af3cdfab1583ae2635c3b525d604c18f1970ea79401c214813143c35e1b20",
+              "filename": "stone_diff_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1107128,
+              "sha256": "9cd46b5b8ec443c228be6b9f3e5e9937c1f730a4993fd2d2f324a360e2b1ae68",
+              "filename": "stone_diff_desktop.webp"
+            }
+          }
+        },
+        "normal": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocky_terrain_02/rocky_terrain_02_nor_gl_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 464976,
+              "sha256": "409b67b1f5a34016c3b7262f5fea5bc29aa6d4611c30d28d49683f29a50802d1",
+              "filename": "stone_normal_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1914414,
+              "sha256": "8acd11015a2b0cd23a1e3e2cbc5a1fe65ddd0f86edd16e39c822a8a835391d83",
+              "filename": "stone_normal_desktop.webp"
+            }
+          }
+        }
+      }
+    },
+    "ash": {
+      "asset": "dark_rock",
+      "page": "https://polyhaven.com/a/dark_rock",
+      "channels": {
+        "diff": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/dark_rock/dark_rock_diff_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 99846,
+              "sha256": "074fdef134508a508dcd657109319873a77d6aba50bd67b1477287e11e5e7049",
+              "filename": "ash_diff_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 430640,
+              "sha256": "32ba38904babb17c4cf951d20f41b06fcceaeb1240e19c337fc507c5b34b343a",
+              "filename": "ash_diff_desktop.webp"
+            }
+          }
+        },
+        "normal": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/dark_rock/dark_rock_nor_gl_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 453086,
+              "sha256": "ff1be58ee959267b2e8a6e06152dc10484defa9b29a936186277988848442a35",
+              "filename": "ash_normal_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1580348,
+              "sha256": "18ea47327b5c99acca86dda17550c5dd7321a3862be96dfa099c71fe6a739b45",
+              "filename": "ash_normal_desktop.webp"
+            }
+          }
+        }
+      }
+    },
+    "crystal": {
+      "asset": "rocks_ground_06",
+      "page": "https://polyhaven.com/a/rocks_ground_06",
+      "channels": {
+        "diff": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocks_ground_06/rocks_ground_06_diff_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 494056,
+              "sha256": "b5fd944152e323c7dafd1638c32ee770ebfeb786d09c306d3966d5e6eec28b4d",
+              "filename": "crystal_diff_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 1992652,
+              "sha256": "4c793c8d4f9cccbf3287d5d28952a64204c7fe9faf654213caafe93e421ec94e",
+              "filename": "crystal_diff_desktop.webp"
+            }
+          }
+        },
+        "normal": {
+          "source_resolution": "2k",
+          "source_url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocks_ground_06/rocks_ground_06_nor_gl_2k.jpg",
+          "variants": {
+            "mobile": {
+              "size": [
+                1024,
+                1024
+              ],
+              "bytes": 623912,
+              "sha256": "b048cdae4618bbfd18afa0fdfe3b4957c5b217ecf669eab8ba222ab55ee1eac6",
+              "filename": "crystal_normal_mobile.webp"
+            },
+            "desktop": {
+              "size": [
+                2048,
+                2048
+              ],
+              "bytes": 2454020,
+              "sha256": "f0c46752ce02abe07dbd7200e8596eed847a882f550daf5643d26af8d25c69a2",
+              "filename": "crystal_normal_desktop.webp"
+            }
+          }
+        }
+      }
+    }
+  }
+}
