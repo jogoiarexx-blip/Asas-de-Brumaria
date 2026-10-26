@@ -40,3 +40,36 @@ export function frontierClaimable(dragon,position,radius=8.5){
  if(!p||!position)return false;
  return Math.hypot(p.x-position.x,p.y-position.y,p.z-position.z)<=radius;
 }
+
+/** Optional local guidance. It never takes over story navigation outside of
+ * the player's currently visited frontier island, and ignores completed goals.
+ * Works with snapshots, so it does not depend on Three.js or renderer state.
+ */
+export function nearestFrontierObjective(position,{found=[],defeated=[],
+  combatUnlocked=false,radius=125}={}){
+ if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.z))return null;
+ const foundSet=found instanceof Set?found:new Set(found);
+ const defeatedSet=defeated instanceof Set?defeated:new Set(defeated);
+ let selected=null;
+ let nearestZoneDistance=Infinity;
+ for(const zone of FRONTIER_ZONES){
+  const distance=Math.hypot(position.x-zone.x,position.z-zone.z);
+  if(distance>radius||distance>=nearestZoneDistance)continue;
+  let candidate=null,bestDistance=Infinity;
+  for(let i=0;i<zone.markers.length;i++){
+   const id=markerId(zone,i);
+   if(foundSet.has(id))continue;
+   const [x,z]=zone.markers[i];
+   const d=Math.hypot(position.x-x,position.z-z);
+   if(d<bestDistance){bestDistance=d;candidate={id,kind:'relic',x,z,
+     zone:zone.id,name:zone.name,label:zone.id==='crystal'?'Fragmento de Quartzo':'Brasa Antiga',
+     remaining:zone.markers.filter((_,j)=>!foundSet.has(markerId(zone,j))).length};}
+  }
+  if(!candidate&&combatUnlocked&&!defeatedSet.has(zone.id)){
+   candidate={id:zone.id+':guardian',kind:'guardian',x:zone.x+4,z:zone.z-7,
+     zone:zone.id,name:zone.name,label:zone.guardian,remaining:1};
+  }
+  if(candidate){selected=candidate;nearestZoneDistance=distance;}
+ }
+ return selected;
+}
