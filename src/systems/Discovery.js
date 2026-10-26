@@ -1,9 +1,9 @@
 import { ISLANDS } from '../world/config.js';
 export const LANDMARKS=Object.freeze(ISLANDS.map((island,i)=>Object.freeze({
-  id:['refugio','cascatas','farol','nevoa','atol'][i],
-  name:['Pedra dos Domadores','Fonte das Cascatas','Antigo Farol','Véu da Névoa','Obelisco Esquecido'][i],
+  id:['refugio','cascatas','farol','nevoa','atol','cristais','cinzas'][i],
+  name:['Pedra dos Domadores','Fonte das Cascatas','Antigo Farol','Véu da Névoa','Obelisco Esquecido','Coração de Quartzo','Trono das Cinzas'][i],
   island:island.name,
-  x:island.x+[42,7,-9,4,0][i],z:island.z+[24,-8,3,0,0][i]
+  x:island.x+[42,7,-9,4,0,4,-6][i],z:island.z+[24,-8,3,0,0,-6,4][i]
 })));
 export function normalizeDiscoveries(data){const found=Array.isArray(data?.found)?data.found:[];
   return LANDMARKS.map(m=>found.includes(m.id));
