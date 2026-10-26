@@ -18,8 +18,8 @@ test('cada monumento cria colisores reais para base e coluna',()=>{
   assert.ok(shapes[1].top>=sample.ground+9.55);
 });
 
-test('os cinco monumentos usam colisores na criação do cenário',()=>{
-  assert.equal(LANDMARKS.length,5);
+test('os sete monumentos usam colisores na criação do cenário',()=>{
+  assert.equal(LANDMARKS.length,7);
   const source=readFileSync(new URL('../src/world/Landmarks.js',import.meta.url),'utf8');
   assert.match(source,/landmarkCollisionVolumes/);
   assert.match(source,/world\.addObstacle\(/);
