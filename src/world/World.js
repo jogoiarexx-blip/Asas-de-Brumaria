@@ -30,7 +30,7 @@ export class World {
     this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
     this.biomeAccentsByIsland=new Map();
-    this.terrainTextures=new TerrainTextureManager();
+    this.terrainTextures=new TerrainTextureManager(renderer);
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
     this.cloudWind=1;
