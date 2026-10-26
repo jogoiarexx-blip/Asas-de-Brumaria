@@ -249,6 +249,12 @@ export class Game {
       visibleIslands:this.world.visibleIslandCount,totalIslands:ISLANDS.length,
       actorsVisible:this.actorStats.visible,actorsLimited:this.actorStats.limited,
       actorsProxied:this.actorStats.proxied??0});
+    const textures=this.world.terrainTextures;
+    if(textures){
+      const q=textures.stats;
+      document.getElementById('performance-panel').textContent+=
+        `\nTEXTURAS CC0 · ${textures.loading.size} mapas ativos · ${textures.queue.length+(textures.busy?1:0)} em fila · ${q.requests} downloads · ${q.uploads} uploads ociosos · ${q.evictions} liberações`;
+    }
   }
   updateActorDetail(){
     const observer=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
