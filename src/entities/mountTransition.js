@@ -8,6 +8,10 @@ export const DISMOUNT_TRANSITION_SECONDS=.77;
 export function mountTransitionPoint(start,end,elapsed,duration,{arc=.16}={}){
   const safeTime=Number.isFinite(elapsed)?elapsed:duration;
   const t=clamp(duration>0?safeTime/duration:1,0,1);
+  // Exact endpoints are essential for replay, saves, and stable grounding.
+  // Floating-point interpolation otherwise produces e.g. -0.3999999999.
+  if(t<=0)return {...start,done:false,progress:0};
+  if(t>=1)return {...end,done:true,progress:1};
   // Smoothstep gives zero velocity at either end, avoiding a visible snap.
   const u=t*t*(3-2*t);
   const lift=arc*Math.sin(Math.PI*u);
