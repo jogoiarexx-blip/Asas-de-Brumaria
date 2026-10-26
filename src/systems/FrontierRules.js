@@ -34,9 +34,9 @@ export function frontierVisible(observer,zone,wasVisible=false){
  const radius=205+(wasVisible?25:0);
  return dx*dx+dz*dz<=radius*radius;
 }
-export function frontierClaimable(dragon,position,marker,radius=8.5){
+export function frontierClaimable(dragon,position,radius=8.5){
  if(!dragon?.riding||!dragon?.airborne)return false;
  const p=dragon.group?.position;
- if(!p||!position||!marker)return false;
+ if(!p||!position)return false;
  return Math.hypot(p.x-position.x,p.y-position.y,p.z-position.z)<=radius;
 }
