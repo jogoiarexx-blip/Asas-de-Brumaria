@@ -25,9 +25,9 @@ test('save climático inválido é sanitizado e estado válido preservado',()=>{
   assert.deepEqual(normalizeWeather({mode:'unknown',elapsed:Infinity}),{mode:'clear',elapsed:0});
   assert.deepEqual(normalizeWeather({mode:'storm',elapsed:23}),{mode:'storm',elapsed:23});
 });
-test('cinco marcos de exploração têm coordenadas, ids e nomes únicos',()=>{
-  assert.equal(LANDMARKS.length,5);
-  assert.equal(new Set(LANDMARKS.map(x=>x.id)).size,5);
+test('sete marcos de exploração têm coordenadas, ids e nomes únicos',()=>{
+  assert.equal(LANDMARKS.length,7);
+  assert.equal(new Set(LANDMARKS.map(x=>x.id)).size,7);
   assert.ok(LANDMARKS.every(x=>Number.isFinite(x.x)&&Number.isFinite(x.z)&&x.name.length>3));
 });
 test('descobertas concedem uma única conclusão e rejeitam índices inválidos',()=>{
