@@ -34,7 +34,7 @@ try{
    };
    manager.setQuality('quality');
    await settle();
-   const blankUntilIdle=meadow.map===null&&uploads.length===0;
+   const blankUntilIdle=meadow.map===manager.placeholder&&uploads.length===0;
    await drain();
    const full={diff:meadow.map?.image.width,
      normal:meadow.normalMap?.image.width,uploadCount:uploads.length};
