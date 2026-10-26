@@ -34,6 +34,7 @@ import {DayNight} from '../systems/DayNight.js';
 import {StablePreview} from '../ui/StablePreview.js';
 import {GraphicsQuality} from '../systems/GraphicsQuality.js';
 import {GraphicsBenchmark,formatBenchmark} from '../systems/GraphicsBenchmark.js';
+import {GraphicsWarmup} from '../systems/GraphicsWarmup.js';
 import {performanceSnapshot,shouldSkipRendering} from '../systems/PerformanceDiagnostics.js';
 import {sceneActorStats} from '../systems/ActorLOD.js';
 import {projectileLimit} from '../systems/PerformanceBudget.js';
@@ -126,7 +127,7 @@ export class Game {
       document.getElementById('new-game-btn').classList.remove('hidden');
     }
     document.getElementById('new-game-btn').addEventListener('click',()=>this.newGame());
-    this.projectiles=[];this.projectilePool=[];this._projectileFrom=new THREE.Vector3();this._projectileTo=new THREE.Vector3();this._fireStart=new THREE.Vector3();this._aimBest=new THREE.Vector3();this.clock=new THREE.Clock();this.started=false;this.elapsed=0;this.fpsTime=0;this.frames=0;
+    this.projectiles=[];this.projectilePool=[];this._projectileFrom=new THREE.Vector3();this._projectileTo=new THREE.Vector3();this._fireStart=new THREE.Vector3();this._aimBest=new THREE.Vector3();this.clock=new THREE.Clock();this.started=false;this.preparing=false;this.elapsed=0;this.fpsTime=0;this.frames=0;
     this.health=100;this.maxHealth=100;this.hurtImmunity=0;this.hitFlash=0;this.needsProjectileClear=false;
     if(this.savedData)this.restoreSave(this.savedData);
     this.projectileGeometry=new THREE.IcosahedronGeometry(.9,1);
@@ -314,13 +315,56 @@ export class Game {
     },{passive:false});
   }
   start(){
-    if(this.started)return;
-    this.started=true;
-    document.body.classList.remove('menu-open');
-    document.getElementById('start-screen').classList.add('hidden');
-    this.clock.getDelta();this.fpsTime=0;this.frames=0;
-    this.audio.unlock();this.ui.toast(this.savedData?'Progresso recuperado! Aperte T para acessar o estábulo.':'Encontre sua Fúria da Noite. Pressione E para montar!',5);
-    this.input.clearActions();
+    if(this.started||this.preparing)return;
+    this.preparing=true;
+    // AudioContext must be unlocked inside the user's click, not after awaits.
+    this.audio.unlock();
+    const button=document.getElementById('start-btn');button.disabled=true;
+    document.getElementById('start-btn-label').textContent='PREPARANDO GRÁFICOS';
+    const panel=document.getElementById('graphics-preparation');
+    const bar=document.getElementById('graphics-preparation-bar');
+    const label=document.getElementById('graphics-preparation-label');
+    const count=document.getElementById('graphics-preparation-percent');
+    panel.classList.remove('hidden');
+    const progress=({percent,label:message})=>{
+      bar.style.width=percent+'%';count.textContent=percent+'%';label.textContent=message;
+    };
+    const prep=new GraphicsWarmup(this.renderer,this.scene,this.camera,{onProgress:progress});
+    this.graphicsPreparation=(async()=>{
+      progress({percent:2,label:'Carregando modelo principal do dragão…'});
+      // The official GLB loads independently of the menu. Include its actual
+      // materials before scanning the scene, or the first ride may still hitch.
+      try{await Promise.race([this.dragonModelReady,new Promise(resolve=>setTimeout(resolve,9500))]);}
+      catch(error){console.warn('[GPU warmup] Modelo do dragão indisponível:',error);}
+      // Reserve inactive guardian shaders now rather than when an island is
+      // approached. Spawn state remains unchanged; AI only runs after Play.
+      try{
+        for(const marker of this.frontier.markers.values())
+          this.frontier.ensureGuardian(marker.zone);
+      }catch(error){console.warn('[GPU warmup] Guardiões opcionais:',error);}
+      // TerrainTextureManager already serializes 1K/2K uploads via idle tasks.
+      // Trigger its existing stream for the starting region; do not replace
+      // higher-resolution textures by low-resolution stand-ins.
+      const focus=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
+      this.world.terrainTextures.updateFocus(focus,ISLANDS);
+      const report=await prep.run(this);
+      if(report.failures.length)console.warn('[GPU warmup] Preparação parcial:',report.failures);
+      return report;
+    })().catch(error=>{
+      console.warn('Falha parcial na preparação gráfica; renderer normal continua disponível:',error);
+      progress({percent:100,label:'Concluindo inicialização…'});
+      return {failures:[String(error)]};
+    }).then(report=>{
+      this.preparing=false;this.started=true;
+      this.graphicsPreparationReport=report;
+      panel.classList.add('hidden');
+      document.body.classList.remove('menu-open');
+      document.getElementById('start-screen').classList.add('hidden');
+      this.clock.getDelta();this.fpsTime=0;this.frames=0;
+      this.ui.toast(this.savedData?'Progresso recuperado! Aperte T para acessar o estábulo.':'Encontre sua Fúria da Noite. Pressione E para montar!',5);
+      this.input.clearActions();
+    });
+    return this.graphicsPreparation;
   }
   newGame(){
     if(!window.confirm('Apagar o progresso salvo e iniciar uma nova aventura?'))return;
