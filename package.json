@@ -1,6 +1,6 @@
 {
   "name": "asas-de-brumaria",
-  "version": "1.4.18",
+  "version": "1.4.19",
   "private": true,
   "type": "module",
   "description": "Protótipo 3D de aventura, montaria e missões com dragões feito em Three.js",
