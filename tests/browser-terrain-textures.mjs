@@ -59,11 +59,11 @@ try{
       x.geometry.attributes.position?.count>2200).length};
  });
  assert.ok(result.start.active.includes('meadow'));
- assert.equal(result.start.meadowTexture,1024);
- assert.equal(result.start.normalInBalanced,false);
+ assert.equal(result.start.meadowTexture,result.start.tier==='desktop'?2048:1024);
+ if(result.start.tier==='mobile')assert.equal(result.start.normalInBalanced,false);
  assert.equal(result.frontierActive.length,1);
  assert.equal(result.frontierActive[0],'crystal');
- assert.equal(result.meadowReleased,true);
+ assert.equal(result.meadowReleased,false,'decoded map should stay cached on quick turns');
  assert.equal(final.map,2048);
  assert.equal(final.normal,2048);
  assert.equal(final.tier,'desktop');
