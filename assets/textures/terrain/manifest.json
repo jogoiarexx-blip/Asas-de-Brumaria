@@ -274,5 +274,55 @@
         }
       }
     }
+  },
+  "distance_lod": {
+    "description": "512px distant-island diffuse previews derived from the CC0 mobile maps; original 1024px and 2048px remain unchanged",
+    "variants": {
+      "meadow": {
+        "filename": "meadow_diff_low.webp",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 88894,
+        "sha256": "b143ce5b04918bae3d6dbb3d67c389c6131595a2920f5223e8ab24f7acf6295e"
+      },
+      "beach": {
+        "filename": "beach_diff_low.webp",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 57360,
+        "sha256": "675535673402414b3f768e996244855a16158efc61194d5b6fca91c2f7324b61"
+      },
+      "stone": {
+        "filename": "stone_diff_low.webp",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 40564,
+        "sha256": "1bf6fb9371b5504d930f24e0164a276232ec9afa4f67a704aeb5c5b10422ccbb"
+      },
+      "ash": {
+        "filename": "ash_diff_low.webp",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 11834,
+        "sha256": "7d71187c5d0b1fa28071027f2d11fd1e3906c2b6cce83cc77daa448e7cd5ef92"
+      },
+      "crystal": {
+        "filename": "crystal_diff_low.webp",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 77978,
+        "sha256": "a392886f00b500d59885349361c84dc096a12ef713d1fe650ec285a603d80b75"
+      }
+    }
   }
 }
