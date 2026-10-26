@@ -1,3 +1,10 @@
+## v1.4.19 — câmera de perseguição, HUD compacto e disparo intencional
+
+- A câmera acompanha suavemente a direção do dragão montado ou do personagem ao caminhar, sem ultrapassar ±180°. Arraste do mouse e analógico direito têm prioridade temporária para explorar os arredores; V realinha atrás do personagem.
+- Interface de jogo compacta: missão mostra objetivo curto com detalhes sob demanda; minimapa reduzido; relógio e modo permanecem visíveis, enquanto gráficos/GPU/FPS/clima/controles ficam no botão ☰ MENU. Estábulo e barras de energia/vida permanecem acessíveis. Informações de diagnóstico e mensagens extensas não ocupam o centro do voo.
+- Animação de ataque somente após disparo real autorizado; diálogo não admite tecla F como combate, teclas são soltas se a página perder visibilidade. GLBs sem Idle nunca usam Attack/Hurt como animação padrão.
+- Testes regressivos adicionados para perseguição angular, animação de ataque e controles básicos do HUD.
+
 ## v1.4.3 — Novo contrato de fogo e flores instanciadas
 
 - Novo contrato repetível de Suri: Chamas dos Faróis, três alvos atingidos com o sopro, +3 pontos ao entregar.
