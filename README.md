@@ -830,3 +830,12 @@ Os biomas **Arquipélago dos Cristais** e **Ilha das Cinzas** agora têm missõe
 Depois que a campanha desbloqueia o combate aéreo (a partir da missão 4, com estágio interno 3), as ilhas são defendidas pelo **Guardião de Quartzo** e pela **Sentinela de Basalto**. Cada um tem 4 pontos de resistência, patrulha a própria ilha e concede **+2 pontos de treinamento** uma única vez quando derrotado. Os inimigos existentes da história continuam separados e inalterados. As versões antigas de salvamento são convertidas sem reiniciar as missões.
 
 **Desempenho:** cada ilha nova utiliza dois grupos de objetos instanciados (núcleo e aro), totalizando apenas **quatro lotes de desenho** quando as duas regiões estão visíveis. A decoração é ocultada a mais de cerca de 205 m da ilha, com margem de 25 m para evitar cintilação na troca de visibilidade. Os guardiões só são criados ao aproximar-se pela primeira vez a menos de 170 m e são desativados quando o jogador se afasta; continuam usando os mecanismos de LOD do jogo. Um teste automatizado do navegador confirma coleta de todos os fragmentos, ausência de recompensas duplicadas, salvamento e combate.
+
+
+### Orientação de voo da fronteira — revisão 147
+
+Ao se aproximar do Arquipélago dos Cristais ou da Ilha das Cinzas, o minimapa passa a exibir os **fragmentos ainda não coletados**, em cores próprias para cada bioma. A seta do objetivo aponta para o fragmento disponível mais próximo. Depois de recolher os três objetos, caso o combate já esteja liberado, o objetivo local passa a apontar para o **guardião sobrevivente**. Durante o combate, o indicador de mira reconhece tanto guardiões quanto sentinelas da campanha.
+
+A orientação local só assume prioridade dentro de 125 unidades do centro da ilha e não interrompe **missões nas Montanhas da Sombra, treinamentos ou contratos de moradores**. Ao voltar à vila, os objetivos antigos continuam sendo exibidos. Concluir um objetivo remove o respectivo marcador sem alterar os dados de progresso da campanha.
+
+Esses recursos utilizam o canvas 2D do minimapa e as posições já carregadas das atividades: não adicionam texturas, luzes, inimigos ou chamadas de renderização 3D. Os testes verificam troca de objetivo, distância, combate desbloqueado e preservação das prioridades da história. 
