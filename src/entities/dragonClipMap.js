@@ -19,7 +19,8 @@ export function mapDragonClips(clips=[]){
     const kind=classifyDragonClip(clip.name);
     if(kind&&!slots[kind])slots[kind]=clip;
   }
-  if(clips.length&&!slots.idle)slots.idle=clips[0];
+  // Do not assign an attack/hurt clip to idle: that looked like auto-attacking.
+  if(!slots.idle)slots.idle=slots.glide??slots.fly??slots.walk??null;
   return slots;
 }
 export function dragonAnimationState(dragon={}){
@@ -39,6 +40,6 @@ export function selectDragonClip(slots,state){
     state==='hurt'?['hurt','idle']:
     state==='attack'?['attack','idle']:
     state==='walk'?['walk','idle']:
-    ['idle'];
-  return fallback.map(s=>slots[s]).find(Boolean)??Object.values(slots)[0]??null;
+    ['idle','glide','fly','walk'];
+  return fallback.map(s=>slots[s]).find(Boolean)??null;
 }
