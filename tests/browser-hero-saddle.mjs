@@ -81,7 +81,7 @@ try{
   const exitDistanceStart=h.group.position.distanceTo(dest);
   for(let i=0;i<12;i++)h.update(1/60,{axis:()=>1,isDown:()=>true},i/60);
   const exitDistanceMiddle=h.group.position.distanceTo(dest);
-  for(let i=12;i<80;i++)h.update(1/60,{axis:()=>1,isDown:()=>true},i/60);
+  for(let i=12;i<80;i++)h.update(1/60,{axis:()=>0,isDown:()=>false},i/60);
   const exitDistanceEnd=h.group.position.distanceTo(dest);
   const dismountCompleted=!h._dismountMotion;
   const riderScaleAfter=h.rider.scale.x;
