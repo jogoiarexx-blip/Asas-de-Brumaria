@@ -14,7 +14,7 @@ export class FrontierActivities {
     this.scene=scene;this.world=world;
     this.found=new Set();this.defeated=new Set();this.rewarded=new Set();
     this.guardians=new Map();
-    this.markers=new Map();
+    this.markers=new Map();this.hintsShown=new Set();
 
     const geometry=new THREE.OctahedronGeometry(2.25,0);
     const ringGeometry=new THREE.TorusGeometry(4.5,.19,7,24);
@@ -86,6 +86,12 @@ export class FrontierActivities {
       if(nearby!==record.visible){
         record.visible=nearby;
         record.cores.visible=nearby;record.rings.visible=nearby;
+      }
+      if(nearby&&dragon.riding&&!this.hintsShown.has(zone.id)&&
+          record.points.some(p=>!this.found.has(p.id))){
+        this.hintsShown.add(zone.id);
+        events.push({type:'frontier-hint',zone:zone.id,name:zone.name,
+          remaining:record.points.filter(p=>!this.found.has(p.id)).length});
       }
       if(nearby&&dragon.riding&&dragon.airborne){
         for(const p of record.points){
