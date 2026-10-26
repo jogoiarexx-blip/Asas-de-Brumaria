@@ -53,6 +53,7 @@ jobs:
           node tests/browser-missions.mjs
           node tests/browser-mountain.mjs
           node tests/browser-performance.mjs
+          node tests/browser-terrain-stream-queue.mjs
           node tests/browser-terrain-textures.mjs
       - name: Salvar captura de tela do teste
         if: always()
