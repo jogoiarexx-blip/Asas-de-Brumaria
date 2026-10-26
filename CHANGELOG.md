@@ -1,3 +1,15 @@
+## v1.4.21 — LOD de texturas por distância, com memória controlada
+
+- Cada ilha determina sua própria qualidade de textura pela distância da costa, independentemente de outras ilhas do mesmo bioma.
+- 512 px para ilhas distantes, 1024 px em média distância e, no perfil Detalhado, 2048 px mais normal map quando próximo. Em Equilibrado/Econômico, 1024 px continua sendo a resolução máxima esperada.
+- Cinco previews WebP de 512 px criados localmente a partir dos originais CC0 sem baixar outra textura ou alterar os mapas 1K/2K. Transferência total dos cinco: 276.630 bytes (~270 KiB).
+- Histerese nos limiares para evitar ficar trocando repetidamente quando o jogador circunda a praia. O detalhamento é progressivo sem congelar a simulação.
+- Um download/decodificação/upload de GPU por vez, ordenado pela distância ao jogador; mapa atual continua exibido até a nova imagem estar pronta.
+- Ilhas do mesmo bioma compartilham os mapas residentes para economizar memória, mas podem exibir resoluções diferentes ao mesmo tempo.
+- Imagens antigas deixam de ocupar a GPU assim que não são mais utilizadas; as ilhas que saem de alcance voltam a um preview leve e o restante é liberado após 18 s sem retorno.
+- O material normal neutro entra no aquecimento antecipado de shaders para evitar compilar o PBR de qualidade no primeiro encontro. Sem redução da qualidade de perto.
+- 5 novos testes de regressão e teste de fila real com carregador simulado: 524 testes locais aprovados.
+
 ## v1.4.20 — Preparação gráfica progressiva ao iniciar a partida
 
 - Após INICIAR/CONTINUAR, a simulação permanece parada enquanto o jogo prepara os recursos 3D necessários; o menu 2D exibe barra de progresso e descrição da etapa atual.
