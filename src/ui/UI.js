@@ -91,6 +91,7 @@ export class UI {
     }
     document.getElementById('train-points').textContent=p.points;
     document.getElementById('discovery-list').textContent=`Marcos encontrados: ${game.discovery.total}/${LANDMARKS.length} · Dragões selvagens: ${game.wildBonds.total}/3. Cada amizade rende +1 ponto.`;
+    document.getElementById('frontier-list').textContent='FRONTEIRA · '+game.frontier.summary();
     document.getElementById('train-circuits').textContent=p.circuits+' circuitos';
     const wildList=document.getElementById('wild-list');wildList.replaceChildren();
     for(const creature of WILD_DRAGON_DEFS){
