@@ -5,12 +5,28 @@ export class Training {
   constructor(scene,onUpdate,onSuccess){
     this.onUpdate=onUpdate;this.onSuccess=onSuccess;this.active=false;this.mode='basic';this.progress=0;
     this.seconds=0;this.cooldown=0;this.rings=[];
+    // Reuse the exact same 4 GPU geometries and 4 materials across all
+    // checkpoints. Extra circuits no longer allocate meshes' source buffers
+    // repeatedly; only the current ring is visible in the scene.
+    const ringGeometry={
+      small:new THREE.TorusGeometry(5.3,.38,9,36),
+      large:new THREE.TorusGeometry(6.4,.38,9,36),
+      haloSmall:new THREE.TorusGeometry(6.3,.12,7,36),
+      haloLarge:new THREE.TorusGeometry(7.3,.12,7,36)
+    };
+    const ringMaterial={
+      basic:new THREE.MeshBasicMaterial({color:0xffdc87,side:THREE.DoubleSide}),
+      advanced:new THREE.MeshBasicMaterial({color:0xff88d5,side:THREE.DoubleSide}),
+      frontier:new THREE.MeshBasicMaterial({color:0x84e8ff,side:THREE.DoubleSide}),
+      halo:new THREE.MeshBasicMaterial({color:0x8bfed7})
+    };
+    this.ringResources={ringGeometry,ringMaterial};
     for(const [id,def] of Object.entries(CIRCUITS)){
+      const basic=id==='basic';
       for(const [index,[x,y,z]] of def.checkpoints.entries()){
         const group=new THREE.Group();group.position.set(x,y,z);
-        const gold=new THREE.MeshBasicMaterial({color:id==='basic'?0xffdc87:0xff88d5,side:THREE.DoubleSide});
-        group.add(new THREE.Mesh(new THREE.TorusGeometry(id==='basic'?5.3:6.4,.38,9,36),gold));
-        const halo=new THREE.Mesh(new THREE.TorusGeometry(id==='basic'?6.3:7.3,.12,7,36),new THREE.MeshBasicMaterial({color:0x8bfed7}));group.add(halo);
+        group.add(new THREE.Mesh(basic?ringGeometry.small:ringGeometry.large,ringMaterial[id]));
+        group.add(new THREE.Mesh(basic?ringGeometry.haloSmall:ringGeometry.haloLarge,ringMaterial.halo));
         group.visible=false;this.rings.push({id,index,group});scene.add(group);
       }
     }
