@@ -325,13 +325,15 @@ export class Game {
     const bar=document.getElementById('graphics-preparation-bar');
     const label=document.getElementById('graphics-preparation-label');
     const count=document.getElementById('graphics-preparation-percent');
+    const track=panel.querySelector('.graphics-preparation-track');
     panel.classList.remove('hidden');
     const progress=({percent,label:message})=>{
       bar.style.width=percent+'%';count.textContent=percent+'%';label.textContent=message;
+      track.setAttribute('aria-valuenow',String(percent));
     };
     const prep=new GraphicsWarmup(this.renderer,this.scene,this.camera,{onProgress:progress});
     this.graphicsPreparation=(async()=>{
-      progress({percent:2,label:'Carregando modelo principal do dragão…'});
+      progress({percent:0,label:'Carregando modelo principal do dragão…'});
       // The official GLB loads independently of the menu. Include its actual
       // materials before scanning the scene, or the first ride may still hitch.
       try{await Promise.race([this.dragonModelReady,new Promise(resolve=>setTimeout(resolve,9500))]);}
