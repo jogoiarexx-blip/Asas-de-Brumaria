@@ -23,13 +23,13 @@ test('frontier adds exactly two original optional island campaigns with three fl
 test('flying objectives cannot be collected on foot, landed or from a long distance',()=>{
  const zone=FRONTIER_ZONES[0],position={x:zone.x,y:30,z:zone.z};
  const dragon={riding:true,airborne:true,group:{position:{...position}}};
- assert.equal(frontierClaimable(dragon,position,position),true);
+ assert.equal(frontierClaimable(dragon,position),true);
  dragon.airborne=false;
- assert.equal(frontierClaimable(dragon,position,position),false);
+ assert.equal(frontierClaimable(dragon,position),false);
  dragon.airborne=true;dragon.riding=false;
- assert.equal(frontierClaimable(dragon,position,position),false);
+ assert.equal(frontierClaimable(dragon,position),false);
  dragon.riding=true;dragon.group.position.z+=10;
- assert.equal(frontierClaimable(dragon,position,position),false);
+ assert.equal(frontierClaimable(dragon,position),false);
 });
 test('region visibility uses hysteresis to prevent flickering and unloads far areas',()=>{
  const zone=FRONTIER_ZONES[1];
