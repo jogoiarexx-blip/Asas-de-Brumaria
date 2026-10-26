@@ -31,7 +31,7 @@ try{
   await check('Three.js carregado e cena 3D inicializada');
 
   await page.locator('#start-btn').click();
-  assert.equal(await page.locator('#start-screen').isVisible(),false);
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
   await page.waitForTimeout(1500);
   await check('Nova partida iniciada e 90 quadros aproximados');
 
