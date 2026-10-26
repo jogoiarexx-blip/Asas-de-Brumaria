@@ -22,9 +22,13 @@ export function fitHeroSaddle(hero){
   const hip=rider?.userData?.glbHip;
   if(!model?.officialFury||!saddle||!hip)return false;
   const s=rider.scale;
-  rider.position.set(saddle.x-hip.x*s.x,
-    saddle.y+.045-hip.y*s.y,
-    saddle.z-hip.z*s.z);
+  const seat={x:saddle.x-hip.x*s.x,
+    y:saddle.y+.045-hip.y*s.y,
+    z:saddle.z-hip.z*s.z};
+  // A late-arriving GLB/species swap must update the animated destination,
+  // not teleport the rider mid-mount.
+  if(hero._mountMotion)hero._mountMotion.end.set(seat.x,seat.y,seat.z);
+  else rider.position.set(seat.x,seat.y,seat.z);
   rider.userData.saddleFit={species:hero.dragon.speciesId??null,saddle:{...saddle},
     hips:{...hip},contactClearance:.045};
   return true;
