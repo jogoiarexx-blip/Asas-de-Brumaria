@@ -3,7 +3,10 @@ export const ISLANDS = [
   { name:'Ilha das Cascatas',x:-183,z:-126,r:55,h:19,seed:2.6 },
   { name:'Ilha do Farol',x:168,z:106,r:57,h:18,seed:4.1 },
   { name:'Ilha da Névoa',x:-117,z:153,r:48,h:16,seed:1.9 },
-  { name:'Atol Esquecido',x:195,z:-162,r:42,h:15,seed:3.6 }
+  { name:'Atol Esquecido',x:195,z:-162,r:42,h:15,seed:3.6 },
+  // Capítulo opcional: duas novas ilhas, fora da rota original das missões.
+  { name:'Arquipélago dos Cristais',x:-320,z:95,r:54,h:21,seed:6.1,biome:'crystal' },
+  { name:'Ilha das Cinzas',x:332,z:-110,r:58,h:23,seed:7.9,biome:'ash' }
 ];
 export const QUEST_DEFS = [
   {id:'bond',title:'A PRIMEIRA CONEXÃO',desc:'Encontre sua Fúria da Noite, aproxime-se e pressione E para montar.',total:1},
