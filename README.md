@@ -839,3 +839,20 @@ Ao se aproximar do Arquipélago dos Cristais ou da Ilha das Cinzas, o minimapa p
 A orientação local só assume prioridade dentro de 125 unidades do centro da ilha e não interrompe **missões nas Montanhas da Sombra, treinamentos ou contratos de moradores**. Ao voltar à vila, os objetivos antigos continuam sendo exibidos. Concluir um objetivo remove o respectivo marcador sem alterar os dados de progresso da campanha.
 
 Esses recursos utilizam o canvas 2D do minimapa e as posições já carregadas das atividades: não adicionam texturas, luzes, inimigos ou chamadas de renderização 3D. Os testes verificam troca de objetivo, distância, combate desbloqueado e preservação das prioridades da história. 
+
+
+## Revisão 148 — texturas fotográficas CC0 instaladas localmente
+
+Foram baixados e incluídos no repositório **20 mapas de textura WebP** reais, oriundos de materiais **Poly Haven CC0**. Cada superfície possui um mapa de cor (diffuse) e um mapa normal (OpenGL) em duas variantes: **1024×1024** para perfil leve/equilibrado e **2048×2048** no perfil detalhado. Os originais de 2K fornecidos pelos autores foram usados na conversão. Os arquivos locais estão em `assets/textures/terrain/` e a procedência, licença, URLs de origem e hashes SHA-256 ficam em `assets/textures/terrain/manifest.json`.
+
+| Superfície do jogo | Material Poly Haven | Página CC0 |
+| --- | --- | --- |
+| Refúgio e Cascatas (chão florestal) | forrest_ground_01 | https://polyhaven.com/a/forrest_ground_01 |
+| Atol Esquecido (praia) | coast_sand_02 | https://polyhaven.com/a/coast_sand_02 |
+| Farol e Névoa (solo rochoso) | rocky_terrain_02 | https://polyhaven.com/a/rocky_terrain_02 |
+| Ilha das Cinzas (rocha escura) | dark_rock | https://polyhaven.com/a/dark_rock |
+| Arquipélago dos Cristais (solo rochoso) | rocks_ground_06 | https://polyhaven.com/a/rocks_ground_06 |
+
+**Licença:** todos os materiais selecionados foram publicados sob **CC0 1.0** pela Poly Haven (https://polyhaven.com/license). Nenhuma atribuição é obrigatória, mas o crédito é mantido para transparência. O jogo distribui as texturas localmente, sem consultar nem fazer hotlink ao provedor ao jogar; o pipeline de importação verifica o domínio e pode ser reproduzido em `tools/import_polyhaven_textures.py` usando o workflow de GitHub Actions `install-terrain-textures.yml`.
+
+**Desempenho:** o renderizador mantém a coloração por vértice e a malha dos terrenos, sem duplicar a geometria nem adicionar um draw call por textura. Os UVs são contínuos entre os anéis das ilhas e as imagens repetem-se a cada 14 unidades. A variante 2K com normais só é ativada no modo detalhado; perfis leves usam cor 1K e evitam o segundo mapa. Os mapas são carregados apenas próximo das ilhas (190 m + raio) e descarregados com margem de 260 m, liberando recursos da GPU ao afastar-se. Em caso de erro de carregamento, o terreno original com cores de vértice permanece utilizável. Nenhuma colisão, história, controle ou salvamento é alterado.
