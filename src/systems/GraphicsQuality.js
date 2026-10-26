@@ -24,11 +24,14 @@ export class GraphicsQuality {
     try{const saved=store?.getItem('asas-brumaria-graphics');if(['auto',...GRAPHICS_TIERS].includes(saved))this.mode=saved;}catch{}
     this.tier=this.mode==='auto'?suggestedTier({coarse,deviceMemory:memory}):this.mode;
     this.resolutionScale=1;this.shadowsAllowed=true;
+    this.autoPixelScale=1;this.mediumSamples=0;this.recoverySamples=0;
     this.slowSamples=0;this.fastSamples=0;this.cooldown=0;
     this.apply();
   }
   apply(){
-    this.renderer.setPixelRatio(pixelRatioFor(this.tier,this.deviceRatio)*this.resolutionScale);
+    // Fine adaptive step: keep meshes, shadows, materials and texture detail;
+    // adjust only GPU fill rate before selecting a lower-quality tier.
+    this.renderer.setPixelRatio(pixelRatioFor(this.tier,this.deviceRatio)*this.resolutionScale*this.autoPixelScale);
     this.renderer.shadowMap.enabled=this.tier!=='economy'&&this.shadowsAllowed;
     this.renderer.shadowMap.needsUpdate=true;
   }
@@ -39,6 +42,7 @@ export class GraphicsQuality {
     if(this.mode!=='auto')this.tier=this.mode;
     else this.tier=suggestedTier({coarse:this.coarse,deviceMemory:this.memory});
     this.slowSamples=0;this.fastSamples=0;this.cooldown=10;
+    this.mediumSamples=0;this.recoverySamples=0;this.autoPixelScale=1;
     try{this.store?.setItem('asas-brumaria-graphics',this.mode);}catch{}
     this.apply();return this.label;
   }
@@ -46,6 +50,25 @@ export class GraphicsQuality {
   sample(fps){
     if(this.mode!=='auto')return false;
     if(this.cooldown>0){this.cooldown--;return false;}
+    // Modest FPS drops (30–46) are commonly fill-rate pressure on mobile.
+    // Reducing only DPR by at most 16% keeps world geometry, HD textures,
+    // shadows and the selected graphics quality intact.
+    if(Number.isFinite(fps)&&fps>=30&&fps<47){
+      this.mediumSamples++;this.recoverySamples=0;
+      if(this.mediumSamples>=3){
+        this.mediumSamples=0;
+        const next=Math.max(.84,Math.round((this.autoPixelScale-.04)*100)/100);
+        if(next!==this.autoPixelScale){this.autoPixelScale=next;this.apply();}
+      }
+    }else this.mediumSamples=0;
+    if(Number.isFinite(fps)&&fps>=55&&this.autoPixelScale<1){
+      this.recoverySamples++;
+      if(this.recoverySamples>=5){
+        this.recoverySamples=0;
+        this.autoPixelScale=Math.min(1,Math.round((this.autoPixelScale+.04)*100)/100);
+        this.apply();
+      }
+    }else if(fps<55)this.recoverySamples=0;
     if(fps<29){this.slowSamples++;this.fastSamples=0;}
     else if(fps>56){this.fastSamples++;this.slowSamples=0;}
     else{this.slowSamples=0;this.fastSamples=0;}
