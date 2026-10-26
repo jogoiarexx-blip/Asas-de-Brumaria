@@ -5,72 +5,50 @@ const page=await browser.newPage();
 try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded',timeout:60000});
  const data=await page.evaluate(async()=>{
-   const {TerrainTextureManager,TERRAIN_STREAMING}=await import('./src/world/TerrainTextureManager.js');
-   let inFlight=0,maxFlight=0,loads=[],uploads=[];
-   const idle=[];
+   const {TerrainTextureManager}=await import('./src/world/TerrainTextureManager.js');
+   let inFlight=0,maxFlight=0;const loads=[],uploads=[],idle=[];
    const loader={async loadAsync(url){
      inFlight++;maxFlight=Math.max(inFlight,maxFlight);loads.push(url);
-     await Promise.resolve();
-     inFlight--;
-     return {image:{width:url.includes('desktop')?2048:1024},
+     await Promise.resolve();inFlight--;
+     return {image:{width:url.includes('_low')?512:url.includes('_mobile')?1024:2048},
        dispose(){this.disposed=true},needsUpdate:false};
    }};
    const renderer={initTexture(texture){uploads.push(texture.image.width);}};
-   const mat=()=>({map:null,normalMap:null,color:{setScalar(v){this.value=v}},needsUpdate:false});
+   const material=()=>({map:null,normalMap:null,color:{setScalar(v){this.value=v}},needsUpdate:false});
    const manager=new TerrainTextureManager(renderer,{loader,idle:fn=>idle.push(fn)});
-   const meadow=mat(),crystal=mat();
-   manager.register('meadow',meadow);
-   manager.register('crystal',crystal);
+   const near={name:'Ilha do Refúgio',x:0,z:0,r:83};
+   const remote={name:'Ilha das Cascatas',x:540,z:0,r:55};
+   const first=material(),second=material();
+   manager.register('meadow',first,near);manager.register('meadow',second,remote);
    const settle=async()=>{await Promise.resolve();await Promise.resolve();await new Promise(r=>setTimeout(r,0));};
-   const drain=async(max=30)=>{
-     for(let i=0;i<max;i++){
-       await settle();
-       if(idle.length){
-         idle.shift()({didTimeout:true,timeRemaining:()=>40});
-         continue;
-       }
-       if(!manager.busy&&!manager.queue.length)break;
-     }
-   };
+   const drain=async(max=70)=>{for(let i=0;i<max;i++){
+     await settle();if(idle.length){idle.shift()({didTimeout:true,timeRemaining:()=>40});continue;}
+     if(!manager.busy&&!manager.queue.length)break;
+   }};
    manager.setQuality('quality');
-   await settle();
-   const blankUntilIdle=meadow.map===manager.placeholder&&uploads.length===0;
+   const noEagerLoad=loads.length===0;
+   manager.updateFocus({x:0,z:0},[near,remote]);
+   const originalPlaceholder=first.map===manager.placeholder;
    await drain();
-   const full={diff:meadow.map?.image.width,
-     normal:meadow.normalMap?.image.width,uploadCount:uploads.length};
-   const originalLoads=loads.length;
-   const islands=[{name:'Ilha do Refúgio',x:0,z:0,r:83},
-     {name:'Arquipélago dos Cristais',biome:'crystal',x:-320,z:95,r:54}];
-   manager.updateFocus({x:0,z:0},islands);
-   manager.updateFocus({x:1500,z:1500},islands);await drain();
-   const stillCached=meadow.map?.image.width===2048;
-   manager.updateFocus({x:0,z:0},islands);await drain();
-   const rapidReturn={requestsBefore:originalLoads,requestsAfter:loads.length,
-     stillCached,restored:meadow.map?.image.width};
-   manager.setQuality('balanced');
-   await drain();
-   const light={diff:meadow.map?.image.width,normal:meadow.normalMap,
-     recycledOld:!manager.loading.has('./assets/textures/terrain/meadow_diff_desktop.webp')};
-   manager.updateFocus({x:-320,z:95},islands);
-   await drain();
-   return {blankUntilIdle,maxFlight,full,rapidReturn,light,
-     crystal:crystal.map?.image.width,
-     uploads,loads,evictions:manager.stats.evictions,
-     prefetch:TERRAIN_STREAMING.prefetchDistance};
+   const initial={near:first.map.image.width,far:second.map.image.width,
+     normal:first.normalMap.image.width,loads:loads.length};
+   manager.updateFocus({x:510,z:0},[near,remote]);await drain();
+   const swapped={near:first.map.image.width,far:second.map.image.width};
+   manager.setQuality('balanced');await drain();
+   const balanced={far:second.map.image.width,normal:second.normalMap,
+     highRemoved:![...manager.loading.keys()].some(x=>x.includes('_desktop'))};
+   return {noEagerLoad,originalPlaceholder,maxFlight,initial,swapped,balanced,
+     uploads,loads,evictions:manager.stats.evictions};
  });
- assert.equal(data.blankUntilIdle,true,'textures were applied during update frame');
- assert.equal(data.maxFlight,1,'more than one large file loading concurrently');
- assert.deepEqual([data.full.diff,data.full.normal],[2048,2048]);
- assert.equal(data.full.uploadCount,2);
- assert.equal(data.rapidReturn.stillCached,true);
- assert.equal(data.rapidReturn.requestsAfter,data.rapidReturn.requestsBefore,'island turn re-downloaded texture');
- assert.equal(data.rapidReturn.restored,2048);
- assert.equal(data.light.diff,1024);
- assert.equal(data.light.normal,null);
- assert.equal(data.light.recycledOld,true,'obsolete GPU quality map was retained');
- assert.equal(data.crystal,1024);
- assert.ok(data.evictions>=2,'old quality maps were not disposed');
- assert.ok(data.prefetch>=200&&data.prefetch<=300);
- console.log('TERRAIN_STREAM_QUEUE_GPU_IDLE_PASS',JSON.stringify(data));
-}catch(e){console.error('TERRAIN_STREAM_QUEUE_ERROR',e);throw e;}
+ assert.equal(data.noEagerLoad,true,'textures must not be requested in the main menu');
+ assert.equal(data.originalPlaceholder,true,'texture must wait for async idle upload');
+ assert.equal(data.maxFlight,1,'more than one large texture loading concurrently');
+ assert.deepEqual([data.initial.near,data.initial.far,data.initial.normal],[2048,512,2048]);
+ assert.deepEqual([data.swapped.near,data.swapped.far],[512,2048]);
+ assert.equal(data.balanced.far,1024);
+ assert.equal(data.balanced.normal,null);
+ assert.equal(data.balanced.highRemoved,true);
+ assert.ok(data.evictions>=2);
+ console.log('TERRAIN_ISLAND_DISTANCE_QUEUE_PASS',JSON.stringify(data));
+}catch(e){console.error('TERRAIN_ISLAND_DISTANCE_QUEUE_ERROR',e);throw e;}
 finally{await browser.close();}
