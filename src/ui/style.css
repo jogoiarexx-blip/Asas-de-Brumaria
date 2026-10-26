@@ -158,3 +158,55 @@ body:has(#controller-status.connected) .gamepad-help{opacity:.92}
 .dragon-model-status[data-state="ok"]{border-color:#8dd1b2;color:#c7ffdc}
 .dragon-model-status[data-state="missing"]{border-color:#edc67c;color:#ffe4b8}
 @media(pointer:coarse),(max-width:850px){.dragon-model-status{top:64%;font-size:9px;padding:5px 9px}}
+
+/* v1.4.19 — streamlined in-game HUD. All controls remain in the ☰ MENU. */
+#hud .hud-top{padding:16px 22px;align-items:center;gap:15px}
+#hud .brand small,#hud .brand-icon{display:none}
+#hud .brand strong{font-size:13px;letter-spacing:1.1px}
+#hud .top-pills{align-items:center;gap:7px}
+#hud .top-pills>span{font-size:10px;padding:7px 9px;white-space:nowrap}
+#hud .hud-options{pointer-events:auto;position:relative;font-size:11px;color:var(--cream)}
+#hud .hud-options>summary{list-style:none;border:1px solid #b6dacf66;border-radius:10px;background:#092b36d9;padding:8px 12px;font-weight:900;cursor:pointer;white-space:nowrap}
+#hud .hud-options>summary::-webkit-details-marker{display:none}
+#hud .hud-options>summary:focus-visible,#mission-extra>summary:focus-visible{outline:2px solid #edca83;outline-offset:3px}
+#hud .hud-options-panel{position:absolute;top:calc(100% + 8px);right:0;width:min(320px,calc(100vw - 24px));max-height:70dvh;overflow-y:auto;display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:14px;background:#071e2af5;border:1px solid #7cbab09c;border-radius:12px;box-shadow:0 12px 40px #00131be8;z-index:21}
+#hud .hud-options-panel>strong{width:100%;font-size:10px;color:var(--gold);letter-spacing:1px}
+#hud .hud-options-panel>span{padding:6px 9px;font-size:10px;border-radius:8px;border:1px solid #57938b55}
+#hud .hud-options-panel>button{font-size:10px}
+#hud .hud-options-panel p{font-size:11px;line-height:1.7;margin:4px 0 0;color:#d5ebe7}
+#hud .hud-options-panel p b{color:var(--gold)}
+#hud .mission-card{top:75px;left:22px;width:min(250px,calc(100vw - 125px));padding:11px 13px;border-radius:10px}
+#hud .mission-card h2{font-size:12px;line-height:1.4;margin:7px 0 10px}
+#hud .eyebrow{font-size:9px;letter-spacing:1px}
+#hud #mission-extra{margin-top:9px;pointer-events:auto}
+#hud #mission-extra>summary{list-style:none;cursor:pointer;color:#b9e9da;font-size:9px;font-weight:900;letter-spacing:.7px}
+#hud #mission-extra>summary::before{content:'▸ ';color:var(--gold)}
+#hud #mission-extra[open]>summary::before{content:'▾ '}
+#hud #mission-extra>summary::-webkit-details-marker{display:none}
+#hud #quest-desc{margin:8px 0;font-size:10px}
+#hud #quest-guide{margin-top:7px;font-size:9px}
+#hud .map-panel{top:75px;right:22px;width:146px;padding:9px}
+#hud #mini-map{width:126px;height:126px;margin:7px 0}
+#hud .map-head,#hud .map-footer{font-size:8px;letter-spacing:.3px}
+#hud .map-footer{font-size:8px;line-height:1.3}
+#hud .bottom-hud{left:16px;right:auto;bottom:16px}
+#hud .status-card{width:220px;padding:10px 11px}
+#hud .status-card .stat-head{font-size:9px;letter-spacing:.15px}
+#hud .status-card .energy-track{height:5px;margin:7px 0}
+#hud .stat-row{font-size:8px}
+#hud #keyboard-help,#hud #gamepad-help,#hud .expedition-status,#hud .mountain-status{display:none!important}
+#hud .stable-toggle{position:absolute;top:auto;bottom:17px;right:17px;padding:10px 12px;font-size:10px;z-index:4}
+#hud .dragon-model-status[data-state="ok"]{display:none}
+#hud .crosshair{font-size:18px;opacity:.6}
+@media(pointer:coarse),(max-width:850px){
+ #hud .hud-top{padding:9px 10px;gap:4px}#hud .brand strong{font-size:10px;letter-spacing:0}
+ #hud .top-pills>span{padding:6px;font-size:8px}#hud .hud-options>summary{padding:6px 9px}
+ #hud .hud-options>summary span{display:none}
+ #hud .mission-card{top:45px;left:8px;width:min(190px,49vw);padding:8px}
+ #hud .mission-card h2{font-size:10px}
+ #hud .map-panel{top:45px;right:8px;width:116px;padding:6px}#hud #mini-map{width:102px;height:102px;margin:4px 0}
+ #hud .map-head,#hud .map-footer{font-size:7px}
+ #hud .bottom-hud{left:8px;bottom:100px}#hud .status-card{width:170px;padding:7px}
+ #hud .status-card .stat-head{font-size:8px}#hud .stable-toggle{right:8px;top:195px;bottom:auto;padding:7px}
+}
+@media(max-height:560px) and (orientation:landscape){#hud .bottom-hud{bottom:69px}#hud .status-card{width:166px}#hud .stable-toggle{top:155px}}
