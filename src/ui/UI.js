@@ -5,7 +5,6 @@ import {SPECIES,SKILLS} from '../systems/Progression.js';
 import {CONTRACTS} from '../systems/VillageContracts.js';
 import {CIRCUITS} from '../systems/Training.js';
 import {LANDMARKS} from '../systems/Discovery.js';
-import {LANDMARKS} from '../systems/Discovery.js';
 import {WILD_DRAGON_DEFS} from '../systems/WildBonds.js';
 export class UI {
   constructor(){
