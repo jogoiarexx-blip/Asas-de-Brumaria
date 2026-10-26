@@ -18,6 +18,15 @@ export function cameraRelativeMove(x=0,z=0,cameraYaw=0){
 export function shortestYawDelta(current,target){
   return Math.atan2(Math.sin(target-current),Math.cos(target-current));
 }
+/** Chase camera easing along the shortest angular arc (also across ±PI).
+ * Manual orbit remains authoritative until Game releases its override. */
+export function chaseCameraYaw(cameraYaw,actorYaw,dt,rate=4){
+  if(!Number.isFinite(cameraYaw)||!Number.isFinite(actorYaw)||!Number.isFinite(dt)||dt<=0)return cameraYaw;
+  const angle=shortestYawDelta(cameraYaw,actorYaw);
+  const amount=1-Math.exp(-Math.max(0,rate)*Math.min(dt,.1));
+  const yaw=cameraYaw+angle*amount;
+  return Math.atan2(Math.sin(yaw),Math.cos(yaw));
+}
 /** Slow down while swinging around rather than sliding backward across the ground. */
 export function steeringTraction(delta){
   return Math.max(0,Math.cos(delta));
