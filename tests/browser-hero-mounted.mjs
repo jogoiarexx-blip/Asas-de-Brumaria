@@ -63,6 +63,7 @@ try{
  assert.deepEqual(errors,[]);
  console.log('HERO_RIDER_44_BONES_ANIMATION_PASS',JSON.stringify(rig));
  await page.locator('#start-btn').click();
+ await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
  await page.keyboard.press('t');
  await page.locator('#stable').waitFor({state:'visible',timeout:16000});
  const data=await page.evaluate(async()=>{
