@@ -266,6 +266,12 @@ export class Game {
       visibleIslands:this.world.visibleIslandCount,totalIslands:ISLANDS.length,
       actorsVisible:this.actorStats.visible,actorsLimited:this.actorStats.limited,
       actorsProxied:this.actorStats.proxied??0});
+    const islandLOD=this.world.detailStream;
+    if(islandLOD){
+      const d=islandLOD.stats;
+      document.getElementById('performance-panel').textContent+=
+        `\nLOD CENÁRIO · ${islandLOD.residentCount}/${ISLANDS.length} ilhas em cache · ${islandLOD.pending} lotes na fila · ${d.jobs} criados · ${d.evicted} ilhas liberadas`;
+    }
     const textures=this.world.terrainTextures;
     if(textures){
       const q=textures.stats;
@@ -331,7 +337,9 @@ export class Game {
       bar.style.width=percent+'%';count.textContent=percent+'%';label.textContent=message;
       track.setAttribute('aria-valuenow',String(percent));
     };
-    const prep=new GraphicsWarmup(this.renderer,this.scene,this.camera,{onProgress:progress});
+    const prep=new GraphicsWarmup(this.renderer,this.scene,this.camera,{
+      onProgress:info=>progress({...info,percent:20+Math.round(info.percent*.8)})
+    });
     this.graphicsPreparation=(async()=>{
       progress({percent:0,label:'Carregando modelo principal do dragão…'});
       // The official GLB loads independently of the menu. Include its actual
@@ -349,6 +357,8 @@ export class Game {
       // higher-resolution textures by low-resolution stand-ins.
       const focus=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
       this.world.terrainTextures.updateFocus(focus,ISLANDS);
+      await this.world.prepareStartingIsland(focus,(done,total)=>
+        progress({percent:Math.round(done/total*18),label:'Preparando cenário próximo…'}));
       const report=await prep.run(this);
       if(report.failures.length)console.warn('[GPU warmup] Preparação parcial:',report.failures);
       return report;
