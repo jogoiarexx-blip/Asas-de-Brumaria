@@ -7,6 +7,7 @@ import {terrainPalette} from './TerrainPalette.js';
 import {TerrainTextureManager,terrainKind} from './TerrainTextureManager.js';
 import {treeVariant,treeCrownPose} from './TreeVariation.js';
 import {applyIslandVisibility,shouldRefreshClouds,wrappedCloudX} from './VisibilityBudget.js';
+import {IslandDetailStream,ISLAND_DETAIL_PHASES} from './IslandDetailStream.js';
 const brown = new THREE.MeshLambertMaterial({color:0x855b37});
 const leafPalette = [0x245d49,0x2b7355,0x398565,0x31735c];
 const rand = seededRandom(18971);
@@ -29,12 +30,22 @@ export class World {
     this.obstacles = [];this.surfaces=[];
     this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
-    this.biomeAccentsByIsland=new Map();
+    this.biomeAccentsByIsland=new Map();this.coastByIsland=new Map();
     this.terrainTextures=new TerrainTextureManager(renderer);
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
     this.cloudWind=1;
     this.populate();
+    this.detailStream=new IslandDetailStream(ISLANDS,{
+      coast:island=>this._buildCoastForIsland(island),
+      foliage:island=>this.flushFoliage(island),
+      grass:island=>this._buildGrassForIsland(island),
+      flowers:island=>this._buildWildflowersForIsland(island),
+      dispose:(island,phase)=>this.releaseIslandDetails(island,phase)
+    });
+    // Starting village is already prepared; nothing remote is eagerly uploaded.
+    this.detailStream.markReady(ISLANDS[0].name);
+    this.visualStreamingEnabled=false;
   }
   islandHeight(island,x,z) {
     const original=naturalIslandHeight(island,x,z);
@@ -157,10 +168,13 @@ export class World {
     }
   }
   // Faixas de espuma e reflexos ao redor das cinco costas, sem mapas de textura externos.
-  buildCoastalDetails() {
+  buildCoastalDetails() { this._buildCoastForIsland(ISLANDS[0]); }
+  _buildCoastForIsland(island) {
+    if(this.coastByIsland.has(island.name))return;
+    const objects=[];
     const foamMat=new THREE.MeshBasicMaterial({color:0xe2f9eb,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});
     const waveMat=new THREE.MeshBasicMaterial({color:0x96e9e5,transparent:true,opacity:.17,depthWrite:false,side:THREE.DoubleSide});
-    for(const island of ISLANDS)for(let band=0;band<2;band++) {
+    for(let band=0;band<2;band++) {
       const positions=[],uv=[],indices=[],steps=144;
       const r0=island.r*(band===0?.935:.965);
       const r1=r0+(band===0?2.1:1.0);
@@ -176,15 +190,20 @@ export class World {
       }
       const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
       geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geometry.setIndex(indices);geometry.computeVertexNormals();
-      this.scene.add(new THREE.Mesh(geometry,band===0?foamMat:waveMat));
+      const mesh=new THREE.Mesh(geometry,band===0?foamMat:waveMat);
+      this.scene.add(mesh);objects.push(mesh);
     }
+    this.coastByIsland.set(island.name,objects);
   }
   // Instância centenas de tufos sem centenas de draw calls.
-  buildWildGrass() {
-    const geometry=new THREE.ConeGeometry(.21,.85,3);
-    const material=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide});
+  buildWildGrass() { this._buildGrassForIsland(ISLANDS[0]); }
+  _buildGrassForIsland(island) {
+    if(this.grassByIsland.has(island.name))return;
+    const geometry=this._grassGeo??(this._grassGeo=new THREE.ConeGeometry(.21,.85,3));
+    const material=this._grassMat??(this._grassMat=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}));
     const dummy=new THREE.Object3D();
-    for(const island of ISLANDS) {
+    const rand=seededRandom(19001+ISLANDS.indexOf(island)*1709);
+    {
       const count=island.r>70?220:115;
       const mesh=new THREE.InstancedMesh(geometry,material,count);
       const palette=island.biome==='crystal'?[0x66b5b7,0x82cad0,0x548f9e]:
@@ -209,12 +228,15 @@ export class World {
     }
   }
   /** Low-cost flower accents: one instanced draw per island; no collisions. */
-  buildWildflowers(){
-    const geometry=new THREE.TetrahedronGeometry(.38,0);
-    const material=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide});
+  buildWildflowers(){ this._buildWildflowersForIsland(ISLANDS[0]); }
+  _buildWildflowersForIsland(island){
+    if(this.flowersByIsland.has(island.name))return;
+    const geometry=this._flowerGeo??(this._flowerGeo=new THREE.TetrahedronGeometry(.38,0));
+    const material=this._flowerMat??(this._flowerMat=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}));
     const dummy=new THREE.Object3D();
+    const rand=seededRandom(39811+ISLANDS.indexOf(island)*1117);
     const palette=[0xffd8a1,0xf9acc7,0xd7c7ff,0xfff3b7,0x87d6cf];
-    for(const island of ISLANDS){
+    {
       const maximum=island.r>70?175:85;
       const flowers=new THREE.InstancedMesh(geometry,material,maximum);
       let count=0;
@@ -271,7 +293,8 @@ export class World {
     this.forestRocks.push({x,y,z,size,palette:rand()>.5?0x829087:0x6c807a,rotation:rand()*6});
     this.addObstacle(x,y,z,1.18*size,1.2*size,'rock');
   }
-  flushFoliage() {
+  flushFoliage(only=ISLANDS[0]) {
+    if(this.foliageByIsland.has(only.name))return;
     const dummy=new THREE.Object3D();
     // Each island gets its own GPU batches, allowing per-island frustum culling.
     const buckets=new Map(ISLANDS.map(i=>[i.name,{trees:[],rocks:[]}])) ;
@@ -285,12 +308,15 @@ export class World {
     };
     for(const t of this.forestTrees)buckets.get(nearest(t)).trees.push(t);
     for(const r of this.forestRocks)buckets.get(nearest(r)).rocks.push(r);
-    const woodGeometry=new THREE.CylinderGeometry(.2,.38,2.4,6);
-    const crownMaterial=new THREE.MeshLambertMaterial({color:0xffffff});
-    const coniferCrowns=[new THREE.ConeGeometry(1.65,3.2,7),new THREE.ConeGeometry(1.37,2.85,7)];
-    const broadleafCrowns=[new THREE.IcosahedronGeometry(1.4,0),new THREE.IcosahedronGeometry(1.1,0)];
-    const stoneGeometry=new THREE.DodecahedronGeometry(1,0);
-    const stoneMaterial=new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true});
+    const common=this._foliageResources??(this._foliageResources={
+      woodGeometry:new THREE.CylinderGeometry(.2,.38,2.4,6),
+      crownMaterial:new THREE.MeshLambertMaterial({color:0xffffff}),
+      coniferCrowns:[new THREE.ConeGeometry(1.65,3.2,7),new THREE.ConeGeometry(1.37,2.85,7)],
+      broadleafCrowns:[new THREE.IcosahedronGeometry(1.4,0),new THREE.IcosahedronGeometry(1.1,0)],
+      stoneGeometry:new THREE.DodecahedronGeometry(1,0),
+      stoneMaterial:new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true}),
+    });
+    const {woodGeometry,crownMaterial,coniferCrowns,broadleafCrowns,stoneGeometry,stoneMaterial}=common;
     const addBatch=(geometry,material,items,place,colorOf,shadows,islandName)=>{
       if(!items.length)return;
       const batch=new THREE.InstancedMesh(geometry,material,items.length);
@@ -306,7 +332,7 @@ export class World {
       this.scene.add(batch);this.foliageMeshes.push(batch);
       this.foliageByIsland.get(islandName).push(batch);
     };
-    for(const island of ISLANDS){
+    for(const island of [only]){
       const {trees,rocks}=buckets.get(island.name);
       this.foliageByIsland.set(island.name,[]);
       addBatch(woodGeometry,brown,trees,
@@ -344,6 +370,46 @@ export class World {
       addBatch(stoneGeometry,stoneMaterial,rocks,
         (r,d)=>{d.position.set(r.x,r.y+r.size*.45,r.z);d.rotation.y=r.rotation;d.scale.set(1.35*r.size,.67*r.size,.95*r.size);},
         r=>r.palette,true,island.name);
+    }
+  }
+  /** Deferred scenery never owns collision volumes: those were baked in
+   * buildIsland() before any streaming. Reused shared geometries stay alive. */
+  releaseIslandDetails(island,phase){
+    const id=island.name;
+    if(phase==='foliage'){
+      const batches=this.foliageByIsland.get(id)??[];
+      for(const mesh of batches){
+        this.scene.remove(mesh);mesh.dispose?.();
+        const index=this.foliageMeshes.indexOf(mesh);
+        if(index!==-1)this.foliageMeshes.splice(index,1);
+      }
+      this.foliageByIsland.delete(id);
+    }else if(phase==='grass'||phase==='flowers'){
+      const map=phase==='grass'?this.grassByIsland:this.flowersByIsland;
+      const mesh=map.get(id);
+      if(mesh){this.scene.remove(mesh);mesh.dispose?.();map.delete(id);}
+    }else if(phase==='coast'){
+      const meshes=this.coastByIsland.get(id)??[];
+      for(const mesh of meshes){this.scene.remove(mesh);mesh.geometry.dispose();}
+      // Both foam materials are unique to the island, not shared.
+      for(const material of new Set(meshes.map(m=>m.material)))material.dispose();
+      this.coastByIsland.delete(id);
+    }
+  }
+  /** Used in Play's preparation panel. No streaming is triggered in the menu.
+   * The player's saved position may be on a different island than the village. */
+  async prepareStartingIsland(observer,onProgress=()=>{}){
+    this.visualStreamingEnabled=true;
+    this.detailStream.plan(observer,this.detailTier);
+    // One batch per animation frame rather than one huge synchronous build.
+    const primary=this.detailStream.queue[0]?.island?.name;
+    if(!primary)return;
+    for(let i=0;i<ISLAND_DETAIL_PHASES.length;i++){
+      if(!this.detailStream.queue.some(item=>item.island.name===primary))break;
+      this.detailStream.step(1);
+      onProgress(i+1,ISLAND_DETAIL_PHASES.length);
+      if(typeof requestAnimationFrame==='function')
+        await new Promise(resolve=>requestAnimationFrame(resolve));
     }
   }
   buildVillage() {
@@ -419,11 +485,13 @@ export class World {
     this.cloudElapsed=Infinity;
   }
   updateDetail(observer,dt=0){
+    if(this.visualStreamingEnabled)this.detailStream.step(1);
     this.detailElapsed+=Math.max(0,dt);
     if(this.detailElapsed<.24)return;
     this.detailElapsed=0;
     // Stream photograph textures using existing 0.24s island visibility cadence.
     this.terrainTextures.updateFocus(observer,ISLANDS);
+    if(this.visualStreamingEnabled)this.detailStream.plan(observer,this.detailTier);
     const state=applyIslandVisibility(observer,this.detailTier,ISLANDS,this.foliageByIsland,this.grassByIsland);
     for(const island of ISLANDS){
       const bloom=this.flowersByIsland.get(island.name);
