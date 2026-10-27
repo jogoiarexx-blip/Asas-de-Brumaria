@@ -143,7 +143,7 @@ export class Hero {
     if(moving){
       const step=(slow?3.1:9)*intent.strength*dt;
       const dx=direction.x/intent.strength*step,dz=direction.z/intent.strength*step;
-      const result=moveWithCollisions(this.group.position,{x:dx,z:dz},.52,this.world.obstacles,
+      const result=moveWithCollisions(this.group.position,{x:dx,z:dz},.52,this.world.obstacleGrid,
         (px,pz)=>this.world.walkable(px,pz),
         o=>obstacleBlocks(o,this.group.position.y+1.1,1.1),
         {groundAt:(px,pz)=>this.world.groundHeightAt(px,pz,.52),maxStepUp:1.1});

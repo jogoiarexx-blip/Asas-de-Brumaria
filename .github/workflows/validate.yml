@@ -57,6 +57,7 @@ jobs:
           node tests/browser-terrain-stream-queue.mjs
           node tests/browser-terrain-textures.mjs
           node tests/browser-island-detail-stream.mjs
+          node tests/browser-prefetch-spatial-v1425.mjs
       - name: Salvar captura de tela do teste
         if: always()
         uses: actions/upload-artifact@v4

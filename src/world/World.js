@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { ISLANDS } from './config.js';
 import { seededRandom, clamp } from '../utils/math.js';
 import { obstacleCeiling } from '../utils/collision.js';
+import {ObstacleGrid} from '../utils/ObstacleGrid.js';
+import {predictFlightIsland} from './IslandFlightPrefetch.js';
 import { surfaceHeightAt,flattenVillageGround } from '../utils/surfaces.js';
 import {terrainPalette} from './TerrainPalette.js';
 import {TerrainTextureManager,terrainKind} from './TerrainTextureManager.js';
@@ -29,6 +31,7 @@ export class World {
     this.clouds = [];
     this.materials = [];
     this.obstacles = [];this.surfaces=[];
+    this.obstacleGrid=new ObstacleGrid(()=>this.obstacles,{cellSize:32});
     this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
     this.biomeAccentsByIsland=new Map();this.coastByIsland=new Map();
@@ -60,7 +63,7 @@ export class World {
   }
   groundHeightAt(x,z,radius=0) { return surfaceHeightAt(this.heightAt(x,z),x,z,this.surfaces,radius); }
   walkable(x,z) { if(x>650&&this.mountainRegion)return this.mountainRegion.heightAt(x,z)>1;return ISLANDS.some(i=>Math.hypot(x-i.x,z-i.z) < i.r*.92 && this.islandHeight(i,x,z)>1); }
-  clearanceAt(x,z,radius=1) { return obstacleCeiling(x,z,radius,this.obstacles); }
+  clearanceAt(x,z,radius=1) { return obstacleCeiling(x,z,radius,this.obstacleGrid); }
   addObstacle(x,y,z,radius,height,type){
     this.obstacles.push({x,z,radius,bottom:y,top:y+height,type});
   }
@@ -488,14 +491,19 @@ export class World {
     this.detailElapsed=Infinity;
     this.cloudElapsed=Infinity;
   }
-  updateDetail(observer,dt=0){
+  updateDetail(observer,dt=0,flight=null){
     if(this.visualStreamingEnabled)this.detailStream.step(1);
     this.detailElapsed+=Math.max(0,dt);
     if(this.detailElapsed<.24)return;
     this.detailElapsed=0;
-    // Stream photograph textures using existing 0.24s island visibility cadence.
+    // Predict the next island from actual movement direction, not the camera.
+    // Stream a distant coast/tree batch and its 512px preview in advance.
+    const predicted=flight?.airborne?predictFlightIsland(flight.position,flight.direction,
+      flight.speed,ISLANDS):null;
     this.terrainTextures.updateFocus(observer,ISLANDS);
-    if(this.visualStreamingEnabled)this.detailStream.plan(observer,this.detailTier);
+    this.terrainTextures.prefetchAhead(predicted);
+    if(this.visualStreamingEnabled)this.detailStream.plan(observer,this.detailTier,
+      {prefetchIsland:predicted});
     const state=applyIslandVisibility(observer,this.detailTier,ISLANDS,this.foliageByIsland,this.grassByIsland);
     for(const island of ISLANDS){
       const bloom=this.flowersByIsland.get(island.name);

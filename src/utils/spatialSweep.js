@@ -1,3 +1,4 @@
+import {obstacleCandidates} from './ObstacleGrid.js';
 import {overlapsObstacle3D} from './collision.js';
 
 /** Height-aware camera and flying-body collision sweeps (no WebGL dependency).
@@ -23,7 +24,7 @@ export function resolveCameraPosition(anchor,desired,obstacles=[],terrainAt=()=>
   const corridor=[];
   const intersects=(o,r=o.radius,bottom=o.bottom,top=o.top)=>
     o.x+r>=minX&&o.x-r<=maxX&&o.z+r>=minZ&&o.z-r<=maxZ&&top>=minY&&bottom<=maxY;
-  for(const o of obstacles){
+  for(const o of obstacleCandidates(obstacles,minX,minZ,maxX,maxZ,5)){
     if(intersects(o))corridor.push(o);
     if(o.type!=='tree')continue;
     // addTree uses .82*size for the trunk collider. Broad crowns need ~2.3*size.
@@ -60,7 +61,9 @@ export function moveFlightWithCollisions(start,delta,radius,halfHeight,obstacles
   const steps=Math.max(1,Math.ceil(length/Math.max(.15,radius*.23)));
   const dx=delta.x/steps,dy=delta.y/steps,dz=delta.z/steps;
   let {x,y,z}=start,blockedHorizontal=false,blockedVertical=false;
-  const corridor=obstacles.filter(o=>
+  const corridor=obstacleCandidates(obstacles,Math.min(x,x+delta.x)-radius,
+    Math.min(z,z+delta.z)-radius,Math.max(x,x+delta.x)+radius,
+    Math.max(z,z+delta.z)+radius).filter(o=>
     o.x+o.radius+radius>=Math.min(x,x+delta.x) &&
     o.x-o.radius-radius<=Math.max(x,x+delta.x) &&
     o.z+o.radius+radius>=Math.min(z,z+delta.z) &&

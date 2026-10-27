@@ -430,7 +430,7 @@ export class Dragon {
         const attemptedVertical=this.verticalVelocity;
         const moved=moveFlightWithCollisions(this.group.position,
           {x:horizontal.x,y:this.verticalVelocity*dt,z:horizontal.z},1.15,1.65,
-          this.world.obstacles,(x,z)=>this.world.groundHeightAt(x,z,1.15));
+          this.world.obstacleGrid,(x,z)=>this.world.groundHeightAt(x,z,1.15));
         this.group.position.set(moved.x,moved.y,moved.z);
         const impact=flightCollisionResponse({speed:this.speed,
           blockedHorizontal:moved.blockedHorizontal,blockedVertical:moved.blockedVertical,
@@ -464,7 +464,7 @@ export class Dragon {
         }
       } else {
         this.dodgeRemaining=0;
-        const moved=moveWithCollisions(this.group.position,horizontal,1.65,this.world.obstacles,
+        const moved=moveWithCollisions(this.group.position,horizontal,1.65,this.world.obstacleGrid,
           (x,z)=>this.world.walkable(x,z),
           o=>obstacleBlocks(o,this.group.position.y,1.65),
           {groundAt:(x,z)=>this.world.groundHeightAt(x,z,1.65),maxStepUp:1.65});

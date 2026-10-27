@@ -274,6 +274,13 @@ export class Game {
       document.getElementById('performance-panel').textContent+=
         `\nLOD CENÁRIO · ${islandLOD.residentCount}/${ISLANDS.length} ilhas em cache · ${islandLOD.pending} lotes na fila · ${d.jobs} criados · ${d.evicted} ilhas liberadas`;
     }
+    const spatial=this.world.obstacleGrid;
+    if(spatial){
+      const q=spatial.stats;
+      const saved=q.fullScanEquivalent>0?Math.round(100*(1-q.candidates/q.fullScanEquivalent)):0;
+      document.getElementById('performance-panel').textContent+=
+        `\nCOLISÕES ESPACIAIS · ${spatial.count} obstáculos · ${q.queries} consultas · ${Math.max(0,saved)}% candidatos descartados`;
+    }
     const textures=this.world.terrainTextures;
     if(textures){
       const q=textures.stats;
@@ -451,7 +458,7 @@ export class Game {
     if(p.x>650){p.x=310;p.z=35;p.y=Math.max(40,p.y);p.airborne=true;p.mounted=true;p.heroX=300;p.heroZ=35;}
     this.expedition.inRegion=false;
     const dragonY=Math.max(p.y,this.world.groundHeightAt(p.x,p.z,1.65)+2.58);
-    const dragonSpot=recoverFreePosition({x:p.x,z:p.z},1.65,this.world.obstacles,
+    const dragonSpot=recoverFreePosition({x:p.x,z:p.z},1.65,this.world.obstacleGrid,
       (x,z)=>p.airborne||this.world.walkable(x,z),
       o=>obstacleBlocks(o,dragonY,1.65),
       {groundAt:(x,z)=>this.world.groundHeightAt(x,z,1.65),maxHeightDelta:p.airborne?Infinity:2.2});
@@ -459,7 +466,7 @@ export class Game {
     this.dragon.group.position.set(dragonX,Math.max(p.y,this.world.groundHeightAt(dragonX,dragonZ,1.65)+2.58),dragonZ);
     this.dragon.yaw=p.yaw;this.dragon.group.rotation.y=p.yaw;
     this.dragon.airborne=p.mounted&&p.airborne;this.dragon.energy=Math.min(this.progression.stats.maxEnergy,p.energy);
-    const safeHero=recoverFreePosition({x:p.heroX,z:p.heroZ},.52,this.world.obstacles,
+    const safeHero=recoverFreePosition({x:p.heroX,z:p.heroZ},.52,this.world.obstacleGrid,
       (x,z)=>this.world.walkable(x,z),o=>obstacleBlocks(o,this.world.groundHeightAt(p.heroX,p.heroZ,.52)+1.1,1.1),
       {groundAt:(x,z)=>this.world.groundHeightAt(x,z,.52)});
     const heroX=safeHero?.x??p.heroX,heroZ=safeHero?.z??p.heroZ;
@@ -703,7 +710,7 @@ export class Game {
     if(this.dragon.airborne || y-h>4.7 || this.dragon.speed>11 || !this.world.walkable(x,z)){
       this.ui.toast('Para desmontar: pouse numa ilha e reduza a velocidade.');this.audio.play('error');return;
     }
-    const spot=safeDismountSpot({x,z},{obstacles:this.world.obstacles,walkable:(a,b)=>this.world.walkable(a,b),groundAt:(a,b)=>this.world.groundHeightAt(a,b,.52)});
+    const spot=safeDismountSpot({x,z},{obstacles:this.world.obstacleGrid,walkable:(a,b)=>this.world.walkable(a,b),groundAt:(a,b)=>this.world.groundHeightAt(a,b,.52)});
     if(!spot){this.ui.toast('Não há espaço livre para desmontar aqui. Mova Nimbo para um local aberto.');this.audio.play('error');return;}
     this.dragon.dismount();
     this.hero.setMounted(false,{dismountTarget:spot});
@@ -977,7 +984,7 @@ export class Game {
     // Collisions and landscape keep their full sweep checks even on tight turns.
     const followTarget=this.camera.position.clone().lerp(camPos,smoothFollow(airborne?3.8:riding?5.3:6.3,dt));
     const cameraAnchor={x:focus.x,y:focus.y+framing.anchorHeight,z:focus.z};
-    const safeCamera=resolveCameraPosition(cameraAnchor,followTarget,this.world.obstacles,
+    const safeCamera=resolveCameraPosition(cameraAnchor,followTarget,this.world.obstacleGrid,
       (x,z)=>this.world.heightAt(x,z),{radius:.45,groundClearance:1.1});
     this.camera.position.set(safeCamera.x,safeCamera.y,safeCamera.z);
     // Look a few meters ahead along the VIEW, not the actor's previous yaw.
@@ -1156,7 +1163,11 @@ export class Game {
     }else this.dragon.update(dt,{isDown:()=>false},this.elapsed);
     this.updateCamera(dt);
     this.updateActorDetail();
-    this.world.updateDetail(this.camera.position,dt);
+    this.world.updateDetail(this.camera.position,dt,{
+      position:this.dragon.group.position,airborne:this.dragon.riding&&this.dragon.airborne,
+      speed:this.dragon.speed,
+      direction:{x:-Math.sin(this.dragon.yaw),z:-Math.cos(this.dragon.yaw)}
+    });
     this.renderer.render(this.scene,this.camera);
     const benchmarking=this.benchmark.active;
     if(benchmarking)this.updateBenchmark(realDt);

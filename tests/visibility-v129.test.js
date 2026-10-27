@@ -58,7 +58,7 @@ test('cloud update frequency is bounded on weak hardware',()=>{
 test('graphics profile controls scene detail without forcing a new game or changing save format',()=>{
   const game=source('../src/game/Game.js');
   assert.match(game,/this\.world\?\.setDetailQuality\(tier\)/);
-  assert.match(game,/this\.world\.updateDetail\(this\.camera\.position,dt\)/);
+  assert.match(game,/this\.world\.updateDetail\(this\.camera\.position,dt,\{/);
 });
 
 test('runtime detail toggles island-scoped foliage/grass, never collision obstacles',async()=>{

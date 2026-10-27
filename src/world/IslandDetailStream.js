@@ -37,18 +37,22 @@ export class IslandDetailStream {
     this.lastUsed.set(name,++this.tick);
     this.stats.peakResident=Math.max(this.stats.peakResident,this.resident.size);
   }
-  plan(observer,tier){
+  plan(observer,tier,{prefetchIsland=null}={}){
     const ranked=rankIslandDetail(observer,tier,this.islands,new Set(this.resident.keys()));
+    const front=prefetchIsland&&this.islands.find(i=>i.name===prefetchIsland.name);
+    if(front&&!ranked.some(item=>item.island.name===front.name))
+      ranked.push({island:front,distance:islandShoreDistance(observer,front)+300,prefetch:true});
     this.wanted=new Set(ranked.map(item=>item.island.name));
     const jobs=[];
     const required=tier==='economy'?this.phases.filter(phase=>phase!=='flowers'):this.phases;
-    for(const {island,distance} of ranked){
+    for(const {island,distance,prefetch=false} of ranked){
+      const islandPhases=prefetch?['coast','foliage']:required;
       const done=this.resident.get(island.name);
-      if(required.every(phase=>done?.has(phase))){
+      if(islandPhases.every(phase=>done?.has(phase))){
         this.lastUsed.set(island.name,++this.tick);this.stats.reused++;
         continue;
       }
-      for(const phase of required)if(!done?.has(phase)){
+      for(const phase of islandPhases)if(!done?.has(phase)){
         jobs.push({island,phase,distance});
       }
     }

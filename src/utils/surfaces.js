@@ -1,3 +1,4 @@
+import {obstacleCandidates} from './ObstacleGrid.js';
 import {obstacleBlocks,overlapsCircle} from './collision.js';
 
 /** Gently flatten village terrain so the platform never buries its own base or floats
@@ -30,6 +31,8 @@ export function surfaceHeightAt(terrainY,x,z,surfaces=[],bodyRadius=0) {
 /** Find a clear nearby dismount position instead of placing the rider inside a prop. */
 export function safeDismountSpot(origin,{obstacles=[],walkable=()=>true,groundAt=()=>0,radius=.52,maxHeightDelta=1.6}={}) {
   const originHeight=groundAt(origin.x,origin.z);
+  const candidates=obstacleCandidates(obstacles,origin.x-5.3-radius,origin.z-5.3-radius,
+    origin.x+5.3+radius,origin.z+5.3+radius);
   for(const distance of [2.8,4,5.3]){
     for(let index=0;index<12;index++){
       const angle=Math.PI/4+index*Math.PI/6;
@@ -38,7 +41,7 @@ export function safeDismountSpot(origin,{obstacles=[],walkable=()=>true,groundAt
       if(!walkable(x,z))continue;
       const ground=groundAt(x,z);
       if(!Number.isFinite(ground)||Math.abs(ground-originHeight)>maxHeightDelta)continue;
-      const blocked=obstacles.some(o=>obstacleBlocks(o,ground+1.1,1.1)&&overlapsCircle(x,z,radius,o));
+      const blocked=candidates.some(o=>obstacleBlocks(o,ground+1.1,1.1)&&overlapsCircle(x,z,radius,o));
       if(!blocked)return {x,z,y:ground};
     }
   }

@@ -82,5 +82,5 @@ test('game Play button prepares nearby details before shader warmup while menu r
  assert.ok(start.indexOf('await this.world.prepareStartingIsland')<start.indexOf('await prep.run(this)'));
  assert.ok(start.indexOf('await prep.run(this)')<start.indexOf('this.started=true'));
  assert.match(game,/LOD CENÁRIO/);
- assert.match(game,/this\.world\.updateDetail\(this\.camera\.position,dt\)/);
+ assert.match(game,/this\.world\.updateDetail\(this\.camera\.position,dt,\{/);
 });

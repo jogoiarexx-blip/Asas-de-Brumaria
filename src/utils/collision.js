@@ -1,3 +1,4 @@
+import {obstacleCandidates} from './ObstacleGrid.js';
 /** Circle-based collision for scenery props, with small swept steps and axis sliding.
  * Obstacle coordinates describe an X/Z footprint and Y extent.
  * Pure math so collision behavior can be regression-tested without WebGL.
@@ -57,7 +58,7 @@ export function obstacleBlocks(obstacle, centerY, halfHeight=1) {
 }
 export function obstacleCeiling(x,z,radius,obstacles) {
   let ceiling=-Infinity;
-  for(const o of obstacles) if(overlapsCircle(x,z,radius,o)) ceiling=Math.max(ceiling,o.top);
+  for(const o of obstacleCandidates(obstacles,x-radius,z-radius,x+radius,z+radius)) if(overlapsCircle(x,z,radius,o)) ceiling=Math.max(ceiling,o.top);
   return ceiling;
 }
 /**
@@ -75,7 +76,7 @@ export function moveWithCollisions(start,delta,radius,obstacles,canOccupy=()=>tr
   const highX=Math.max(start.x,start.x+delta.x)+radius;
   const lowZ=Math.min(start.z,start.z+delta.z)-radius;
   const highZ=Math.max(start.z,start.z+delta.z)+radius;
-  const candidates=obstacles.filter(o=>
+  const candidates=obstacleCandidates(obstacles,lowX,lowZ,highX,highZ).filter(o=>
     o.x+o.radius>=lowX&&o.x-o.radius<=highX&&
     o.z+o.radius>=lowZ&&o.z-o.radius<=highZ&&blocks(o));
   const groundAt=options.groundAt;
@@ -112,7 +113,9 @@ export function landmarkCollisionVolumes(x,z,groundY) {
  */
 export function recoverFreePosition(start,radius,obstacles,canOccupy=()=>true,blocks=()=>true,options={}) {
   const pad=options.padding??.08;
-  const valid=(x,z)=>canOccupy(x,z) && !obstacles.some(o=>blocks(o)&&overlapsCircle(x,z,radius+pad,o));
+  const searchRadius=(options.maxRadius??18)+radius+pad;
+  const candidates=obstacleCandidates(obstacles,start.x-searchRadius,start.z-searchRadius,start.x+searchRadius,start.z+searchRadius);
+  const valid=(x,z)=>canOccupy(x,z) && !candidates.some(o=>blocks(o)&&overlapsCircle(x,z,radius+pad,o));
   if(valid(start.x,start.z))return {x:start.x,z:start.z,recovered:false};
   const groundAt=options.groundAt;
   const originalY=groundAt?.(start.x,start.z);

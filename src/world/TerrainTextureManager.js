@@ -56,7 +56,7 @@ export class TerrainTextureManager {
     this.queue=[];this.queued=new Map();this.busy=false;
     this.tier=null;this.quality='balanced';this.serial=0;
     this.failed=new Set();this.lastSeen=new Map();this.retireTimers=new Map();
-    this.focus=null;this.islands=[];
+    this.focus=null;this.islands=[];this.ahead=null;
     this.stats={requests:0,uploads:0,evictions:0,discarded:0,upgrades:0,downgrades:0};
   }
   register(kind,material,island=null){
@@ -77,7 +77,18 @@ export class TerrainTextureManager {
       if(item.material.map===this.placeholder)
         needed.add(textureFile(item.kind,'diff','low'));
     }
+    if(this.ahead)needed.add(textureFile(this.ahead.kind,'diff','low'));
     return needed;
+  }
+  /** The following island receives only a 512px preview; never its expensive
+   * 2048px PBR maps until it enters normal distance thresholds. */
+  prefetchAhead(island=null){
+    const entry=island&&this.registrations.get(island.name);
+    const next=entry?{id:island.name,kind:entry.kind}:null;
+    if(this.ahead?.id===next?.id)return;
+    this.ahead=next;
+    if(next){this._queueJob(next.kind,'diff','low',520);this._pump();}
+    this.scheduleIdle(()=>this._pruneUnused());
   }
   _queueJob(kind,channel,tier,priority){
     const url=textureFile(kind,channel,tier);
@@ -183,6 +194,11 @@ export class TerrainTextureManager {
     for(const entry of this.registrations.values()){
       if(entry.material.map)keep.add(entry.material.map);
       if(entry.material.normalMap)keep.add(entry.material.normalMap);
+    }
+    // Keep exactly one extra prefetched low-resolution map warm in the GPU.
+    if(this.ahead){
+      const preview=this.loading.get(textureFile(this.ahead.kind,'diff','low'));
+      if(preview)keep.add(preview);
     }
     for(const [url,texture] of this.loading){
       if(keep.has(texture))continue;

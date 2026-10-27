@@ -1,3 +1,13 @@
+## v1.4.25 — Colisões espaciais e pré-carregamento inteligente de ilhas
+
+- Implementado índice uniforme 2D por células de 32 unidades para obstáculos estáticos. Caminhada, voo, câmera, pousos, desembarque e recuperação de saves usam a mesma detecção precisa de antes, mas consultam apenas os candidatos nas células intersectadas.
+- O índice é atualizado automaticamente quando obstáculos da montanha são adicionados e quando a região é removida, inclusive após substituir o array. Mantidas as colisões 3D de casas, árvores, copas e marcos.
+- Pré-carregamento direcional: voando acima de 15 unidades/s, o jogo escolhe no máximo uma ilha à frente (cone de direção, até ~6 s de antecipação). Nunca ativa IA, simulação ou carregamento no menu principal.
+- Antes da chegada, prepara apenas espuma costeira e floresta da ilha prevista, mais uma textura de **512 px**; as versões 1K/2K e outros detalhes continuam seguindo a distância real e a qualidade selecionada.
+- Fila de GPU e texturas permanece serializada, descarte libera a previsão anterior ao mudar de rota; demais LODs por ilha seguem íntegros.
+- F3 mostra o total de obstáculos, consultas e percentual de candidatos eliminados pelo filtro espacial. Nenhuma mudança na estrutura dos saves, nas missões ou nas espécies.
+- Novos testes diferenciais contra a colisão antiga, incluindo 500 consultas aleatórias, 70 trajetórias de voo e caminhada, interações com a montanha e prefetch. Regressões no Chromium adicionadas à CI.
+
 ## v1.4.24 — Natureza, água, dragões, sons e poderes elementais
 
 - **Terreno:** variação procedural de matizes por coordenada e bioma, preservando a geometria, colisões e texturas LOD (512/1024/2048 px).

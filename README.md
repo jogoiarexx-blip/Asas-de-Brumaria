@@ -885,3 +885,9 @@ A renderização usa `src/world/IslandDetailStream.js`, um agendador de lotes vi
 * O áudio é criado com WebAudio **somente após iniciar**: vento, mar, asas, pouso, disparos e impactos são sons procedurais locais. A opção M continua silenciando todos os sons.
 * **F** continua sendo o sopro básico; **H** libera um novo poder elemental por espécie, custa energia e tem recarga de 6,8 segundos. No controle, use **X + Y** simultaneamente; o estábulo continua no Start. Na tela sensível ao toque, use **PODER**.
 * O poder é calculado no espaço 3D, não atravessa o mapa, ignora alvos inativos e preserva os desbloqueios/missões.
+
+### Colisões espaciais + pré-carregamento do voo (v1.4.25)
+
+`src/utils/ObstacleGrid.js` indexa obstáculos estáticos em células X/Z de 32 unidades. Objetos mantêm todas as colisões detalhadas originais; `Game`, `Dragon`, `Hero` e a câmera só testam os candidatos locais. O sistema detecta inserções e remoções da região da montanha. O algoritmo antigo continua aceitando arrays normais, para testes e ambientes isolados.
+
+`src/world/IslandFlightPrefetch.js` usa a direção efetiva do dragão, a velocidade e a posição para selecionar uma única ilha adiante. `IslandDetailStream` enfileira apenas costa e floresta por antecipação; `TerrainTextureManager.prefetchAhead()` mantém a imagem WebP de 512 px preparada sem adiantar mapas pesados. O menu não simula nem transmite assets adicionais. Consulte F3 para medir candidatos descartados pela grade.
