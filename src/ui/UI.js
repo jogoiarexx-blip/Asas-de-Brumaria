@@ -12,7 +12,7 @@ export class UI {
     this.questIndex=document.getElementById('quest-index');this.questTitle=document.getElementById('quest-title');
     this.questDesc=document.getElementById('quest-desc');this.questProgress=document.getElementById('quest-progress');this.questGuide=document.getElementById('quest-guide');
     this.energyNumber=document.getElementById('energy-number');this.energyBar=document.getElementById('energy-bar');
-    this.speed=document.getElementById('speed-text');this.altitude=document.getElementById('altitude-text');this.dodgeStatus=document.getElementById('dodge-status');
+    this.speed=document.getElementById('speed-text');this.altitude=document.getElementById('altitude-text');this.dodgeStatus=document.getElementById('dodge-status');this.pulseStatus=document.getElementById('pulse-status');
     this.healthNumber=document.getElementById('health-number');this.healthBar=document.getElementById('health-bar');
     this.healthLabel=document.getElementById('health-label');
     this.hitOverlay=document.getElementById('hurt-overlay');this.targetLock=document.getElementById('target-lock');
@@ -188,6 +188,7 @@ export class UI {
     this.hitOverlay.style.opacity=String(Math.min(.66,game.hitFlash*1.25));
     this.speed.textContent=dragon.riding?`VELOCIDADE ${Math.round(dragon.speed*3.6)} km/h`:game.input.isDown('shift')?'A PÉ · PASSOS LEVES':'A PÉ';
     this.dodgeStatus.textContent=dragon.dodgeRemaining>0?'✦ ESQUIVANDO':dragon.dodgeCooldown>0?`ESQUIVA ${dragon.dodgeCooldown.toFixed(1)}s`:dragon.riding&&dragon.airborne?'ESQUIVA Q · PRONTA':'ESQUIVA · EM VOO';
+    if(this.pulseStatus)this.pulseStatus.textContent=game.pulseCooldown>0?`H · PODER ${game.pulseCooldown.toFixed(1)}s`:'H · PODER PRONTO';
     const ground=Math.max(-.9,world.heightAt(dragon.group.position.x,dragon.group.position.z));
     this.altitude.textContent=`ALT ${Math.max(0,Math.round(dragon.group.position.y-ground))} m`;
     const position=dragon.riding?dragon.group.position:hero.group.position;

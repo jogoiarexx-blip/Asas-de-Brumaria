@@ -1,3 +1,15 @@
+## v1.4.24 — Natureza, água, dragões, sons e poderes elementais
+
+- **Terreno:** variação procedural de matizes por coordenada e bioma, preservando a geometria, colisões e texturas LOD (512/1024/2048 px).
+- **Grama:** substituição dos cones por tufos de três lâminas curvas com raízes sombreadas, reutilizando um único BufferGeometry e InstancedMesh por ilha, mantendo as cores das estações/biomas e o carregamento progressivo existente.
+- **Árvores:** copa baixa poligonagem com assimetrias sutis e coloração de troncos por instância; o LOD e o agrupamento de árvores continuam compartilhados.
+- **Água:** normal e padrão de pequenas ondas melhorados em uma textura Canvas local de 384 px. Reflexo aproximado pela iluminação do sol e espuma costeira com pulsação sutil; sem reflexos em render targets adicionais.
+- **Dragões:** brilho de olhos responsivo a ataques e danos na montaria procedural; nos dragões inimigos, padrões nas asas e alerta luminoso antes da rajada. Importação GLB e animações existentes não foram alteradas.
+- **Sons:** sintetizador WebAudio com compressor, limite de vozes, sopro com ruído filtrado, impactos mais encorpados, som de asas e pouso. Ondas do mar e vento acompanham a posição/velocidade do dragão, com crossfade suave. Sons são gerados localmente e iniciam apenas após o clique de iniciar.
+- **Novo poder:** tecla H/tela de toque ou X+Y no gamepad executa **onda elemental** com efeitos e som distintos para cada espécie, energia e recarga de 6,8 s. O pulso atinge apenas inimigos ativos dentro da distância 3D; não burla missões ou proteções do combate. F mantém o sopro e Q mantém a esquiva.
+- **Performance:** as ondas e partículas reutilizam instâncias do sistema de efeitos, o anel é preparado na compilação inicial de shaders, e o cache de ilhas/LOD não foi removido.
+- **QA:** 11 novos testes de regressão para regras de poderes, 3D, grama, água, luz de inimigos, controle de entrada, limites de áudio e ambientes. Suíte Node.js local: 546 aprovados.
+
 ## v1.4.23 — LOD de cenário por ilha e streaming de lotes visuais
 
 - A criação de vegetação (árvores, pedras, grama, flores) e linhas de espuma passa a ser por ilha e **somente quando o jogador se aproxima**; o terreno, os pontos de missão e todas as colisões continuam presentes desde a inicialização.

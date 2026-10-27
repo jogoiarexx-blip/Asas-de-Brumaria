@@ -10,9 +10,16 @@ export class Effects {
       fire:new THREE.MeshBasicMaterial({color:0xffa15e}),
       enemy:new THREE.MeshBasicMaterial({color:0xf06aab}),
       rescue:new THREE.MeshBasicMaterial({color:0x9dffde}),
-      impact:new THREE.MeshBasicMaterial({color:0xffe4ae})
+      impact:new THREE.MeshBasicMaterial({color:0xffe4ae}),
+      pulse:new THREE.MeshBasicMaterial({color:0x73dbef,transparent:true,opacity:.9,depthWrite:false})
     };
     this.buckets={};this.dummy=new THREE.Object3D();
+    this.pulseMaterial=new THREE.MeshBasicMaterial({color:0x80dbfc,transparent:true,opacity:0,
+      depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending});
+    this.pulseRing=new THREE.Mesh(new THREE.RingGeometry(.84,1,56),this.pulseMaterial);
+    this.pulseRing.rotation.x=-Math.PI/2;
+    this.pulseRing.visible=false;this.pulseRing.frustumCulled=false;this.pulseRing.castShadow=false;
+    scene.add(this.pulseRing);this.pulseTime=0;this.pulseRadius=32;
     const capacity=effectLimit('quality');
     for(const [type,material] of Object.entries(this.materials)){
       const mesh=new THREE.InstancedMesh(this.geometry,material,capacity);
@@ -47,7 +54,21 @@ export class Effects {
       particle.rotation=Math.random()*6;
     }
   }
+  pulse(position,{radius=34,color=0x80dbfc}={}){
+    this.pulseTime=.62;this.pulseRadius=radius;
+    this.pulseRing.position.copy(position);this.pulseRing.position.y-=.45;
+    this.pulseRing.visible=true;this.pulseMaterial.color.setHex(color);
+    this.materials.pulse.color.setHex(color);
+    this.burst(position,'pulse',26);
+  }
   update(dt){
+    if(this.pulseTime>0){
+      this.pulseTime=Math.max(0,this.pulseTime-dt);
+      const progress=1-this.pulseTime/.62;
+      this.pulseRing.scale.setScalar(this.pulseRadius*(.10+.9*progress));
+      this.pulseMaterial.opacity=.78*Math.pow(Math.max(0,1-progress),1.25);
+      this.pulseRing.visible=this.pulseTime>0;
+    }
     const d=this.dummy;
     for(const bucket of Object.values(this.buckets)){
       const particles=bucket.particles;
@@ -67,6 +88,7 @@ export class Effects {
   }
   dispose(){
     for(const bucket of Object.values(this.buckets))this.scene.remove(bucket.mesh);
+    this.scene.remove(this.pulseRing);this.pulseRing.geometry.dispose();this.pulseMaterial.dispose();
     this.geometry.dispose();Object.values(this.materials).forEach(m=>m.dispose());
   }
 }

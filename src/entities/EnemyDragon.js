@@ -13,7 +13,7 @@ function enemyModel(color,accent) {
   const main=new THREE.MeshStandardMaterial({color,roughness:.7,flatShading:true});
   const dark=new THREE.MeshStandardMaterial({color:0x292034,roughness:.82,flatShading:true});
   const wingSkin=new THREE.MeshStandardMaterial({color:accent,roughness:.75,side:THREE.DoubleSide,flatShading:true});
-  const eye=new THREE.MeshBasicMaterial({color:0xffc172});
+  const eye=new THREE.MeshStandardMaterial({color:0xffd3b1,emissive:0xf76ea2,emissiveIntensity:.5,roughness:.4});
   const add=(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1)=>{
     const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);
     mesh.castShadow=true;parent.add(mesh);return mesh;
@@ -51,7 +51,16 @@ function enemyModel(color,accent) {
   }
   const tip=add(tailParent,new THREE.ConeGeometry(.45,1.25,3),wingSkin,0,0,.92);tip.rotation.x=Math.PI/2;
   for(let i=0;i<4;i++) add(root,new THREE.ConeGeometry(.22,.74,4),dark,0,.77,-.5+i*.65);
-  return {root,head,wings,tail};
+  // Wing markings and layered horn ridges create distinct enemy silhouettes.
+  const stripeGeo=new THREE.PlaneGeometry(1.55,.21);
+  const stripeMat=new THREE.MeshBasicMaterial({color:accent,side:THREE.DoubleSide,transparent:true,opacity:.55,depthWrite:false});
+  for(const {wing,side} of wings){
+    for(let stripe=0;stripe<2;stripe++){
+      const mark=add(wing,stripeGeo,stripeMat,side*(1.1+stripe*.56),.12,-.44+stripe*.32,.7,.9,.9);
+      mark.rotation.set(-.23,side*.22,side*.15);mark.castShadow=false;
+    }
+  }
+  return {root,head,wings,tail,eye};
 }
 export const ENEMY_SPAWNS=[
   {x:-67,y:39,z:-177,color:0x774e6d,accent:0xb35c8e},
@@ -124,7 +133,9 @@ export class EnemyDragon {
     this.visualClock+=dt;
     if(shouldAnimateActor(this.visualLevel,this.visualClock)){
     this.visualClock=0;
-    const {root,wings,head,tail}=this.model;
+    const {root,wings,head,tail,eye}=this.model;
+    const charging=this.state==='chase'&&this.fireCooldown<.65;
+    eye.emissiveIntensity=charging?1.4+Math.sin(time*25)*.38:.45+this.hurtPulse*.8;
     root.rotation.z=THREE.MathUtils.damp(root.rotation.z,-shortestAngle(intendedYaw-this.yaw)*.20,2.8,dt);
     root.rotation.x=Math.sin(time*2+this.phase)*.04;
     root.position.y=Math.sin(time*5+this.phase)*.15;

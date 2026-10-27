@@ -876,3 +876,12 @@ O menu principal agora possui uma arte vetorial inédita das ilhas e de um drag�
 ### LOD de cenário por ilha (v1.4.23)
 
 A renderização usa `src/world/IslandDetailStream.js`, um agendador de lotes visuais por região inspirado no padrão de LOD do Driver 2: terreno/colisões e objetivos existem desde o início; copa das árvores, troncos, pedras, grama, flores e espuma são criados sob demanda. O cache é reutilizado no retorno às ilhas; recursos fora da faixa podem ser liberados. A cada frame, somente um lote pode ser construído, com priorização da costa mais próxima. Durante o Play, os detalhes do ponto de partida são preparados antes da pré-compilação dos shaders. A qualidade Detalhada continua mostrando todos os lotes quando a ilha está próxima. F3 exibe as estatísticas de streaming e renderização.
+
+### Natureza, áudio e poder elemental (v1.4.24)
+
+* A grama usa três lâminas com pontas curvadas, uma geometria compartilhada e um `InstancedMesh` por ilha. A textura do terreno e o cache de paisagem anterior continuam ativos.
+* As árvores usam copas assimétricas de baixa poligonagem e troncos com tons variados, mantendo um pequeno número de draw calls por ilha.
+* A água altera cor e relevo da onda em resposta à iluminação, com espuma das praias animada sem passes extras.
+* O áudio é criado com WebAudio **somente após iniciar**: vento, mar, asas, pouso, disparos e impactos são sons procedurais locais. A opção M continua silenciando todos os sons.
+* **F** continua sendo o sopro básico; **H** libera um novo poder elemental por espécie, custa energia e tem recarga de 6,8 segundos. No controle, use **X + Y** simultaneamente; o estábulo continua no Start. Na tela sensível ao toque, use **PODER**.
+* O poder é calculado no espaço 3D, não atravessa o mapa, ignora alvos inativos e preserva os desbloqueios/missões.

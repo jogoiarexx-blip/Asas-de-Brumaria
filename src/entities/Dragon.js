@@ -60,6 +60,7 @@ export class Dragon {
     membrane.map=patternTexture('wing');
     const horn=new THREE.MeshStandardMaterial({color:0x83c2ae,roughness:.6});
     const eyeMat=new THREE.MeshStandardMaterial({color:0xa3f2e7,emissive:0x247776,emissiveIntensity:.28,roughness:.25});
+    this.eyeGlowMaterial=eyeMat;
     const pupilMat=new THREE.MeshBasicMaterial({color:0x0b2531});
     const scaleMat=new THREE.MeshStandardMaterial({color:0x2c6e74,roughness:.82,metalness:.08});
     const spotMat=new THREE.MeshStandardMaterial({color:0x76c3b2,roughness:.72});
@@ -495,6 +496,8 @@ export class Dragon {
     this.group.rotation.y=this.yaw;
     const floorNow=Math.max(2.7,this.world.groundHeightAt(this.group.position.x,this.group.position.z,1.65)+2.58);
     this.pose=flightPhase(this.airborne,this.takeoffTime,this.group.position.y-floorNow,this.verticalVelocity<-.8,this.landingTimer);
+    this.eyeGlowMaterial.emissiveIntensity=.25+(this.attackTime>0?.52:0)+
+      (this.hurtTime>0?.42:0)+(this.airborne?.08:0);
     const wingLift=liftBlend(this.airborne,this.takeoffTime,this.landingTimer);
     const contact=flightContactPose({phase:this.pose,takeoffTime:this.takeoffTime,landingTimer:this.landingTimer});
     // Apply squash *and* gait bob once at the end; a second assignment previously erased it.

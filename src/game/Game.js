@@ -46,6 +46,8 @@ import {readGPUSettings,writeGPUSettings,chooseContextOptions,describeRenderer} 
 import {bossAttackStep,bossAttackPattern,bossShotDirections,bossPatternLabel} from '../systems/MountainCombat.js';
 import {contactBurstSize} from '../entities/FlightContact.js';
 import {bossAimPoint} from '../systems/AerialCombat.js';
+import {pulseConfig,canCastPulse,targetsInPulse,PULSE_COOLDOWN} from '../systems/DragonPowers.js';
+import {coastDistance} from '../world/TerrainTextureLOD.js';
 import {counterOpportunity,counterStrike} from '../systems/BossCounter.js';
 
 export class Game {
@@ -101,7 +103,7 @@ export class Game {
     this.dragonAssetUI.onReset=()=>this.speciesModels.select(this.progression.species);
     this.enemies=new EnemySquad(this.scene,this.world);
     this.frontier=new FrontierActivities(this.scene,this.world,this.savedData?.frontier);
-    this.effects=new Effects(this.scene);
+    this.effects=new Effects(this.scene);this.pulseCooldown=0;this.wingAudioTime=0;
     this.applySceneQuality();
     this.contracts=new VillageContracts(this.savedData?.contracts,this.dayNight.state.day);
     this.villagers=new VillageNPCs(this.scene,this.world);
@@ -787,6 +789,36 @@ export class Game {
       this.effects.burst(start,'fire',7);
     }
   }
+  castPulse(){
+    const config=pulseConfig(this.progression.species,this.progression.skills.fire);
+    const allowed=canCastPulse({riding:this.dragon.riding,energy:this.dragon.energy,
+      cooldown:this.pulseCooldown,dialogue:this.ui.dialogueOpen},config);
+    if(!allowed.ok){this.ui.toast(allowed.reason,2);return false;}
+    // Only an accepted button press spends energy or triggers the attack pose.
+    this.pulseCooldown=PULSE_COOLDOWN;
+    this.dragon.energy-=config.cost;
+    this.dragon.triggerAttack();
+    const origin=this.dragon.group.position;
+    this.effects.pulse(origin,config);this.audio.play('pulse',this.progression.species);
+    let hit=0,defeated=0;
+    if(!this.inMountain&&this.missions.stage===4){
+      for(const enemy of targetsInPulse(origin,this.enemies.alive,config.radius)){
+        const dead=enemy.takeHit(config.damage);hit++;
+        this.effects.burst(enemy.position,dead?'fire':'impact',dead?14:7);
+        if(dead){this.missions.enemyDefeated();defeated++;}
+      }
+    }
+    if(!this.inMountain&&this.missions.stage>=3){
+      for(const target of this.frontier.pulseGuardians(origin,config.radius,config.damage)){
+        hit++;
+        this.effects.burst(target.position,target.dead?'fire':'impact',target.dead?14:7);
+        if(target.dead){defeated++;this.progression.grant(target.reward);this.saveGame();this.ui.renderStable(this);}
+      }
+    }
+    this.ui.toast(
+      `${config.name}! ${hit?`${hit} inimigo(s) atingido(s)${defeated?` · ${defeated} derrotado(s)`:''}`:'Onda elemental liberada'}.`,3);
+    return true;
+  }
   takeDamage(amount){
     // The short lateral evasive window avoids a projectile, even if its
     // swept sphere intersects the player on this frame.
@@ -1033,7 +1065,8 @@ export class Game {
       if(weatherChanged)this.ui.toast(`Clima mudou: ${this.weather.mode.label}`,4);
     }
     if(this.started){
-      if(this.input.consume('t')||this.input.consume('start'))this.toggleStable();
+      const pulseChord=this.input.pad.connected&&this.input.isDown('t')&&this.input.isDown('f');
+      if((!pulseChord&&this.input.consume('t'))||this.input.consume('start'))this.toggleStable();
       if(this.input.consume('escape')){this.ui.stable.classList.add('hidden');this.ui.hideDialogue();document.getElementById('gpu-panel').classList.add('hidden');}
       if(this.input.consume('p'))this.saveGame(true);
       if(this.input.consume('c')){this.weather.cycle();this.saveGame();this.ui.toast(`Clima: ${this.weather.mode.label}`,3);}
@@ -1054,7 +1087,9 @@ export class Game {
         return;
       } else {
       if(this.input.consume('e')){if(this.ui.dialogueOpen)this.ui.hideDialogue();else if(!this.interactVillager()&&!this.interactWildDragon())this.mountOrDismount();}
-      if(!this.ui.dialogueOpen&&this.input.consume('f'))this.fire();
+      if(!this.ui.dialogueOpen&&(this.input.consume('h')||
+        (pulseChord&&(this.input.consume('t')||this.input.consume('f')))))this.castPulse();
+      if(!pulseChord&&!this.ui.dialogueOpen&&this.input.consume('f'))this.fire();
       if(!this.ui.dialogueOpen&&this.input.consume('q')){
         const sideways=this.input.axis('a','d');
         if(this.dragon.tryDodge(sideways)){
@@ -1071,10 +1106,22 @@ export class Game {
       this.input.cameraYaw=this.cameraOrbit.yaw;
       this.dragon.setWind(this.weather.mode.wind);
       this.dragon.update(dt,this.input,this.elapsed);
+      this.pulseCooldown=Math.max(0,this.pulseCooldown-dt);
+      this.wingAudioTime=Math.max(0,this.wingAudioTime-dt);
+      if(this.dragon.riding&&this.dragon.airborne&&this.dragon.speed>12&&this.wingAudioTime===0){
+        this.audio.play('wingbeat');this.wingAudioTime=1.05+Math.min(.7,20/this.dragon.speed);
+      }
+      const observer=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
+      let nearestCoast=Infinity;
+      for(const island of ISLANDS)nearestCoast=Math.min(nearestCoast,coastDistance(observer,island));
+      this.audio.updateAmbience({speed:this.dragon.riding?this.dragon.speed:this.hero.moveSpeed,
+        airborne:this.dragon.riding&&this.dragon.airborne,coastDistance:nearestCoast,
+        wind:this.weather.mode.wind,rain:this.weather.mode.rain,time:this.elapsed});
       if(this.dragon.contactPulse>0){
         const d=this.dragon,p=d.group.position;
         const count=contactBurstSize(d.contactKind,d.contactSpeed,
           this.world.walkable(p.x,p.z),this.graphics.tier);
+        if(d.contactKind==='landing')this.audio.play('land');
         if(count){
           this._groundContactPosition.set(p.x,this.world.groundHeightAt(p.x,p.z,1.15)+.3,p.z);
           this.effects.burst(this._groundContactPosition,'impact',count);

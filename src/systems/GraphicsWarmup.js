@@ -27,6 +27,7 @@ export class GraphicsWarmup{
       ]},
       {name:'Fogo e efeitos',roots:[
         ...Object.values(game.effects.buckets).map(b=>b.mesh),
+        game.effects.pulseRing,
         ...game.projectilePool.slice(0,2).map(p=>p.mesh)
       ]},
       {name:'Vegetação, terreno e sombras',roots:[game.scene]}

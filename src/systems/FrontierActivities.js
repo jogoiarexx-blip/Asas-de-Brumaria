@@ -121,6 +121,19 @@ export class FrontierActivities {
     }
     return events;
   }
+  pulseGuardians(origin,radius,damage){
+    const hits=[];
+    for(const [id,guardian] of this.guardians){
+      if(!guardian.active||!guardian.alive)continue;
+      if(guardian.position.distanceToSquared(origin)>radius*radius)continue;
+      const dead=guardian.takeHit(damage);
+      if(dead)this.defeated.add(id);
+      const zone=FRONTIER_ZONES.find(z=>z.id===id);
+      hits.push({id,dead,health:guardian.health,name:zone?.guardian??id,
+        position:guardian.position.clone(),reward:dead?zone.guardianReward:0});
+    }
+    return hits;
+  }
   setDetail(observer,tier,camera,forward){
     for(const guardian of this.guardians.values())
       if(guardian.active)guardian.setDetail(observer,tier,camera,forward);

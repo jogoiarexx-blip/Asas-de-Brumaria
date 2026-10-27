@@ -1,6 +1,6 @@
 import {GamepadController} from './GamepadController.js';
 
-const relevantKeys = new Set(['w','a','s','d','e','f','r','m','p','t','c','n','g','v','q','escape','f3','b',' ','shift','control','arrowup','arrowdown','arrowleft','arrowright']);
+const relevantKeys = new Set(['w','a','s','d','e','f','h','r','m','p','t','c','n','g','v','q','escape','f3','b',' ','shift','control','arrowup','arrowdown','arrowleft','arrowright']);
 export const normalized = key => key === ' ' ? 'space' : key.toLowerCase() === 'control' ? 'ctrl' : key.toLowerCase();
 export class Input {
   constructor() {

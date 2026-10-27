@@ -6,6 +6,7 @@ import { surfaceHeightAt,flattenVillageGround } from '../utils/surfaces.js';
 import {terrainPalette} from './TerrainPalette.js';
 import {TerrainTextureManager,terrainKind} from './TerrainTextureManager.js';
 import {treeVariant,treeCrownPose} from './TreeVariation.js';
+import {makeGrassTuftGeometry,terrainColorGrain,makeTreeCrownGeometry} from './NatureGeometry.js';
 import {applyIslandVisibility,shouldRefreshClouds,wrappedCloudX} from './VisibilityBudget.js';
 import {IslandDetailStream,ISLAND_DETAIL_PHASES} from './IslandDetailStream.js';
 const brown = new THREE.MeshLambertMaterial({color:0x855b37});
@@ -73,18 +74,19 @@ export class World {
     sunOrb.position.set(-400,270,-520); scene.add(sunOrb);this.sunOrb=sunOrb;
     const waterTexture = this.makeWaterTexture();
     this.waterTexture=waterTexture;
-    const water = new THREE.Mesh(new THREE.PlaneGeometry(2200,2200),new THREE.MeshPhongMaterial({color:0x287da2,shininess:115,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.095,transparent:false}));
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(2200,2200),new THREE.MeshPhongMaterial({color:0x287da2,shininess:120,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.12,transparent:false}));
+    this.water=water;
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
     this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds();
   }
   makeWaterTexture() {
-    const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='#62b6c9';ctx.fillRect(0,0,256,256);
-    for (let i=0;i<130;i++) { const x=rand()*256, y=rand()*256;
-      ctx.strokeStyle=`rgba(214,254,250,${.07+rand()*.18})`;
-      ctx.lineWidth=1+rand()*1.8;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+7,y-3,x+18+rand()*20,y);ctx.stroke(); }
+    const canvas=document.createElement('canvas');canvas.width=384;canvas.height=384;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#62b6c9';ctx.fillRect(0,0,384,384);
+    for (let i=0;i<330;i++) { const x=rand()*384, y=rand()*384;
+      ctx.strokeStyle=`rgba(214,254,250,${.04+rand()*.14})`;
+      ctx.lineWidth=.6+rand()*1.35;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+7,y-3,x+18+rand()*27,y);ctx.stroke(); }
     const texture=new THREE.CanvasTexture(canvas);
     texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(18,18);texture.colorSpace=THREE.SRGBColorSpace;return texture;
   }
@@ -105,7 +107,8 @@ export class World {
         const slope=clamp(Math.hypot(dx,dz)/3.2,0,1);
         const detail=Math.sin(x*.17+island.seed)*Math.cos(z*.13-island.seed);
         const c=terrainPalette(y,slope,detail,island.biome);
-        colors.push(c[0],c[1],c[2]);
+        const grain=terrainColorGrain(x,z,y,island.seed,island.biome);
+        colors.push(Math.min(1,c[0]*grain),Math.min(1,c[1]*grain),Math.min(1,c[2]*grain));
       }
     }
     for(let ring=0;ring<R;ring++)for(let j=0;j<N;j++){
@@ -199,8 +202,8 @@ export class World {
   buildWildGrass() { this._buildGrassForIsland(ISLANDS[0]); }
   _buildGrassForIsland(island) {
     if(this.grassByIsland.has(island.name))return;
-    const geometry=this._grassGeo??(this._grassGeo=new THREE.ConeGeometry(.21,.85,3));
-    const material=this._grassMat??(this._grassMat=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}));
+    const geometry=this._grassGeo??(this._grassGeo=makeGrassTuftGeometry());
+    const material=this._grassMat??(this._grassMat=new THREE.MeshLambertMaterial({color:0xffffff,vertexColors:true,side:THREE.DoubleSide}));
     const dummy=new THREE.Object3D();
     const rand=seededRandom(19001+ISLANDS.indexOf(island)*1709);
     {
@@ -216,7 +219,7 @@ export class World {
         const x=island.x+Math.cos(a)*d,z=island.z+Math.sin(a)*d;
         if(island.name==='Ilha do Refúgio'&&x>-37&&x<34&&z>-32&&z<38)continue;
         const y=this.heightAt(x,z);if(y<2||y>24)continue;
-        dummy.position.set(x,y+.39,z);dummy.rotation.y=rand()*Math.PI*2;
+        dummy.position.set(x,y+.025,z);dummy.rotation.y=rand()*Math.PI*2;
         const scale=.55+rand()*1.7;dummy.scale.set(scale,scale*(.7+rand()*.8),scale);dummy.updateMatrix();
         mesh.setMatrixAt(placed,dummy.matrix);
         mesh.setColorAt(placed,new THREE.Color(palette[Math.floor(rand()*palette.length)]));
@@ -312,7 +315,7 @@ export class World {
       woodGeometry:new THREE.CylinderGeometry(.2,.38,2.4,6),
       crownMaterial:new THREE.MeshLambertMaterial({color:0xffffff}),
       coniferCrowns:[new THREE.ConeGeometry(1.65,3.2,7),new THREE.ConeGeometry(1.37,2.85,7)],
-      broadleafCrowns:[new THREE.IcosahedronGeometry(1.4,0),new THREE.IcosahedronGeometry(1.1,0)],
+      broadleafCrowns:[makeTreeCrownGeometry(1.4,13),makeTreeCrownGeometry(1.1,27)],
       stoneGeometry:new THREE.DodecahedronGeometry(1,0),
       stoneMaterial:new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true}),
     });
@@ -336,7 +339,8 @@ export class World {
       const {trees,rocks}=buckets.get(island.name);
       this.foliageByIsland.set(island.name,[]);
       addBatch(woodGeometry,brown,trees,
-        (t,d)=>{d.position.set(t.x,t.y+1.2*t.size,t.z);d.scale.setScalar(t.size);},null,true,island.name);
+        (t,d)=>{d.position.set(t.x,t.y+1.2*t.size,t.z);d.scale.setScalar(t.size);},
+        t=>[0xd8c6a4,0xc8b4a3,0xe3c9a3,0xd3b19a][t.palette%4],true,island.name);
       // Keep one trunk + two canopy layers, but use two distinct silhouettes.
       // Matrices and colors are uploaded once; render uses existing island visibility.
       const conifers=trees.filter(t=>treeVariant(t).kind==='conifer');
@@ -558,7 +562,17 @@ export class World {
     this.birdMesh.instanceMatrix.needsUpdate=true;
   }
   update(dt,time) {
-    this.elapsed=time;this.waterTexture.offset.x=(time*.004)%1;this.waterTexture.offset.y=(time*.003)%1;
+    this.elapsed=time;
+    // Two directional wave frequencies encoded in one tiled bump/albedo map.
+    // Color responds to the existing sun/weather rather than adding costly reflections.
+    this.waterTexture.offset.x=(time*.005)%1;this.waterTexture.offset.y=(time*.0027)%1;
+    const seaLight=THREE.MathUtils.clamp(this.sun.intensity/2.65,.22,1.15);
+    this.water.material.color.setRGB(.075+.07*seaLight,.27+.11*seaLight,.37+.13*seaLight);
+    this.water.material.bumpScale=.105+Math.sin(time*.35)*.022;
+    // One wave amplitude update per island; no particles or extra draw calls.
+    for(const bands of this.coastByIsland.values())for(let i=0;i<bands.length;i++){
+      bands[i].material.opacity=(i===0?.28:.17)*(0.86+.14*Math.sin(time*1.3+i));
+    }
     if(this.fire)this.fire.scale.y=1+Math.sin(time*9)*.16;
     const elapsed=Math.max(0,dt);
     this.cloudTravel+=elapsed*this.cloudWind;this.cloudElapsed+=elapsed;
