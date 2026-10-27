@@ -1,3 +1,14 @@
+## v1.4.23 — LOD de cenário por ilha e streaming de lotes visuais
+
+- A criação de vegetação (árvores, pedras, grama, flores) e linhas de espuma passa a ser por ilha e **somente quando o jogador se aproxima**; o terreno, os pontos de missão e todas as colisões continuam presentes desde a inicialização.
+- Fila ordenada por distância à costa: no máximo **um lote visual novo por frame**, quatro fases por ilha (costa, floresta, grama, flores). A qualidade Econômica não constrói flores invisíveis; ao voltar para Equilibrado/Detalhado, recupera a decoração completa.
+- Histerese reaproveita os lotes já construídos, reduzindo trocas bruscas. Cache de até quatro ilhas fora dos grupos simultaneamente necessários; ao ultrapassar o limite, libera as regiões mais antigas fora da área e mantém intactas as ilhas que estão visíveis.
+- Geometrias/material de instâncias estáticas são compartilhados entre ilhas; cada ilha preserva seu próprio buffer de instâncias e suas cores.
+- O carregamento inicial do Play prepara progressivamente a decoração da região onde está o jogador **antes** do aquecimento dos shaders, sem executar a simulação no menu principal.
+- Diagnóstico F3 informa ilhas residentes, lotes pendentes, instâncias criadas e regiões descartadas.
+- Integra o LOD de cenários com a versão anterior de texturas 512/1024/2048 e as versões já existentes de LOD dos atores; sem alteração da física, saves, missões ou qualidade de perto.
+- QA: 535 testes Node.js aprovados localmente (8 regressões novas) e teste de integração WebGL no workflow validate.yml.
+
 ## v1.4.22 — Arquipélago ampliado (distância +50%)
 
 - Distância entre centros das sete ilhas aumentada em 50%, sem modificar raios, relevos, texturas nem a posição da vila do Refúgio.
