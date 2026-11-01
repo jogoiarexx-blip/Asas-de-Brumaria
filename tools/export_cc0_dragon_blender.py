@@ -45,11 +45,31 @@ def main():
                 for clip,amplitude in (("Flying",.62),("Glide",.10)):
                     action=idle.copy()
                     action.name=clip
-                    for fcurve in list(action.fcurves):
-                        if any('pose.bones["'+name+'"]' in fcurve.data_path
-                               for name in wing_names):
-                            action.fcurves.remove(fcurve)
+                    # Blender 5 removed Action.fcurves. Curves now live in
+                    # per-slot channelbags; preserve other body/head tracks.
+                    if bpy.app.version >= (4, 4, 0):
+                        for layer in action.layers:
+                            for strip in layer.strips:
+                                if strip.type != "KEYFRAME":
+                                    continue
+                                for slot in action.slots:
+                                    bag=strip.channelbag(slot)
+                                    if bag is None:
+                                        continue
+                                    for fcurve in list(bag.fcurves):
+                                        if any('pose.bones["'+name+'"]' in fcurve.data_path
+                                               for name in wing_names):
+                                            bag.fcurves.remove(fcurve)
+                    else:
+                        for fcurve in list(action.fcurves):
+                            if any('pose.bones["'+name+'"]' in fcurve.data_path
+                                   for name in wing_names):
+                                action.fcurves.remove(fcurve)
                     rig.animation_data.action=action
+                    if bpy.app.version >= (4, 4, 0) and action.slots:
+                        # Explicitly bind the slot; in Blender 5 a copied
+                        # Action's slot need not auto-bind to the Armature.
+                        rig.animation_data.action_slot=action.slots[0]
                     for frame in (1,7,13,19,25):
                         phase=(frame-1)/24*math.pi*2
                         for name in wing_names:
@@ -61,7 +81,13 @@ def main():
                             bone.rotation_quaternion=Quaternion((0,0,1),angle)
                             bone.keyframe_insert(data_path="rotation_quaternion",frame=frame)
                     action.use_fake_user=True
-                    print("DRAGON_SYNTHETIC_CLIP",clip,len(action.fcurves),flush=True)
+                    curve_count=sum(
+                        len(strip.channelbag(slot).fcurves)
+                        for layer in action.layers for strip in layer.strips
+                        if strip.type=="KEYFRAME"
+                        for slot in action.slots if strip.channelbag(slot) is not None
+                    ) if bpy.app.version >= (4,4,0) else len(action.fcurves)
+                    print("DRAGON_SYNTHETIC_CLIP",clip,curve_count,flush=True)
                 rig.animation_data.action=idle
         else:
             print("DRAGON_SYNTHETIC_CLIP_SKIPPED missing wing bones",flush=True)
