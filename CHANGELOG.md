@@ -1,3 +1,15 @@
+## v1.5.3 — Ilhas maiores e travessias mais longas (01/11/2026)
+
+- Centros das sete ilhas de 1,50× para 1,75× as posições originais (+16,7% contra v1.5.2).
+- Raio de terra aumentado em 18% em todas as ilhas (+39,2% de área útil aproximada por ilha).
+- Distância marítima mínima do arquipélago passou de cerca de 119,8 m para 138,4 m; demais pares também ganharam mar aberto.
+- Terreno, praias e vegetação expandidos sem multiplicar a quantidade de lotes de terreno e materiais por ilha.
+- Guarnições de fronteira, animais, NPCs, missões, checkpoints e objetivos associados aos centros atualizados.
+- Pré-carregamento de ilha à frente ampliado e circuito das sete ilhas ajustado para 270 segundos.
+- Minimap mantém objetivos distantes visíveis, com escala automática; oceano ampliado para 2400 × 2400 unidades.
+- Saves existentes nos mapas v1 e v2 são migrados uma única vez ao layout v3, preservando progresso; montanhas e portal mantêm posições.
+- Limite da Ilha das Cinzas termina antes do mapa das montanhas (x=650), com testes Node e Chromium para layout, terra, mar e saves.
+
 ## v1.5.2 — Testes de campanha e pipeline Blender 5 (01/11/2026)
 
 - Teste real da Fúria da Noite aguarda primeiro frame animado após Play antes de medir contato das patas com o chão.
