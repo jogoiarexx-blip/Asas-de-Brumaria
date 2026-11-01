@@ -8,7 +8,7 @@ export const CIRCUITS=Object.freeze({
   // Fase extra de exploração: conecta as duas ilhas inéditas.
   // As sete balizas criam uma rota de longa distância, com tempo suficiente
   // para procurar as costas e pousar sem ultrapassar a física original.
-  frontier:{label:'TRAVESSIA DAS SETE ILHAS',seconds:210,reward:4,minSpeed:14,
+  frontier:{label:'TRAVESSIA DAS SETE ILHAS',seconds:270,reward:4,minSpeed:14,
     checkpoints:[[90,42,-34],stretchPointOnIsland([215,42,-143],'Atol Esquecido'),
       stretchPointOnIsland([332,38,-105],'Ilha das Cinzas'),stretchPointOnIsland([185,43,52],'Ilha do Farol'),
       stretchPointOnIsland([-28,44,102],'Ilha da Névoa'),stretchPointOnIsland([-183,41,138],'Ilha da Névoa'),
