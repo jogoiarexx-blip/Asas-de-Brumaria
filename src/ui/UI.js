@@ -263,7 +263,7 @@ export class UI {
     const ctx=this.ctx,W=this.mini.width,H=this.mini.height;
     // Keep the distant objective inside the radar when island separation grows.
     const objectiveRange=target?Math.hypot(target.x-position.x,target.z-position.z):0;
-    const s=objectiveRange>250?Math.max(.15,Math.min(.30,(Math.min(W,H)*.43)/objectiveRange)):.30;
+    const s=objectiveRange>250?Math.max(.055,Math.min(.30,(Math.min(W,H)*.43)/objectiveRange)):.30;
     ctx.clearRect(0,0,W,H);ctx.fillStyle='#0b3645';ctx.fillRect(0,0,W,H);
     const mx=x=>W/2+(x-position.x)*s, my=z=>H/2+(z-position.z)*s;
     ctx.fillStyle='#4e8d76';ctx.strokeStyle='#8bc19c';ctx.lineWidth=1;
