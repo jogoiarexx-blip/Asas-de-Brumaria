@@ -95,7 +95,9 @@ export class EnemyDragon {
   }
   takeHit(amount=1){
     if(!this.active||!this.alive)return false;
-    this.health=Math.max(0,this.health-Math.max(0,amount));this.hurtPulse=.28;this.evadeTime=.9;
+    this.health=Math.max(0,this.health-Math.max(0,amount));this.hurtPulse=.42;this.evadeTime=1.15;
+    // Cancel a nearly released salvo when hit; defensive movement takes priority.
+    this.fireCooldown=Math.max(this.fireCooldown,.48);
     if(this.health<=0){this.alive=false;this.group.visible=false;return true;}
     return false;
   }
@@ -135,9 +137,9 @@ export class EnemyDragon {
     this.visualClock=0;
     const {root,wings,head,tail,eye}=this.model;
     const charging=this.state==='chase'&&this.fireCooldown<.65;
-    eye.emissiveIntensity=charging?1.4+Math.sin(time*25)*.38:.45+this.hurtPulse*.8;
+    eye.emissiveIntensity=charging?1.4+Math.sin(time*25)*.38:.45+this.hurtPulse*1.45;
     root.rotation.z=THREE.MathUtils.damp(root.rotation.z,-shortestAngle(intendedYaw-this.yaw)*.20,2.8,dt);
-    root.rotation.x=Math.sin(time*2+this.phase)*.04;
+    root.rotation.x=Math.sin(time*2+this.phase)*.04-this.hurtPulse*.28;
     root.position.y=Math.sin(time*5+this.phase)*.15;
     root.scale.setScalar(1+this.hurtPulse*.23);
     wings.forEach(({wing,elbow,side})=>{
