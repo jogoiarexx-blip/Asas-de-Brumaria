@@ -77,7 +77,7 @@ export class World {
     sunOrb.position.set(-400,270,-520); scene.add(sunOrb);this.sunOrb=sunOrb;
     const waterTexture = this.makeWaterTexture();
     this.waterTexture=waterTexture;
-    const water = new THREE.Mesh(new THREE.PlaneGeometry(2200,2200),new THREE.MeshPhongMaterial({color:0x287da2,shininess:120,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.12,transparent:false}));
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(2400,2400),new THREE.MeshPhongMaterial({color:0x287da2,shininess:120,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.12,transparent:false}));
     this.water=water;
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
     for (const island of ISLANDS) this.buildIsland(island);
@@ -124,7 +124,8 @@ export class World {
     const material=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
     this.terrainTextures.register(terrainKind(island),material,island);
     const mesh=new THREE.Mesh(geo,material);mesh.receiveShadow=true;sceneAdd(this.scene,mesh);
-    const amount=island.r>75?89:35;
+    // Maintain visual density on larger shores without new draw calls.
+    const amount=island.name==='Ilha do Refúgio'?110:45;
     for(let i=0;i<amount;i++) {
       const a=rand()*Math.PI*2,d=Math.sqrt(rand())*island.r*.8;
       const x=island.x+Math.cos(a)*d,z=island.z+Math.sin(a)*d;
