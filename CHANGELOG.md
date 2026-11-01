@@ -1,3 +1,17 @@
+## v1.5.1 — Auditoria e melhorias nas dez frentes (01/11/2026)
+
+- **Voo:** aproximação vertical mais suave do terreno, sem remover o sweep de colisão; pitch acompanha velocidade vertical amortecida.
+- **Câmera:** compensação gradual quando a câmera fica encurralada atrás de obstáculos, preservando o controle manual e o enquadramento das asas.
+- **Combate:** inimigos atingidos interrompem a salva imediata, reagem visualmente ao impacto; indicador de acerto nos inimigos, chefes, guardiões e navios.
+- **Ilhas:** sete marcos com silhuetas/acabamentos distintos e sete desafios opcionais de exploração/voo (1 ponto cada, sem ganho duplicado).
+- **Missões:** dica contextual visível no HUD sem exigir abrir detalhes; as etapas e a campanha original não foram renumeradas.
+- **Gráficos:** antecipação de pré-carregamento durante voos, aparecimento progressivo da espuma costeira; streaming menos frequente na qualidade LEVE.
+- **Áudio:** três volumes independentes (efeitos, ambiente, interface), salvos no navegador; retomada do contexto de áudio após interrupção.
+- **Mobile:** botões de toque maiores, ajustes de safe areas, HUD mais compacto e controles de qualidade preservados.
+- **Salvamento:** exportação e importação JSON; validação, limite de arquivo e backup local automático do save anterior.
+- **QA:** regressões Node para save/atividades/áudio; teste Chromium das Fúrias aguarda terminar preparação gráfica antes de abrir o estábulo.
+- **Certificação:** execução automatizada no Chromium/SwiftShader não certifica uma campanha integral humana nem FPS em hardware real.
+
 ## v1.4.25 — Colisões espaciais e pré-carregamento inteligente de ilhas
 
 - Implementado índice uniforme 2D por células de 32 unidades para obstáculos estáticos. Caminhada, voo, câmera, pousos, desembarque e recuperação de saves usam a mesma detecção precisa de antes, mas consultam apenas os candidatos nas células intersectadas.
