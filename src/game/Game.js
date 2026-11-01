@@ -132,6 +132,7 @@ export class Game {
     }
     document.getElementById('new-game-btn').addEventListener('click',()=>this.newGame());
     this.initSaveTransfer();this.initAudioControls();
+    window.addEventListener('pointerdown',()=>{if(this.started&&this.audio.ctx?.state==='suspended')this.audio.unlock();},{passive:true});
     this.projectiles=[];this.projectilePool=[];this._projectileFrom=new THREE.Vector3();this._projectileTo=new THREE.Vector3();this._fireStart=new THREE.Vector3();this._aimBest=new THREE.Vector3();this.clock=new THREE.Clock();this.started=false;this.preparing=false;this.elapsed=0;this.fpsTime=0;this.frames=0;
     this.health=100;this.maxHealth=100;this.hurtImmunity=0;this.hitFlash=0;this.hitConfirmTime=0;this.needsProjectileClear=false;this.cameraOcclusion=0;
     if(this.savedData)this.restoreSave(this.savedData);
@@ -153,6 +154,7 @@ export class Game {
     window.addEventListener('pagehide',()=>this.saveGame());
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){this.cancelBenchmark('Teste interrompido: aba em segundo plano.');this.saveGame();}
+      else if(this.started)this.audio.unlock();
     });
     document.getElementById('start-btn').addEventListener('click',()=>this.start());
     document.getElementById('menu-settings-btn').addEventListener('click',()=>{
