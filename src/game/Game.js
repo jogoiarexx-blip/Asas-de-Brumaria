@@ -1125,18 +1125,6 @@ export class Game {
       this.input.clearActions();
       return;
     }
-    this.elapsed+=dt;
-    this.world.update(dt,this.elapsed);
-    this.landmarks.update(this.elapsed,this.discovery);
-    if(this.started){
-      const focus=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
-      this.dayNight.update(dt,focus);
-      if(this.contracts.syncDay(this.dayNight.state.day)){
-        this.villagers.refresh(this.contracts);this.ui.toast(`DIA ${this.dayNight.state.day}: novas tarefas diárias disponíveis na vila!`,5);this.saveGame();
-      }
-      const weatherChanged=this.weather.update(dt,this.elapsed,focus,this.dayNight.state.phase);
-      if(weatherChanged)this.ui.toast(`Clima mudou: ${this.weather.mode.label}`,4);
-    }
     if(this.started){
       const pulseChord=this.input.pad.connected&&this.input.isDown('t')&&this.input.isDown('f');
       if((!pulseChord&&this.input.consume('t'))||this.input.consume('start'))this.toggleStable();
@@ -1159,6 +1147,20 @@ export class Game {
         }
         return;
       } else {
+      // Gameplay clock, AI, world, weather and daily contract rollovers must
+      // not advance behind the stable. Only its isolated 3D preview updates.
+      this.elapsed+=dt;
+      this.world.update(dt,this.elapsed);
+      this.landmarks.update(this.elapsed,this.discovery);
+      const focus=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
+      this.dayNight.update(dt,focus);
+      if(this.contracts.syncDay(this.dayNight.state.day)){
+        this.villagers.refresh(this.contracts);
+        this.ui.toast(`DIA ${this.dayNight.state.day}: novas tarefas diárias disponíveis na vila!`,5);
+        this.saveGame();
+      }
+      const weatherChanged=this.weather.update(dt,this.elapsed,focus,this.dayNight.state.phase);
+      if(weatherChanged)this.ui.toast(`Clima mudou: ${this.weather.mode.label}`,4);
       if(this.input.consume('e')){if(this.ui.dialogueOpen)this.ui.hideDialogue();else if(!this.interactVillager()&&!this.interactWildDragon()&&!this.tryIslandActivity())this.mountOrDismount();}
       if(!this.ui.dialogueOpen&&(this.input.consume('h')||
         (pulseChord&&(this.input.consume('t')||this.input.consume('f')))))this.castPulse();
