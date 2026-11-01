@@ -403,12 +403,9 @@ export class Game {
       // materials before scanning the scene, or the first ride may still hitch.
       try{await Promise.race([this.dragonModelReady,new Promise(resolve=>setTimeout(resolve,9500))]);}
       catch(error){console.warn('[GPU warmup] Modelo do dragão indisponível:',error);}
-      // Reserve inactive guardian shaders now rather than when an island is
-      // approached. Spawn state remains unchanged; AI only runs after Play.
-      try{
-        for(const marker of this.frontier.markers.values())
-          this.frontier.ensureGuardian(marker.zone);
-      }catch(error){console.warn('[GPU warmup] Guardiões opcionais:',error);}
+      // Do not instantiate frontier enemies during Play preparation: each
+      // guardian owns a rig and must be created lazily on first approach.
+      // Other enemies and shader variants still warm up below.
       // TerrainTextureManager already serializes 1K/2K uploads via idle tasks.
       // Trigger its existing stream for the starting region; do not replace
       // higher-resolution textures by low-resolution stand-ins.
