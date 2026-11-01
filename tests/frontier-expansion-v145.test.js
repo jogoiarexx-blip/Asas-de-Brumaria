@@ -51,10 +51,12 @@ test('new island biomes are distinct using existing vertex colors only',()=>{
 test('new seven-marker stage has clear unlock gate and reachable checkpoints',()=>{
  const c=CIRCUITS.frontier;
  assert.equal(c.checkpoints.length,7);
- assert.equal(c.seconds,210);
+ assert.ok(c.seconds>=270,'Tempo deve acomodar a travessia expandida');
  assert.ok(c.reward>=3&&c.minSpeed>0);
- assert.ok(c.checkpoints.some(p=>Math.hypot(p[0]+480,p[2]-142.5)<20));
- assert.ok(c.checkpoints.some(p=>Math.hypot(p[0]-498,p[2]+165)<20));
+ const cristais=ISLANDS.find(i=>i.name==='Arquipélago dos Cristais');
+ assert.ok(c.checkpoints.some(p=>Math.hypot(p[0]-cristais.x,p[2]-cristais.z)<20));
+ const cinzas=ISLANDS.find(i=>i.name==='Ilha das Cinzas');
+ assert.ok(c.checkpoints.some(p=>Math.hypot(p[0]-cinzas.x,p[2]-cinzas.z)<20));
  const html=source('../index.html'),game=source('../src/game/Game.js'),ui=source('../src/ui/UI.js');
  assert.match(html,/id="train-frontier"/);
  assert.match(game,/mode==='frontier'&&this\.progression\.circuits<2/);
