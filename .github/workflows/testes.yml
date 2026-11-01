@@ -18,14 +18,14 @@ jobs:
         run: npm run check
       - name: Preparar ZIP fonte e Windows
         run: |
-          zip -q -r Brumaria-v1.4.3-FONTE.zip . -x ".git/*" ".github/*" "Brumaria-v1.4.3-FONTE.zip"
-          zip -q -r Brumaria-v1.4.3-Windows.zip index.html src assets vendor start_game.py start_windows.ps1 JOGAR-WINDOWS.bat INICIAR-JOGO.bat README-WINDOWS.txt
-          unzip -tq Brumaria-v1.4.3-FONTE.zip
-          unzip -tq Brumaria-v1.4.3-Windows.zip
+          zip -q -r Brumaria-v1.5.1-FONTE.zip . -x ".git/*" ".github/*" "Brumaria-v1.5.1-FONTE.zip"
+          zip -q -r Brumaria-v1.5.1-Windows.zip index.html src assets vendor start_game.py start_windows.ps1 JOGAR-WINDOWS.bat INICIAR-JOGO.bat README-WINDOWS.txt
+          unzip -tq Brumaria-v1.5.1-FONTE.zip
+          unzip -tq Brumaria-v1.5.1-Windows.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Brumaria-v1.4.3-Downloads
+          name: Brumaria-v1.5.1-Downloads
           path: |
-            Brumaria-v1.4.3-FONTE.zip
-            Brumaria-v1.4.3-Windows.zip
+            Brumaria-v1.5.1-FONTE.zip
+            Brumaria-v1.5.1-Windows.zip
           retention-days: 30
