@@ -28,6 +28,7 @@ export function normalizeSave(payload){
     wildBonds:normalizeWildBonds(payload.wildBonds),
     expedition:normalizeExpedition(payload.expedition),
     frontier:normalizeFrontier(payload.frontier),
+    islandActivities:{completed:Array.from({length:7},(_,i)=>payload.islandActivities?.completed?.[i]===true)},
     discoveries:{found:LANDMARKS.filter((_,i)=>normalizeDiscoveries(payload.discoveries)[i]).map(m=>m.id)},
     player:{x:finite(dragon.x,-640,1450,8),y:finite(p.y,2.7,110,4),z:finite(dragon.z,-640,640,7),yaw:finite(p.yaw,-Math.PI*4,Math.PI*4,-.5),energy:finite(p.energy,0,250,100),health:finite(p.health,1,100,100),mounted:p.mounted===true,airborne:p.airborne===true,heroX:finite(hero.x,-640,640,2),heroZ:finite(hero.z,-640,640,11)},
     savedAt:typeof payload.savedAt==='string'?payload.savedAt:''
