@@ -1,3 +1,12 @@
+## v1.5.2 — Testes de campanha e pipeline Blender 5 (01/11/2026)
+
+- Teste real da Fúria da Noite aguarda primeiro frame animado após Play antes de medir contato das patas com o chão.
+- Testes do resgate e checkpoint aguardam a conclusão da preparação gráfica; preservada a proteção de `saveGame` contra gravação durante o boot.
+- Validação de portal e chefe de montanha aguarda `Game.started`, sem teletransportes durante o loading.
+- Exportação de dragão CC0 adaptada às `action.slots/layers/strips/channelbags` do Blender 5, mantendo suporte antigo para 4.3.
+- Workflow CC0 fixado em Ubuntu 24.04 para compatibilidade com Playwright 1.56.1.
+- Testes de comportamento não substituem partida humana inteira nem certificação de GPU física.
+
 ## v1.5.1 — Auditoria e melhorias nas dez frentes (01/11/2026)
 
 - **Voo:** aproximação vertical mais suave do terreno, sem remover o sweep de colisão; pitch acompanha velocidade vertical amortecida.

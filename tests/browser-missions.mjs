@@ -41,7 +41,8 @@ try{
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>!!window.__brumariaQAGame,null,{timeout:45000});
   await page.locator('#start-btn').click();
-  await page.waitForTimeout(450);
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
+  await page.waitForFunction(()=>window.__brumariaQAGame?.started===true);
   await check('Cena inicial com Game real em execução');
 
   const rings=await run('Cinco aros e três cristais',()=>{
@@ -121,6 +122,7 @@ try{
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!window.__brumariaQAGame,null,{timeout:45000});
   await page.locator('#start-btn').click();
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
   const reloaded=await run('Recuperação do save após o primeiro resgate',()=>{
     const g=window.__brumariaQAGame;
     const snapshot=g.missions.snapshot();

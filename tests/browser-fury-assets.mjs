@@ -79,6 +79,12 @@ try{
   assert.equal(automatic.modelRoots,1,'duplicate dragon GLB roots in the scene');
   assert.equal(automatic.rigBones,49,'wrong startup dragon model');
   console.log('FURY_AUTO_STARTUP_PASS',JSON.stringify(automatic));
+  // The startup menu deliberately does not tick the AnimationMixer. A GLB
+  // bounds/ground check before Play samples an uninitialized rig pose.
+  await page.locator('#start-btn').click();
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
+  await page.waitForFunction(()=>window.__furyQAGame?.started===true);
+  await page.waitForTimeout(200);
   // Gameplay regression: real skinned bones must face the direction of
   // physical forward motion, while the feet stay near the terrain.
   const mechanics=await page.evaluate(async()=>{
@@ -125,8 +131,6 @@ try{
   assert.ok(mechanics.walkRate>.65&&mechanics.takeoffRate>2,
     'Velocidades das animações não acompanham os estados de gameplay');
   console.log('FURY_GAMEPLAY_GROUND_DIRECTION_ANIMATION_PASS',JSON.stringify(mechanics));
-  await page.locator('#start-btn').click();
-  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
   await page.keyboard.press('t');
   await page.locator('#stable').waitFor({state:'visible',timeout:10000});
 

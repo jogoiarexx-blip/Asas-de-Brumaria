@@ -28,7 +28,8 @@ try{
   await page.goto(process.env.BRUMARIA_TEST_URL??'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded',timeout:50000});
   await page.waitForFunction(()=>!!window.__brumariaQAGame,null,{timeout:45000});
   await page.locator('#start-btn').click();
-  await page.waitForTimeout(400);
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
+  await page.waitForFunction(()=>window.__brumariaQAGame?.started===true);
 
   const training=await run('Treino básico, avanço de missão, desafio avançado e cooldown',()=>{
     const g=window.__brumariaQAGame;
@@ -147,6 +148,7 @@ try{
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!window.__brumariaQAGame,null,{timeout:45000});
   await page.locator('#start-btn').click();
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
   const restore=await run('Restaurar campanha da montanha ao recarregar',async()=>{
     const g=window.__brumariaQAGame;
     if(g.expedition.phase!=='boss'||g.expedition.boatsSunk!==3)throw Error('Save perdeu barcos e chefe');
