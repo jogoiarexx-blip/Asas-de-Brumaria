@@ -24,8 +24,8 @@ try{
   const download=await transfer;
   assert.ok(download.suggestedFilename().endsWith('.json'));
   await page.locator('#menu-settings-btn').click();
-  await page.locator('#audio-effects').fill('35');
-  await page.locator('#audio-ambience').fill('20');
+  await page.locator('#audio-effects').evaluate(el=>{el.value='35';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  await page.locator('#audio-ambience').evaluate(el=>{el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}));});
   const levels=await page.evaluate(()=>window.__upgradeGame.audio.volumes);
   assert.ok(Math.abs(levels.effects-.35)<.01);
   assert.ok(Math.abs(levels.ambience-.2)<.01);
