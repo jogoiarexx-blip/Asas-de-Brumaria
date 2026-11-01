@@ -126,8 +126,8 @@ export class EnemyDragon {
     this.group.rotation.y=this.yaw;
     const desiredSpeed=this.state==='chase'?plan.speed:16;
     this.speed=approach(this.speed,desiredSpeed,dt*9);
-    origin.x=clamp(origin.x-Math.sin(this.yaw)*this.speed*dt,-610,610);
-    origin.z=clamp(origin.z-Math.cos(this.yaw)*this.speed*dt,-610,610);
+    origin.x=clamp(origin.x-Math.sin(this.yaw)*this.speed*dt,-700,650);
+    origin.z=clamp(origin.z-Math.cos(this.yaw)*this.speed*dt,-700,700);
     const floor=this.world.heightAt(origin.x,origin.z)+15;
     origin.y=THREE.MathUtils.damp(origin.y,Math.max(floor,clamp(destination.y,22,88)),1.25,dt);
     // AI, cooldowns, movement and fire remain active at full frequency.
