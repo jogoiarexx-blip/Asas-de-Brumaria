@@ -4,6 +4,13 @@ export class AudioSystem {
   constructor(){
     this.ctx=null;this.muted=false;this.master=null;this.noiseBuffer=null;
     this.ambience=null;this.activeVoices=0;this.maxVoices=20;
+    this.volumes={effects:1,ambience:1,interface:1};
+    try{
+      const saved=JSON.parse(globalThis.localStorage?.getItem('brumaria-audio-levels-v1')??'null');
+      for(const key of Object.keys(this.volumes))if(Number.isFinite(saved?.[key]))
+        this.volumes[key]=Math.max(0,Math.min(1,saved[key]));
+    }catch{}
+    this.effectsChannel=null;this.ambienceChannel=null;this.interfaceChannel=null;this.activeChannel=null;
   }
   unlock(){
     if(this.muted)return;
@@ -17,11 +24,24 @@ export class AudioSystem {
         limiter.threshold.value=-13;limiter.knee.value=12;
         limiter.ratio.value=5;limiter.attack.value=.004;limiter.release.value=.19;
         master.connect(limiter).connect(this.ctx.destination);
-        this.master=master;this.noiseBuffer=this.createNoiseBuffer();
+        this.master=master;
+        this.effectsChannel=this.ctx.createGain();this.effectsChannel.connect(master);
+        this.ambienceChannel=this.ctx.createGain();this.ambienceChannel.connect(master);
+        this.interfaceChannel=this.ctx.createGain();this.interfaceChannel.connect(master);
+        for(const key of Object.keys(this.volumes))this.setVolume(key,this.volumes[key],false);
+        this.noiseBuffer=this.createNoiseBuffer();
         this.startAmbience();
       }
       if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{});
     }catch(error){console.warn('Áudio do navegador indisponível:',error);this.ctx=null;}
+  }
+  setVolume(group,value,persist=true){
+    if(!Object.hasOwn(this.volumes,group)||!Number.isFinite(Number(value)))return false;
+    this.volumes[group]=Math.max(0,Math.min(1,Number(value)));
+    const node=group==='effects'?this.effectsChannel:group==='ambience'?this.ambienceChannel:this.interfaceChannel;
+    if(node)node.gain.value=this.volumes[group];
+    if(persist)try{globalThis.localStorage?.setItem('brumaria-audio-levels-v1',JSON.stringify(this.volumes));}catch{}
+    return true;
   }
   createNoiseBuffer(){
     const ctx=this.ctx,frames=Math.round(ctx.sampleRate*2),buffer=ctx.createBuffer(1,frames,ctx.sampleRate);
@@ -39,7 +59,7 @@ export class AudioSystem {
       const source=ctx.createBufferSource();source.buffer=this.noiseBuffer;source.loop=true;
       const filter=ctx.createBiquadFilter();filter.type=type;filter.frequency.value=freq;
       const gain=ctx.createGain();gain.gain.value=0;
-      source.connect(filter).connect(gain).connect(this.master);source.start();
+      source.connect(filter).connect(gain).connect(this.ambienceChannel??this.master);source.start();
       return {source,filter,gain};
     };
     this.ambience={wind:layer('bandpass',350),sea:layer('lowpass',290)};
@@ -65,7 +85,7 @@ export class AudioSystem {
     gain.gain.setValueAtTime(.0001,t);
     gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),t+.016);
     gain.gain.exponentialRampToValueAtTime(.0001,t+life);
-    osc.connect(gain).connect(this.master);
+    osc.connect(gain).connect(this.activeChannel??this.effectsChannel??this.master);
     osc.onended=()=>{osc.disconnect();gain.disconnect();this.activeVoices=Math.max(0,this.activeVoices-1);};
     osc.start(t);osc.stop(t+life+.015);
   }
@@ -77,11 +97,13 @@ export class AudioSystem {
     gain.gain.setValueAtTime(.0001,t);
     gain.gain.exponentialRampToValueAtTime(volume,t+.012);
     gain.gain.exponentialRampToValueAtTime(.0001,t+duration);
-    source.connect(filter).connect(gain).connect(this.master);this.activeVoices++;
+    source.connect(filter).connect(gain).connect(this.activeChannel??this.effectsChannel??this.master);this.activeVoices++;
     source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();this.activeVoices=Math.max(0,this.activeVoices-1);};
     source.start(t);source.stop(t+duration+.01);
   }
   play(name,variant=null){
+    this.activeChannel=['pickup','complete','rescue','error'].includes(name)
+      ?this.interfaceChannel:this.effectsChannel;
     if(name==='mount'){
       this.tone(200,.21,'triangle',.055,210);this.noise(.13,{frequency:320,volume:.035});
       this.tone(480,.39,'sine',.045,180,.1);
@@ -113,6 +135,7 @@ export class AudioSystem {
     }else if(name==='rescue'){
       [700,880,1050].forEach((hz,i)=>this.tone(hz,.34,'sine',.043,0,i*.11));
     }else if(name==='error')this.tone(160,.13,'square',.02,-70);
+    this.activeChannel=null;
   }
   dispose(){
     if(this.ambience)for(const layer of Object.values(this.ambience)){
