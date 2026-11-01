@@ -1004,7 +1004,7 @@ export class Game {
     const position=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
     const result=this.islandActivities.tryComplete(position,{
       mounted:this.dragon.riding,airborne:this.dragon.airborne,
-      speed:this.dragon.speed,ground:this.world.groundHeightAt(position.x,position.z)
+      speed:this.dragon.speed,energy:this.dragon.energy,ground:this.world.groundHeightAt(position.x,position.z)
     });
     if(!result)return false;
     if(!result.ok){this.ui.toast(result.hint,4);return true;}
