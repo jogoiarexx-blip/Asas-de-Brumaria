@@ -28,8 +28,10 @@ try{
    const shell=[];
    for(let k=0;k<32;k++){
     const angle=k*Math.PI/16;
-    const x=island.x+Math.cos(angle)*base.r*.98;
-    const z=island.z+Math.sin(angle)*base.r*.98;
+    // Sample just beyond the old walkable limit (92% radius).
+    // Very low atolls are steep and their outer lip is not walkable.
+    const x=island.x+Math.cos(angle)*base.r*.925;
+    const z=island.z+Math.sin(angle)*base.r*.925;
     if(game.world.walkable(x,z))shell.push([x,z]);
    }
    return {name:island.name,radius:island.r,oldRadius:base.r,expandedLand:shell.length};
