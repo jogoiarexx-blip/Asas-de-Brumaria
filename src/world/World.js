@@ -508,7 +508,7 @@ export class World {
       if(next===1)this.coastFade.delete(id);
     }
     this.detailElapsed+=Math.max(0,dt);
-    if(this.detailElapsed<.15)return;
+    if(this.detailElapsed<(this.detailTier==='economy'?.30:this.detailTier==='balanced'?.20:.15))return;
     this.detailElapsed=0;
     // Predict the next island from actual movement direction, not the camera.
     // Stream a distant coast/tree batch and its 512px preview in advance.
