@@ -126,6 +126,7 @@ try{
     'Velocidades das animações não acompanham os estados de gameplay');
   console.log('FURY_GAMEPLAY_GROUND_DIRECTION_ANIMATION_PASS',JSON.stringify(mechanics));
   await page.locator('#start-btn').click();
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
   await page.keyboard.press('t');
   await page.locator('#stable').waitFor({state:'visible',timeout:10000});
 
