@@ -1,3 +1,7 @@
+## Novidades v1.5.3 — arquipélago expandido
+
+As sete ilhas cresceram **18% de raio** (aproximadamente **39% a mais de área**) e os centros ficaram **16,7% mais afastados** que na v1.5.2. Há mais mar para sobrevoar e explorar, sem alterar a campanha, os controles ou o portal das montanhas. O circuito de travessia passou a 270 segundos. Os saves antigos migram automaticamente para o mapa v3, preservando habilidades, missões e posição local sobre cada ilha. O streaming antecipado continua ativo para evitar travamentos ao chegar nas novas costas.
+
 ## Melhorias v1.5.1 — dez frentes
 A v1.5.1 adiciona atividades opcionais nos marcos das sete ilhas (aproxime-se e pressione E; cada ilha exige movimento/voo diferente), HUD com dicas, áudio ajustável em Vídeo, feedback de combate e ajustes de voo, câmera, mobile e streaming. Na tela principal, **EXPORTAR SAVE** e **IMPORTAR SAVE** trabalham com JSON validado; durante a partida, use **☰ MENU → EXPORTAR SAVE**. A importação substitui o save atual somente após confirmação e mantém uma cópia local do anterior.
 
