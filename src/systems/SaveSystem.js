@@ -37,5 +37,25 @@ export class SaveSystem {
   constructor(storage=globalThis.localStorage){this.storage=storage;this.key=STORAGE_KEY;this.available=!!storage;}
   read(){try{return normalizeSave(JSON.parse(this.storage?.getItem(this.key)??'null'));}catch{return null;}}
   write(data){try{if(!this.storage)return false;this.storage.setItem(this.key,JSON.stringify(data));return true;}catch{return false;}}
+  exportBackup(){
+    const data=this.read();
+    return data?JSON.stringify({format:'asas-de-brumaria-save',exportedAt:new Date().toISOString(),data},null,2):null;
+  }
+  importBackup(text){
+    if(typeof text!=='string'||text.length>524288)return {ok:false,reason:'Arquivo de progresso muito grande ou inválido.'};
+    let envelope;
+    try{envelope=JSON.parse(text);}catch{return {ok:false,reason:'Arquivo JSON inválido.'};}
+    if(!isPlainObject(envelope)||envelope.format!=='asas-de-brumaria-save')
+      return {ok:false,reason:'Este arquivo não é um backup do Asas de Brumária.'};
+    const normalized=normalizeSave(envelope.data);
+    if(!normalized)return {ok:false,reason:'Progresso incompatível ou corrompido.'};
+    try{
+      if(!this.storage)return {ok:false,reason:'Armazenamento indisponível.'};
+      const previous=this.storage.getItem(this.key);
+      if(previous)this.storage.setItem(this.key+'-backup',previous);
+      this.storage.setItem(this.key,JSON.stringify(normalized));
+      return {ok:true,stage:normalized.mission.stage};
+    }catch{return {ok:false,reason:'Não foi possível gravar o progresso.'};}
+  }
   clear(){try{this.storage?.removeItem(this.key);return true;}catch{return false;}}
 }
