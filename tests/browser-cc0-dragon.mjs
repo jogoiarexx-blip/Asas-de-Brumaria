@@ -22,6 +22,8 @@ try{
   await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>!!window.__cc0QA,null,{timeout:40000});
   await page.locator('#start-btn').click();
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
+  await page.waitForFunction(()=>window.__cc0QA?.started===true);
   await page.keyboard.press('t');
   await page.locator('#stable').waitFor({state:'visible',timeout:10000});
   await page.locator('#dragon-glb-file').setInputFiles({
