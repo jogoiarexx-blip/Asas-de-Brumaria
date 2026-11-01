@@ -49,6 +49,7 @@ import {bossAimPoint} from '../systems/AerialCombat.js';
 import {pulseConfig,canCastPulse,targetsInPulse,PULSE_COOLDOWN} from '../systems/DragonPowers.js';
 import {coastDistance} from '../world/TerrainTextureLOD.js';
 import {counterOpportunity,counterStrike} from '../systems/BossCounter.js';
+import {IslandActivities} from '../systems/IslandActivities.js';
 
 export class Game {
   constructor() {
@@ -85,6 +86,7 @@ export class Game {
     this.discovery=new Discovery(this.savedData?.discoveries);
     this.wildBonds=new WildBonds(this.savedData?.wildBonds);
     this.landmarks=new Landmarks(this.scene,this.world);
+    this.islandActivities=new IslandActivities(this.savedData?.islandActivities);
     this.dragon=new Dragon(this.scene,this.world);
     this.hero=new Hero(this.scene,this.world,this.dragon);
     this.heroAssetUI=new HeroAssetUI(this.hero);
@@ -129,8 +131,10 @@ export class Game {
       document.getElementById('new-game-btn').classList.remove('hidden');
     }
     document.getElementById('new-game-btn').addEventListener('click',()=>this.newGame());
+    this.initSaveTransfer();this.initAudioControls();
+    window.addEventListener('pointerdown',()=>{if(this.started&&this.audio.ctx?.state==='suspended')this.audio.unlock();},{passive:true});
     this.projectiles=[];this.projectilePool=[];this._projectileFrom=new THREE.Vector3();this._projectileTo=new THREE.Vector3();this._fireStart=new THREE.Vector3();this._aimBest=new THREE.Vector3();this.clock=new THREE.Clock();this.started=false;this.preparing=false;this.elapsed=0;this.fpsTime=0;this.frames=0;
-    this.health=100;this.maxHealth=100;this.hurtImmunity=0;this.hitFlash=0;this.needsProjectileClear=false;
+    this.health=100;this.maxHealth=100;this.hurtImmunity=0;this.hitFlash=0;this.hitConfirmTime=0;this.needsProjectileClear=false;this.cameraOcclusion=0;
     if(this.savedData)this.restoreSave(this.savedData);
     this.projectileGeometry=new THREE.IcosahedronGeometry(.9,1);
     this.projectileMaterials={player:new THREE.MeshBasicMaterial({color:0xffb65a}),enemy:new THREE.MeshBasicMaterial({color:0xf06ca9})};
@@ -150,6 +154,7 @@ export class Game {
     window.addEventListener('pagehide',()=>this.saveGame());
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){this.cancelBenchmark('Teste interrompido: aba em segundo plano.');this.saveGame();}
+      else if(this.started)this.audio.unlock();
     });
     document.getElementById('start-btn').addEventListener('click',()=>this.start());
     document.getElementById('menu-settings-btn').addEventListener('click',()=>{
@@ -329,6 +334,49 @@ export class Game {
       event.preventDefault();this.cameraOrbit.zoomBy(event.deltaY);
     },{passive:false});
   }
+  initAudioControls(){
+    for(const name of ['effects','ambience','interface']){
+      const slider=document.getElementById('audio-'+name);
+      if(!slider)continue;
+      slider.value=String(Math.round(this.audio.volumes[name]*100));
+      slider.addEventListener('input',()=>this.audio.setVolume(name,Number(slider.value)/100));
+    }
+  }
+  initSaveTransfer(){
+    const status=document.getElementById('save-transfer-status');
+    const announce=message=>{if(status)status.textContent=message;this.ui.toast(message,4);};
+    const exportSave=()=>{
+      if(this.started)this.saveGame();
+      const data=this.saveSystem.exportBackup();
+      if(!data){announce('Não há progresso salvo para exportar.');return;}
+      const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+      const link=document.createElement('a');
+      link.href=url;link.download='asas-de-brumaria-progresso.json';
+      document.body.append(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+      announce('Backup JSON do progresso exportado.');
+    };
+    document.getElementById('save-export')?.addEventListener('click',exportSave);
+    document.getElementById('save-export-hud')?.addEventListener('click',exportSave);
+    const input=document.getElementById('save-import-file');
+    document.getElementById('save-import')?.addEventListener('click',()=>input?.click());
+    input?.addEventListener('change',async()=>{
+      const file=input.files?.[0];input.value='';if(!file)return;
+      if(file.size>524288){announce('Arquivo muito grande para um save.');return;}
+      try{
+        const data=await file.text();
+        if(!window.confirm('Importar progresso? O save atual terá uma cópia de segurança e o jogo será reiniciado.'))return;
+        const result=this.saveSystem.importBackup(data);
+        if(!result.ok){announce(result.reason);return;}
+        window.location.reload();
+      }catch(error){announce('Falha ao ler o backup: '+String(error?.message??error));}
+    });
+  }
+  showHitConfirm(label='ACERTO'){
+    const el=document.getElementById('hit-confirm');
+    if(!el)return;
+    el.textContent=label;el.classList.remove('hidden');this.hitConfirmTime=.6;
+  }
   start(){
     if(this.started||this.preparing)return;
     this.preparing=true;
@@ -355,12 +403,9 @@ export class Game {
       // materials before scanning the scene, or the first ride may still hitch.
       try{await Promise.race([this.dragonModelReady,new Promise(resolve=>setTimeout(resolve,9500))]);}
       catch(error){console.warn('[GPU warmup] Modelo do dragão indisponível:',error);}
-      // Reserve inactive guardian shaders now rather than when an island is
-      // approached. Spawn state remains unchanged; AI only runs after Play.
-      try{
-        for(const marker of this.frontier.markers.values())
-          this.frontier.ensureGuardian(marker.zone);
-      }catch(error){console.warn('[GPU warmup] Guardiões opcionais:',error);}
+      // Do not instantiate frontier enemies during Play preparation: each
+      // guardian owns a rig and must be created lazily on first approach.
+      // Other enemies and shader variants still warm up below.
       // TerrainTextureManager already serializes 1K/2K uploads via idle tasks.
       // Trigger its existing stream for the starting region; do not replace
       // higher-resolution textures by low-resolution stand-ins.
@@ -442,7 +487,7 @@ export class Game {
     const payload={version:1,layoutVersion:2,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
       frontier:this.frontier.snapshot(),
       contracts:this.contracts.snapshot(),weather:this.weather.snapshot(),dayNight:this.dayNight.snapshot(),discoveries:this.discovery.snapshot(),
-      wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),
+      wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),islandActivities:this.islandActivities.snapshot(),
       player:{x:p.x,y:p.y,z:p.z,yaw:this.dragon.yaw,health:this.health,energy:this.dragon.energy,mounted:this.dragon.riding,airborne:this.dragon.airborne,heroX:h.x,heroZ:h.z}};
     this.lastSaveOk=this.saveSystem.write(payload);
     if(manual)this.ui.toast(this.lastSaveOk?'Partida salva neste navegador.':'Não foi possível salvar: armazenamento indisponível.');
@@ -450,6 +495,7 @@ export class Game {
   }
   restoreSave(data){
     this.missions.restore(data.mission);
+    this.islandActivities.restore(data.islandActivities);
     this.frontier.restore(data.frontier);
     this.contracts.restore(data.contracts);this.contracts.syncDay(this.dayNight.state.day);this.villagers.refresh(this.contracts);
     const p={...data.player};
@@ -810,7 +856,7 @@ export class Game {
     let hit=0,defeated=0;
     if(!this.inMountain&&this.missions.stage===4){
       for(const enemy of targetsInPulse(origin,this.enemies.alive,config.radius)){
-        const dead=enemy.takeHit(config.damage);hit++;
+        const dead=enemy.takeHit(config.damage);hit++;this.showHitConfirm(dead?'INIMIGO DERROTADO':'PODER ATINGIU O ALVO');
         this.effects.burst(enemy.position,dead?'fire':'impact',dead?14:7);
         if(dead){this.missions.enemyDefeated();defeated++;}
       }
@@ -860,7 +906,7 @@ export class Game {
               const ship=this.mountain.boats[k];
               if(!ship.visible)continue;
               if(segmentSphereHit(from,to,ship.position,11)){
-                const result=this.expedition.hitBoat(k);hit=result.hit;
+                const result=this.expedition.hitBoat(k);hit=result.hit;if(hit)this.showHitConfirm(result.sunk?'NAVIO AFUNDADO':'ACERTO NO NAVIO');
                 this.effects.burst(ship.position,'impact',15);this.audio.play('hit');
                 this.mountain.notifyBoatHit(k,result);
                 this.mountain.refresh();this.ui.toast(result.sunk?`Barco afundado! ${this.expedition.boatsSunk}/3`: 'Barco atingido: acerte novamente!',4);
@@ -870,7 +916,7 @@ export class Game {
             }
           }else if(this.expedition.phase==='boss'&&segmentSphereHit(from,to,this.mountain.boss.position,16)){
             const counter=counterStrike(this.bossCounterTime);
-            const result=this.expedition.hitBoss(counter.damage);hit=result.hit;this.effects.burst(this.mountain.boss.position,'fire',17);
+            const result=this.expedition.hitBoss(counter.damage);hit=result.hit;if(hit)this.showHitConfirm(counter.bonus?'CONTRA-ATAQUE ×2':'ACERTO NO CHEFE');this.effects.burst(this.mountain.boss.position,'fire',17);
             if(counter.bonus&&result.hit){
               this.bossCounterTime=0;this.bossAttackState={elapsed:0,warned:false};this.bossWarnedPattern=null;this.mountain.setBossWarning(false);
               this.ui.toast('✦ CONTRA-ATAQUE! O dragão gigante cambaleou! DANO DUPLO.',3);
@@ -907,6 +953,7 @@ export class Game {
           for(const enemy of this.enemies.alive){
             if(segmentSphereHit(from,to,enemy.position,5.6)){
               const dead=enemy.takeHit(this.progression.stats.fireDamage);
+              this.showHitConfirm(dead?'SENTINELA DERROTADA':'ACERTO · '+Math.ceil(enemy.health)+' PV');
               this.effects.burst(enemy.position,dead?'fire':'impact',dead?22:9);
               this.audio.play('hit');
               if(dead){
@@ -920,7 +967,7 @@ export class Game {
         if(!hit&&!this.inMountain){
           const strike=this.frontier.hitGuardian(from,to,this.progression.stats.fireDamage);
           if(strike){
-            hit=true;this.audio.play('hit');
+            hit=true;this.audio.play('hit');this.showHitConfirm(strike.reward?'GUARDIÃO DERROTADO':'ACERTO NO GUARDIÃO');
             this.effects.burst(strike.position,strike.reward?'fire':'impact',strike.reward?18:7);
             if(strike.reward){
               this.progression.grant(strike.reward);this.saveGame();
@@ -951,6 +998,20 @@ export class Game {
       this.ui.toast(`EXPEDIÇÃO CONCLUÍDA — ${event.name}! +${event.points} pontos de treino.`,7);
       this.saveGame();this.ui.renderStable(this);
     }
+  }
+  tryIslandActivity(){
+    const position=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
+    const result=this.islandActivities.tryComplete(position,{
+      mounted:this.dragon.riding,airborne:this.dragon.airborne,
+      speed:this.dragon.speed,energy:this.dragon.energy,ground:this.world.groundHeightAt(position.x,position.z)
+    });
+    if(!result)return false;
+    if(!result.ok){this.ui.toast(result.hint,4);return true;}
+    this.progression.grant(1);this.audio.play('complete');
+    this.effects.burst(new THREE.Vector3(position.x,position.y+2,position.z),'rescue',12);
+    this.ui.toast('ATIVIDADE CONCLUÍDA: '+result.label+' · +1 ponto ('+
+      this.islandActivities.total+'/7)',6);
+    this.saveGame();this.ui.renderStable(this);return true;
   }
   updateDiscoveries(){
     const p=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
@@ -987,10 +1048,15 @@ export class Game {
     const safeCamera=resolveCameraPosition(cameraAnchor,followTarget,this.world.obstacleGrid,
       (x,z)=>this.world.heightAt(x,z),{radius:.45,groundClearance:1.1});
     this.camera.position.set(safeCamera.x,safeCamera.y,safeCamera.z);
+    // When an obstacle forces the camera too close, slightly lift the
+    // framing rather than pushing the character behind the near clipping plane.
+    const actual=Math.hypot(safeCamera.x-focus.x,safeCamera.z-focus.z);
+    const ratio=Math.max(0,Math.min(1,1-actual/Math.max(1,framing.distance)));
+    this.cameraOcclusion=THREE.MathUtils.damp(this.cameraOcclusion,ratio,5,dt);
     // Look a few meters ahead along the VIEW, not the actor's previous yaw.
     // Maintain independent pitch, avoid head bob and drifting off-screen.
     const lookAt=new THREE.Vector3(focus.x+forwardX*framing.lookAhead,
-      focus.y+framing.lookHeight,focus.z+forwardZ*framing.lookAhead);
+      focus.y+framing.lookHeight+this.cameraOcclusion*1.4,focus.z+forwardZ*framing.lookAhead);
     this._camTarget??=lookAt.clone();
     this._camTarget.lerp(lookAt,smoothFollow(airborne?4.0:6.2,dt));
     this.camera.lookAt(this._camTarget);
@@ -1059,18 +1125,6 @@ export class Game {
       this.input.clearActions();
       return;
     }
-    this.elapsed+=dt;
-    this.world.update(dt,this.elapsed);
-    this.landmarks.update(this.elapsed,this.discovery);
-    if(this.started){
-      const focus=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
-      this.dayNight.update(dt,focus);
-      if(this.contracts.syncDay(this.dayNight.state.day)){
-        this.villagers.refresh(this.contracts);this.ui.toast(`DIA ${this.dayNight.state.day}: novas tarefas diárias disponíveis na vila!`,5);this.saveGame();
-      }
-      const weatherChanged=this.weather.update(dt,this.elapsed,focus,this.dayNight.state.phase);
-      if(weatherChanged)this.ui.toast(`Clima mudou: ${this.weather.mode.label}`,4);
-    }
     if(this.started){
       const pulseChord=this.input.pad.connected&&this.input.isDown('t')&&this.input.isDown('f');
       if((!pulseChord&&this.input.consume('t'))||this.input.consume('start'))this.toggleStable();
@@ -1093,7 +1147,21 @@ export class Game {
         }
         return;
       } else {
-      if(this.input.consume('e')){if(this.ui.dialogueOpen)this.ui.hideDialogue();else if(!this.interactVillager()&&!this.interactWildDragon())this.mountOrDismount();}
+      // Gameplay clock, AI, world, weather and daily contract rollovers must
+      // not advance behind the stable. Only its isolated 3D preview updates.
+      this.elapsed+=dt;
+      this.world.update(dt,this.elapsed);
+      this.landmarks.update(this.elapsed,this.discovery);
+      const focus=this.dragon.riding?this.dragon.group.position:this.hero.group.position;
+      this.dayNight.update(dt,focus);
+      if(this.contracts.syncDay(this.dayNight.state.day)){
+        this.villagers.refresh(this.contracts);
+        this.ui.toast(`DIA ${this.dayNight.state.day}: novas tarefas diárias disponíveis na vila!`,5);
+        this.saveGame();
+      }
+      const weatherChanged=this.weather.update(dt,this.elapsed,focus,this.dayNight.state.phase);
+      if(weatherChanged)this.ui.toast(`Clima mudou: ${this.weather.mode.label}`,4);
+      if(this.input.consume('e')){if(this.ui.dialogueOpen)this.ui.hideDialogue();else if(!this.interactVillager()&&!this.interactWildDragon()&&!this.tryIslandActivity())this.mountOrDismount();}
       if(!this.ui.dialogueOpen&&(this.input.consume('h')||
         (pulseChord&&(this.input.consume('t')||this.input.consume('f')))))this.castPulse();
       if(!pulseChord&&!this.ui.dialogueOpen&&this.input.consume('f'))this.fire();
@@ -1159,6 +1227,10 @@ export class Game {
       this.effects.update(dt);
       this.hurtImmunity=Math.max(0,this.hurtImmunity-dt);
       this.hitFlash=Math.max(0,this.hitFlash-dt);
+      if(this.hitConfirmTime>0){
+        this.hitConfirmTime=Math.max(0,this.hitConfirmTime-dt);
+        if(!this.hitConfirmTime)document.getElementById('hit-confirm')?.classList.add('hidden');
+      }
       this.ui.update(dt,this);
     }else this.dragon.update(dt,{isDown:()=>false},this.elapsed);
     this.updateCamera(dt);

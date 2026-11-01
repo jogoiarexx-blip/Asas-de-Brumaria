@@ -68,6 +68,7 @@ try{
     assert.ok(first.clips.includes(name),'Animação GLB ausente: '+name);
 
   await page.locator('#start-btn').click();
+  await page.locator('#start-screen').waitFor({state:'hidden',timeout:90000});
   await page.waitForTimeout(350);
   await page.screenshot({path:'artifacts/furia-da-noite-auto-substituicao.png'});
   const after=await snapshot();

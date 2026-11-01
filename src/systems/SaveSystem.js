@@ -28,6 +28,7 @@ export function normalizeSave(payload){
     wildBonds:normalizeWildBonds(payload.wildBonds),
     expedition:normalizeExpedition(payload.expedition),
     frontier:normalizeFrontier(payload.frontier),
+    islandActivities:{completed:Array.from({length:7},(_,i)=>payload.islandActivities?.completed?.[i]===true)},
     discoveries:{found:LANDMARKS.filter((_,i)=>normalizeDiscoveries(payload.discoveries)[i]).map(m=>m.id)},
     player:{x:finite(dragon.x,-640,1450,8),y:finite(p.y,2.7,110,4),z:finite(dragon.z,-640,640,7),yaw:finite(p.yaw,-Math.PI*4,Math.PI*4,-.5),energy:finite(p.energy,0,250,100),health:finite(p.health,1,100,100),mounted:p.mounted===true,airborne:p.airborne===true,heroX:finite(hero.x,-640,640,2),heroZ:finite(hero.z,-640,640,11)},
     savedAt:typeof payload.savedAt==='string'?payload.savedAt:''
@@ -37,5 +38,25 @@ export class SaveSystem {
   constructor(storage=globalThis.localStorage){this.storage=storage;this.key=STORAGE_KEY;this.available=!!storage;}
   read(){try{return normalizeSave(JSON.parse(this.storage?.getItem(this.key)??'null'));}catch{return null;}}
   write(data){try{if(!this.storage)return false;this.storage.setItem(this.key,JSON.stringify(data));return true;}catch{return false;}}
+  exportBackup(){
+    const data=this.read();
+    return data?JSON.stringify({format:'asas-de-brumaria-save',exportedAt:new Date().toISOString(),data},null,2):null;
+  }
+  importBackup(text){
+    if(typeof text!=='string'||text.length>524288)return {ok:false,reason:'Arquivo de progresso muito grande ou inválido.'};
+    let envelope;
+    try{envelope=JSON.parse(text);}catch{return {ok:false,reason:'Arquivo JSON inválido.'};}
+    if(!isPlainObject(envelope)||envelope.format!=='asas-de-brumaria-save')
+      return {ok:false,reason:'Este arquivo não é um backup do Asas de Brumária.'};
+    const normalized=normalizeSave(envelope.data);
+    if(!normalized)return {ok:false,reason:'Progresso incompatível ou corrompido.'};
+    try{
+      if(!this.storage)return {ok:false,reason:'Armazenamento indisponível.'};
+      const previous=this.storage.getItem(this.key);
+      if(previous)this.storage.setItem(this.key+'-backup',previous);
+      this.storage.setItem(this.key,JSON.stringify(normalized));
+      return {ok:true,stage:normalized.mission.stage};
+    }catch{return {ok:false,reason:'Não foi possível gravar o progresso.'};}
+  }
   clear(){try{this.storage?.removeItem(this.key);return true;}catch{return false;}}
 }

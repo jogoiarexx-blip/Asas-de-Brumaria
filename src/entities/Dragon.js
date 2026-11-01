@@ -425,8 +425,12 @@ export class Dragon {
         // let a dragon enter the column while climbing or diving in one frame.
         this.takeoffTime+=dt;
         const floorBefore=this.world.groundHeightAt(this.group.position.x,this.group.position.z,1.15)+2.58;
-        const desired=airflowTarget({airborne:true,speed:this.speed,height:this.group.position.y-floorBefore,up,down});
-        this.verticalVelocity=approach(this.verticalVelocity,desired,dt*(up?69:down?64:48));
+        const clearance=this.group.position.y-floorBefore;
+        const rawTarget=airflowTarget({airborne:true,speed:this.speed,height:clearance,up,down});
+        // Reduce sudden vertical changes when approaching solid ground; landing
+        // speed and collision checks remain authoritative in inspectLanding.
+        const desired=down&&clearance<9?Math.max(-7,rawTarget):rawTarget;
+        this.verticalVelocity=approach(this.verticalVelocity,desired,dt*(up?65:down?51:44));
         const attemptedVertical=this.verticalVelocity;
         const moved=moveFlightWithCollisions(this.group.position,
           {x:horizontal.x,y:this.verticalVelocity*dt,z:horizontal.z},1.15,1.65,
@@ -479,7 +483,8 @@ export class Dragon {
       const bankGoal=bankTarget(this.turnAxis,this.speed,this.airborne,gust.x)+(this.dodgeRemaining>0?this.dodgeSide*.26:0)+(groundPose?.roll??0);
       this.bank=THREE.MathUtils.damp(this.bank,bankGoal,4.2,dt);
       this.visual.rotation.z=THREE.MathUtils.damp(this.visual.rotation.z,this.bank,5.5,dt);
-      this.visual.rotation.x=THREE.MathUtils.damp(this.visual.rotation.x,flightPitch(this.verticalVelocity,this.airborne)+(up?-.075:down?.05:0)-this.impactKick*.12+(groundPose?.pitch??0),3.7,dt);
+      this.smoothClimb=THREE.MathUtils.damp(this.smoothClimb??0,this.verticalVelocity,4.8,dt);
+      this.visual.rotation.x=THREE.MathUtils.damp(this.visual.rotation.x,flightPitch(this.smoothClimb,this.airborne)+(up?-.055:down?.045:0)-this.impactKick*.12+(groundPose?.pitch??0),3.9,dt);
     } else {
       this.dodgeRemaining=0;
       this.windDrift=0;this.steerInput=0;this.turnAxis=smoothedTurn(this.turnAxis,0,dt);this.bank=THREE.MathUtils.damp(this.bank,0,3,dt);

@@ -34,7 +34,7 @@ export class World {
     this.obstacleGrid=new ObstacleGrid(()=>this.obstacles,{cellSize:32});
     this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
-    this.biomeAccentsByIsland=new Map();this.coastByIsland=new Map();
+    this.biomeAccentsByIsland=new Map();this.coastByIsland=new Map();this.coastFade=new Map();
     this.terrainTextures=new TerrainTextureManager(renderer);
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
@@ -200,6 +200,10 @@ export class World {
       this.scene.add(mesh);objects.push(mesh);
     }
     this.coastByIsland.set(island.name,objects);
+    if(island!==ISLANDS[0]){
+      this.coastFade.set(island.name,0);
+      for(const mesh of objects)mesh.material.opacity=0;
+    }
   }
   // Instância centenas de tufos sem centenas de draw calls.
   buildWildGrass() { this._buildGrassForIsland(ISLANDS[0]); }
@@ -398,6 +402,7 @@ export class World {
     }else if(phase==='coast'){
       const meshes=this.coastByIsland.get(id)??[];
       for(const mesh of meshes){this.scene.remove(mesh);mesh.geometry.dispose();}
+      this.coastFade.delete(id);
       // Both foam materials are unique to the island, not shared.
       for(const material of new Set(meshes.map(m=>m.material)))material.dispose();
       this.coastByIsland.delete(id);
@@ -493,8 +498,17 @@ export class World {
   }
   updateDetail(observer,dt=0,flight=null){
     if(this.visualStreamingEnabled)this.detailStream.step(1);
+    // Fade newly streamed coast geometry on its own material: no extra draw calls,
+    // and no opacity changes to shared foliage or gameplay colliders.
+    for(const [id,value] of this.coastFade){
+      const next=Math.min(1,value+Math.max(0,dt)*1.65);
+      const objects=this.coastByIsland.get(id);
+      if(objects)for(const mesh of objects)mesh.material.opacity=next*(mesh===objects[0]?0.28:0.17);
+      this.coastFade.set(id,next);
+      if(next===1)this.coastFade.delete(id);
+    }
     this.detailElapsed+=Math.max(0,dt);
-    if(this.detailElapsed<.24)return;
+    if(this.detailElapsed<(this.detailTier==='economy'?.30:this.detailTier==='balanced'?.20:.15))return;
     this.detailElapsed=0;
     // Predict the next island from actual movement direction, not the camera.
     // Stream a distant coast/tree batch and its 512px preview in advance.

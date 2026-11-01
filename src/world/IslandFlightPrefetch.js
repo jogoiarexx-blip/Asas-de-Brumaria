@@ -1,6 +1,6 @@
 import {islandShoreDistance} from './IslandDetailStream.js';
 
-export const FLIGHT_PREFETCH=Object.freeze({lookAheadSeconds:6,maxDistance:310,minSpeed:15,maxAngleCos:.66});
+export const FLIGHT_PREFETCH=Object.freeze({lookAheadSeconds:7.5,maxDistance:375,minSpeed:12,maxAngleCos:.58});
 /** Choose one island ahead of the dragon; never request behind it or while
  * grounded. Terrain and collision remain present regardless of this hint. */
 export function predictFlightIsland(position,direction,speed,islands,config=FLIGHT_PREFETCH){

@@ -216,6 +216,13 @@ export class UI {
     if(frontierTarget)this.questGuide.textContent=frontierTarget.kind==='relic'
       ?`FRONTEIRA · ${frontierTarget.label} · ${frontierTarget.remaining} pendente(s) · atravesse em voo.`
       :`FRONTEIRA · ${frontierTarget.label} · pressione F para lançar fogo e use Q para esquivar.`;
+    const tip=document.getElementById('quest-hint');
+    if(tip){
+      const islandHint=game.islandActivities?.hint(position);
+      tip.textContent=islandHint??'';
+      if(!islandHint)tip.textContent=this.questGuide.textContent;
+      tip.classList.toggle('island-tip',!!islandHint);
+    }
     const waypointType=game.inMountain?'EXPEDIÇÃO':game.training.active?'TREINO':contractTarget?'CONTRATO':frontierTarget?'FRONTEIRA':'OBJETIVO';
     this.waypoint.textContent=bearing?`${bearing.symbol} ${waypointType} · ${bearing.distance} m · ${bearing.direction}`:
       missions.complete?'ARQUIPÉLAGO LIBERADO':missions.stage===6?'VOLTE À VILA · TECLA T':'ENCONTRE O PRÓXIMO OBJETIVO';
