@@ -41,7 +41,7 @@ import {projectileLimit} from '../systems/PerformanceBudget.js';
 import {projectileAdmission} from '../systems/ProjectilePolicy.js';
 import {WildBonds} from '../systems/WildBonds.js';
 import {WildDragons} from '../entities/WildDragons.js';
-import {ExpeditionProgress,MOUNTAIN_PORTAL,MOUNTAIN_ENTRY,shouldLoadMountain,shouldEnterMountain,shouldExitMountain,shouldHoldMountainGate} from '../systems/ExpeditionRules.js';
+import {ExpeditionProgress,MOUNTAIN_PORTAL,MOUNTAIN_ENTRY,shouldLoadMountain,shouldEnterMountain,shouldExitMountain,shouldHoldMountainGate,shouldUnloadMountain} from '../systems/ExpeditionRules.js';
 import {readGPUSettings,writeGPUSettings,chooseContextOptions,describeRenderer} from '../systems/GPUSettings.js';
 import {bossAttackStep,bossAttackPattern,bossShotDirections,bossPatternLabel} from '../systems/MountainCombat.js';
 import {contactBurstSize} from '../entities/FlightContact.js';
@@ -77,7 +77,7 @@ export class Game {
     this.graphics.resolutionScale=this.gpuPrefs.resolution;this.graphics.shadowsAllowed=this.gpuPrefs.shadows;this.graphics.apply();
     this.initGPUOptions();this.updateGraphicsLabel();
     this.saveSystem=new SaveSystem();this.savedData=this.saveSystem.read();
-    this.expedition=new ExpeditionProgress(this.savedData?.expedition);this.mountain=null;this.mountainLoading=null;this.inMountain=false;this.bossAttackState={elapsed:0,warned:false};this.bossAttackCount=0;this.bossWarnedPattern=null;this.bossCounterTime=0;this._bossVolleyVector=new THREE.Vector3();this._bossShotDirection=new THREE.Vector3();this._bossPredicted=new THREE.Vector3();this._groundContactPosition=new THREE.Vector3();this.gateLoadingWarned=false;this.gateWarned=false;this.mountainRetryUntil=0;
+    this.expedition=new ExpeditionProgress(this.savedData?.expedition);this.mountain=null;this.mountainLoading=null;this.inMountain=false;this.bossAttackState={elapsed:0,warned:false};this.bossAttackCount=0;this.bossWarnedPattern=null;this.bossCounterTime=0;this._bossVolleyVector=new THREE.Vector3();this._bossShotDirection=new THREE.Vector3();this._bossPredicted=new THREE.Vector3();this._groundContactPosition=new THREE.Vector3();this.gateLoadingWarned=false;this.gateWarned=false;this.gateMustLeave=false;this.mountainRetryUntil=0;
     this.portal=this.makeMountainPortal();
     this.progression=new Progression(this.savedData?.progression);this.autoSaveTime=0;this.lastSaveOk=null;
     this.world=new World(this.scene,this.renderer);
@@ -484,7 +484,7 @@ export class Game {
   saveGame(manual=false){
     if(!this.started&&!manual)return false;
     const p=this.dragon.group.position,h=this.hero._dismountMotion?.end??this.hero.group.position;
-    const payload={version:1,layoutVersion:3,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
+    const payload={version:1,layoutVersion:3,portalVersion:2,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
       frontier:this.frontier.snapshot(),
       contracts:this.contracts.snapshot(),weather:this.weather.snapshot(),dayNight:this.dayNight.snapshot(),discoveries:this.discovery.snapshot(),
       wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),islandActivities:this.islandActivities.snapshot(),
@@ -501,7 +501,7 @@ export class Game {
     const p={...data.player};
     // If the game was closed during a streamed map, restore at its gateway.
     // Side-mission progress is preserved, even if the mountain module is not yet loaded.
-    if(p.x>650){p.x=310;p.z=35;p.y=Math.max(40,p.y);p.airborne=true;p.mounted=true;p.heroX=300;p.heroZ=35;}
+    if(p.x>650){p.x=MOUNTAIN_PORTAL.returnX;p.z=MOUNTAIN_PORTAL.returnZ;p.y=Math.max(40,p.y);p.airborne=true;p.mounted=true;p.heroX=MOUNTAIN_PORTAL.returnX-8;p.heroZ=MOUNTAIN_PORTAL.returnZ;}
     this.expedition.inRegion=false;
     const dragonY=Math.max(p.y,this.world.groundHeightAt(p.x,p.z,1.65)+2.58);
     const dragonSpot=recoverFreePosition({x:p.x,z:p.z},1.65,this.world.obstacleGrid,
@@ -557,7 +557,7 @@ export class Game {
     });
   }
   makeMountainPortal(){
-    const root=new THREE.Group();root.position.set(MOUNTAIN_PORTAL.x,44,MOUNTAIN_PORTAL.z);
+    const root=new THREE.Group();root.name='PORTAL_MONTANHAS_COSTA_LESTE';root.position.set(MOUNTAIN_PORTAL.x,MOUNTAIN_PORTAL.y,MOUNTAIN_PORTAL.z);
     const ring=new THREE.Mesh(new THREE.TorusGeometry(12,.7,8,40),new THREE.MeshBasicMaterial({color:0x8deef0}));
     ring.rotation.y=Math.PI/2;root.add(ring);
     const signal=new THREE.Mesh(new THREE.ConeGeometry(4,16,6),new THREE.MeshBasicMaterial({color:0xbacbff,transparent:true,opacity:.5,depthWrite:false}));signal.position.y=14;root.add(signal);
@@ -586,21 +586,26 @@ export class Game {
     const pos=this.dragon.group.position,riding=this.dragon.riding;
     this.portal.visible=!this.inMountain;
     if(!this.inMountain){
-      if(shouldLoadMountain(pos,riding)){
+      const nearPortal=shouldLoadMountain(pos,riding);
+      // Do not reload/re-enter immediately after returning to this same gate.
+      // Leaving the vicinity and approaching again re-arms the portal.
+      if(shouldUnloadMountain(pos))this.gateMustLeave=false;
+      if(nearPortal&&!this.gateMustLeave){
         if(this.missions.stage<3){
           if(!this.gateWarned){this.ui.toast('Conclua as runas para liberar fogo antes de entrar nas montanhas!',4);this.gateWarned=true;}
         }else{this.gateWarned=false;this.loadMountain();}
       }else this.gateWarned=false;
       // Stream gate: do not let fast travel outrun the dynamic import.
-      if(shouldHoldMountainGate(pos,riding,this.missions.stage>=3,!!this.mountain)){
-        pos.x=MOUNTAIN_PORTAL.enterAt-2;
+      if(!this.gateMustLeave&&shouldHoldMountainGate(pos,riding,this.missions.stage>=3,!!this.mountain)){
+        // Stay just west of the ring until the second map is available.
+        pos.x=Math.min(pos.x,MOUNTAIN_PORTAL.x-MOUNTAIN_PORTAL.enterRadius-2);
         this.dragon.speed=Math.min(this.dragon.speed,6);
         if(!this.gateLoadingWarned){
           this.ui.toast('Carregando Montanhas da Sombra… Aguarde junto ao portal.',4);
           this.gateLoadingWarned=true;
         }
       }else this.gateLoadingWarned=false;
-      if(this.mountain&&shouldEnterMountain(pos,riding)&&this.missions.stage>=3){
+      if(this.mountain&&!this.gateMustLeave&&shouldEnterMountain(pos,riding)&&this.missions.stage>=3){
         this.inMountain=true;this.expedition.inRegion=true;
         this.dragon.group.position.set(MOUNTAIN_ENTRY.x,Math.max(47,pos.y),MOUNTAIN_ENTRY.z);
         this.dragon.airborne=true;this.dragon.speed=Math.max(15,this.dragon.speed);
@@ -608,10 +613,10 @@ export class Game {
         this.ui.toast('NOVA REGIÃO: MONTANHAS DA SOMBRA! Destrua os barcos inimigos.',6);this.saveGame();
       }
       // Keep the dynamically imported chunk cached near the gateway, then free its GPU resources.
-      if(this.mountain&&pos.x<245)this.unloadMountain();
+      if(this.mountain&&shouldUnloadMountain(pos))this.unloadMountain();
     }else if(shouldExitMountain(pos,riding)){
-      this.inMountain=false;this.expedition.inRegion=false;
-      this.dragon.group.position.set(295,Math.max(45,pos.y),35);
+      this.inMountain=false;this.expedition.inRegion=false;this.gateMustLeave=true;
+      this.dragon.group.position.set(MOUNTAIN_PORTAL.returnX,Math.max(45,pos.y),MOUNTAIN_PORTAL.returnZ);
       this._camTarget?.copy(this.dragon.group.position);
       if(this.expedition.completeReturn()){
         this.progression.grant(3);this.audio.play('complete');

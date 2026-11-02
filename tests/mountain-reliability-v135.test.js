@@ -4,10 +4,11 @@ import {readFileSync} from 'node:fs';
 import {shouldHoldMountainGate,MOUNTAIN_PORTAL} from '../src/systems/ExpeditionRules.js';
 import {bossAttackStep,bossAttackCadence} from '../src/systems/MountainCombat.js';
 
-const gatePoint={x:MOUNTAIN_PORTAL.enterAt+5,y:50,z:MOUNTAIN_PORTAL.z};
+const gatePoint={x:MOUNTAIN_PORTAL.x-1,y:MOUNTAIN_PORTAL.y,z:MOUNTAIN_PORTAL.z};
 test('a passagem segura o voo enquanto o módulo ainda está carregando',()=>{
   assert.equal(shouldHoldMountainGate(gatePoint,true,true,false),true);
-  assert.equal(shouldHoldMountainGate({...gatePoint,x:465},true,true,false),true);
+  assert.equal(shouldHoldMountainGate({...gatePoint,x:MOUNTAIN_PORTAL.x-5},true,true,false),true);
+  assert.equal(shouldHoldMountainGate({...gatePoint,x:465},true,true,false),false);
 });
 test('passagem livre com mapa pronto, sem montaria ou sem fogo',()=>{
   assert.equal(shouldHoldMountainGate(gatePoint,true,true,true),false);

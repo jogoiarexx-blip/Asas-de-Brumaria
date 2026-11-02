@@ -1,3 +1,13 @@
+## v1.5.4 — Portal na extremidade do primeiro mapa (02/11/2026)
+
+- Portal físico deslocado para a costa leste da Ilha das Cinzas, próximo ao fim do arquipélago (x=633, z=-192,5).
+- Entrada por aproximação ao anel azul na altura correta, evitando teletransporte acidental em corredores distantes.
+- Montanhas carregadas sob demanda durante aproximação; entrada aguarda carregamento terminar.
+- Saída e restauração de saves da montanha agora levam à costa das Cinzas.
+- Bloqueio de reentrada imediata até o jogador se afastar da área e retornar.
+- Minimapa, dica de missão e bússola final passam a apontar para o portal real.
+- Saves antigos próximos do portal antigo migram sem perda de campanha; testes novos de proximidade, checkpoints e retorno.
+
 ## v1.5.3 — Ilhas maiores e travessias mais longas (01/11/2026)
 
 - Centros das sete ilhas de 1,50× para 1,75× as posições originais (+16,7% contra v1.5.2).

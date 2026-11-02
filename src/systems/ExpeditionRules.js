@@ -1,5 +1,10 @@
 /** Side campaign state, deliberately independent of the seven-story-mission save. */
-export const MOUNTAIN_PORTAL=Object.freeze({x:328,z:35,loadAt:292,enterAt:355,exitAt:752});
+// The gate sits at the eastern tip of the final archipelago island (Cinzas).
+// The mountain chunk starts at x>650; keep the gate and shoreline on the first map.
+export const MOUNTAIN_PORTAL=Object.freeze({
+  x:633,z:-192.5,y:44,loadRadius:165,enterRadius:16,unloadRadius:215,exitAt:752,
+  returnX:603,returnZ:-192.5
+});
 export const MOUNTAIN_ENTRY=Object.freeze({x:798,z:35,y:51});
 export const BOAT_POSITIONS=Object.freeze([[898,7,-90],[1050,7,143],[1206,7,-112]]);
 export const GIANT_DRAGON_POSITION=Object.freeze({x:1120,y:79,z:8});
@@ -30,14 +35,17 @@ export class ExpeditionProgress {
  completeReturn(){if(this.phase!=='return')return false;this.phase='complete';this.rewarded=true;this.inRegion=false;return true;}
  snapshot(){return {boatHealth:[...this.boatHealth],bossHealth:this.bossHealth,phase:this.phase,rewarded:this.rewarded,inRegion:this.inRegion};}
 }
-const inCorridor=(p)=>Math.abs(p.z-MOUNTAIN_PORTAL.z)<95;
-export const shouldLoadMountain=(p,riding=false)=>riding&&p.y>14&&p.x>MOUNTAIN_PORTAL.loadAt&&p.x<425&&inCorridor(p);
-export const shouldEnterMountain=(p,riding=false)=>riding&&p.y>14&&p.x>MOUNTAIN_PORTAL.enterAt&&inCorridor(p);
-export const shouldExitMountain=(p,riding=false)=>riding&&p.x<MOUNTAIN_PORTAL.exitAt&&p.x>650;
-
-/** Hold the mount at the gate while the asynchronously imported level is absent.
- * Otherwise a fast flying dragon can pass x=425 before the chunk finishes loading. */
+const horizontalPortalDistance=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z)
+ ?Math.hypot(p.x-MOUNTAIN_PORTAL.x,p.z-MOUNTAIN_PORTAL.z):Infinity;
+const withinGateHeight=p=>Number.isFinite(p?.y)&&Math.abs(p.y-MOUNTAIN_PORTAL.y)<=24;
+/** Preload only when approaching the visible gate, never anywhere else on the eastern map. */
+export const shouldLoadMountain=(p,riding=false)=>Boolean(riding)&&p?.y>14&&
+ horizontalPortalDistance(p)<MOUNTAIN_PORTAL.loadRadius&&p.x<=650;
+export const shouldEnterMountain=(p,riding=false)=>Boolean(riding)&&withinGateHeight(p)&&
+ horizontalPortalDistance(p)<=MOUNTAIN_PORTAL.enterRadius&&p.x<=650;
+export const shouldExitMountain=(p,riding=false)=>Boolean(riding)&&p?.x<MOUNTAIN_PORTAL.exitAt&&p.x>650;
+/** A slow hold at the actual ring avoids crossing before the async chunk is ready. */
 export function shouldHoldMountainGate(p,riding=false,unlocked=false,loaded=false){
- return riding&&unlocked&&!loaded&&p.y>14&&p.x>=MOUNTAIN_PORTAL.enterAt&&
-   p.x<650&&Math.abs(p.z-MOUNTAIN_PORTAL.z)<95;
+ return Boolean(riding&&unlocked&&!loaded&&shouldEnterMountain(p,true));
 }
+export const shouldUnloadMountain=(p)=>horizontalPortalDistance(p)>MOUNTAIN_PORTAL.unloadRadius;
