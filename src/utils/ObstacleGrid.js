@@ -12,6 +12,8 @@ export class ObstacleGrid {
     this.stats={rebuilds:0,queries:0,candidates:0,fullScanEquivalent:0};
   }
   key(x,z){return `${x},${z}`;}
+  /** Dynamic NPCs invalidate only when the footprint crosses a spatial cell. */
+  invalidate(){this.count=-1;}
   refresh(){
     const source=this.getObstacles();
     if(source===this.source&&source.length===this.count)return;
