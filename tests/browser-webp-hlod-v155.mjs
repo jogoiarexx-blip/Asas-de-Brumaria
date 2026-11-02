@@ -28,7 +28,7 @@ try{
   const {IMPOSTOR_PROFILES}=await import('./src/world/ImpostorRules.js');
   const THREE=await import('three');
   cam.position.set(12,35,40);
-  world.updateDetail(cam.position,1,null,cam);
+  for(let tick=0;tick<5;tick++)world.updateDetail(cam.position,1,null,cam);
   const graphics=world.impostors;
   const groups=[...graphics.groups.values()];
   const far=groups.flatMap(g=>g.batches).filter(b=>b.mesh.visible);
