@@ -9,9 +9,9 @@ import {treeVariant,treeCrownPose} from './TreeVariation.js';
 import {IMPOSTOR_PROFILES,lodFromShore,boxSize} from './ImpostorRules.js';
 function boundsOfVegetation(item,kind,resources){
   const box=new THREE.Box3().makeEmpty(),part=new THREE.Box3(),dummy=new THREE.Object3D();
-  const extend=(geo,x,y,z,sx,sy,sz,yaw=0)=>{
+  const extend=(geo,x,y,z,sx,sy,sz,yaw=0,roll=0)=>{
     if(!geo.boundingBox)geo.computeBoundingBox();
-    dummy.position.set(x,y,z);dummy.rotation.set(0,yaw,0);
+    dummy.position.set(x,y,z);dummy.rotation.set(0,yaw,roll);
     dummy.scale.set(sx,sy,sz);dummy.updateMatrix();
     part.copy(geo.boundingBox).applyMatrix4(dummy.matrix);box.union(part);
   };
@@ -29,7 +29,7 @@ function boundsOfVegetation(item,kind,resources){
     if(resources.fernGeometry)for(let layer=0;layer<2;layer++){
       const angle=item.palette*1.57+layer*2.4;
       extend(resources.fernGeometry,Math.cos(angle)*size*1.22,.40*size,
-        Math.sin(angle)*size*1.22,.75*size,.64*size,.82*size,angle);
+        Math.sin(angle)*size*1.22,.75*size,.64*size,.82*size,angle,layer===0?-.18:.2);
     }
   }
   return boxSize(box);
