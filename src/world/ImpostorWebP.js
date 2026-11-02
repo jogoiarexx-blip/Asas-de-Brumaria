@@ -130,8 +130,9 @@ export class IslandImpostorLOD{
       group.state=state;
       const proxyOn=state==='far'&&hasProxy;
       for(const batch of group.batches){
+        const appeared=!batch.mesh.visible;
         batch.mesh.visible=proxyOn&&this.textureReady.has(batch.kind);
-        if(batch.mesh.visible&&refresh)this.face(batch,yaw);
+        if(batch.mesh.visible&&(refresh||appeared))this.face(batch,yaw);
       }
       const realOn=state==='full'||state==='mid'||!hasProxy&&state!=='hidden';
       for(const mesh of nearMeshes){
@@ -152,9 +153,10 @@ export class IslandImpostorLOD{
       const mode=lodFromShore(d,{near:record.near,far:record.far,hide:profile.hide},record.state);
       record.state=mode;
       const proxyVisible=(mode==='far')&&this.textureReady.has(record.batch.kind);
+      const appeared=!record.batch.mesh.visible;
       record.batch.mesh.visible=proxyVisible;
       record.object.visible=!proxyVisible&&mode!=='hidden';
-      if(proxyVisible&&refresh)this.face(record.batch,yaw);
+      if(proxyVisible&&(refresh||appeared))this.face(record.batch,yaw);
     }
   }
   getStatistics(){
