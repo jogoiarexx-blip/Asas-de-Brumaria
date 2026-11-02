@@ -96,7 +96,7 @@ export class VillageNPCs {
       this.loadedModels.add(id);
       console.info('[Vila GLB] Modelo exclusivo:',id,config.file,
         'altura:',model.visualHeight,'escala:',model.scale,
-        'clipes:',model.clips.join(', ')||'estático');
+        'clipes:',model.clips.join(', ')||'estático','idle gerado:',model.syntheticIdle);
     }).catch(error=>{
       // Transactional fallback: contracts and interactions stay available.
       candidate.body.visible=true;
