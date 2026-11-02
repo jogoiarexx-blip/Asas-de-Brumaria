@@ -1,0 +1,35 @@
+name: IA dos NPCs — caminhada e interação v1.5.8
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  village-ai:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 11
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Chromium/Three local
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1 three@0.180.0
+          npx playwright install --with-deps chromium
+          mkdir -p vendor
+          cp node_modules/three/build/three.module.js vendor/three.module.js
+          cp node_modules/three/build/three.core.js vendor/three.core.js
+      - name: Navegação NPC, GLB, colisão e contratos em WebGL
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/brumaria-npc-ai.log 2>&1 &
+          node tests/browser-village-ai-v158.mjs
+      - name: Capturas do teste
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v158-village-ai
+          path: artifacts/v158-*.png
+          if-no-files-found: ignore
