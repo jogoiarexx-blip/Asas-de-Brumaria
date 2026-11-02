@@ -139,8 +139,18 @@ export class IslandImpostorLOD{
     const refresh=this.elapsed>=.22||Math.abs(yaw-this.lastYaw)>.12;
     if(refresh){this.elapsed=0;this.lastYaw=yaw;}
     const profile=IMPOSTOR_PROFILES[tier]??IMPOSTOR_PROFILES.balanced;
-    for(const island of ISLANDS){
+    // Allocate no more than two island proxy groups per streaming tick.
+    // This avoids a first-frame spike on slow phones; nearby islands win.
+    let buildBudget=2;
+    const ordered=[...ISLANDS].sort((a,b)=>
+      Math.hypot(observer.x-a.x,observer.z-a.z)-a.r-
+      (Math.hypot(observer.x-b.x,observer.z-b.z)-b.r));
+    for(const island of ordered){
       const d=Math.max(0,Math.hypot(observer.x-island.x,observer.z-island.z)-island.r);
+      if(!this.groups.has(island.name)){
+        if(buildBudget<=0)continue;
+        buildBudget--;
+      }
       const group=this.createIsland(island);
       const target=lodFromShore(d,profile,group.state);
       const hasProxy=group.batches.every(b=>this.textureReady.has(b.kind));
