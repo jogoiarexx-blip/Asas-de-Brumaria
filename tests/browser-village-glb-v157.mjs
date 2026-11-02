@@ -49,7 +49,9 @@ try{
         scale:[scene?.scale.x,scene?.scale.y,scene?.scale.z],
         rootY:n.root.position.y,
         nearest:g.villagers.nearby(n.root.position)?.spec.id??null,
-        clipCount:n.model?.info.animationCount??null
+        clipCount:n.model?.info.animationCount??null,
+        mixerEnabled:!!n.model?.mixer,
+        syntheticIdle:n.model?.syntheticIdle??false
       };
     });
     return {models,unreplaced:extras.map(n=>({id:n.spec.id,fallback:n.body.visible})),
@@ -66,6 +68,8 @@ try{
     assert.equal(m.hasModel,true);
     assert.equal(m.fallback,false,'Procedural deve ficar escondido');
     assert.equal(m.holderChildren,1,'GLB substitui apenas um NPC');
+    assert.ok(m.mixerEnabled,'NPC GLB precisa ter animação Idle');
+    assert.equal(m.syntheticIdle,true,'Running/Walking precisam de idle estático gerado');
     assert.ok(Math.abs(m.scaledHeight-m.matchedHeight)<1e-5,'Altura 1:1');
     assert.ok(m.scale.every(v=>Math.abs(v-m.scale[0])<1e-7),'Escala não uniforme');
     assert.equal(m.nearest,m.id,'Colisão/interação deve manter a posição');
