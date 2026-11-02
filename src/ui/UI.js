@@ -207,7 +207,9 @@ export class UI {
     // near that frontier island, never during story expeditions or training.
     const frontierTarget=!game.inMountain&&!game.training.active&&!contractTarget
       ?game.frontier.objective(position,missions.stage>=3):null;
-    const target=mountainTarget??game.training.waypoint??contractTarget??frontierTarget??missions.waypoint(dragon);
+    const finalPortal=!game.inMountain&&missions.stage>=7&&game.expedition.phase!=='complete'
+      ?MOUNTAIN_PORTAL:null;
+    const target=mountainTarget??game.training.waypoint??contractTarget??frontierTarget??finalPortal??missions.waypoint(dragon);
     const bearing=headingToObjective(position,target,dragon.riding?dragon.yaw:hero.group.rotation.y);
     const enemyForGuide=!game.inMountain&&missions.stage===4?game.enemies.nearest(dragon.group.position):null;
     this.questGuide.textContent=missionNextStep({stage:missions.stage,progress:missions.progress,riding:dragon.riding,
@@ -224,7 +226,7 @@ export class UI {
       if(!islandHint)tip.textContent=this.questGuide.textContent;
       tip.classList.toggle('island-tip',!!islandHint);
     }
-    const waypointType=game.inMountain?'EXPEDIÇÃO':game.training.active?'TREINO':contractTarget?'CONTRATO':frontierTarget?'FRONTEIRA':'OBJETIVO';
+    const waypointType=game.inMountain?'EXPEDIÇÃO':game.training.active?'TREINO':contractTarget?'CONTRATO':frontierTarget?'FRONTEIRA':finalPortal?'PORTAL':'OBJETIVO';
     this.waypoint.textContent=bearing?`${bearing.symbol} ${waypointType} · ${bearing.distance} m · ${bearing.direction}`:
       missions.complete?'ARQUIPÉLAGO LIBERADO':missions.stage===6?'VOLTE À VILA · TECLA T':'ENCONTRE O PRÓXIMO OBJETIVO';
     const portal=document.getElementById('mountain-status');
