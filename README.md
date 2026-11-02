@@ -1,3 +1,7 @@
+## v1.5.5 — Ilhas mais separadas + WebP LOD leve
+
+As sete ilhas continuam explorações reais, com costa/colisões intactas. A distância mínima entre costas aumentou para ~232 unidades; a Ilha das Cinzas e o portal do segundo mapa não mudaram. Saves antigos são migrados de forma transparente. Para vegetação, rochas e cabanas distantes, o jogo usa **WebP transparente** em `assets/impostors/`. Ao se aproximar, volta ao mesh procedural simplificado e em seguida ao completo. O tamanho de cada WebP é aplicado em **metros de mundo** segundo o bounding box real de origem (largura, altura e pivot), e não pelo tamanho em pixels do arquivo. Objetivos, combates e colisões não são trocados por imagens. O streaming mantém a base do terreno sempre presente. A API `IslandImpostorLOD.registerObject` oferece o mesmo mecanismo para **objetos GLB estáticos** quando adicionados às ilhas.
+
 ## v1.5.4 — Portal das Montanhas no fim do primeiro mapa
 
 O portal azul fica agora na **ponta leste da Ilha das Cinzas**, perto do fim do arquipélago. Voe até o anel azul e atravesse-o na altura adequada para visitar as Montanhas da Sombra. O mapa é carregado durante a aproximação e o retorno coloca o jogador novamente nas Cinzas. Progresso e saves antigos são preservados, inclusive para jogadores que estavam próximos ao portal anterior.
