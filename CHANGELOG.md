@@ -1,3 +1,14 @@
+## v1.5.8 — IA de NPCs com patrulha na ilha (02/11/2026)
+
+- Seis personagens receberam rotinas independentes: caminhar, escolher destinos, retornar periodicamente ao ponto de trabalho, descansar e responder ao jogador.
+- IA determinística por NPC com velocidades e raios de patrulha diferentes, sem teleporte nem perseguição automática.
+- Desvio de árvores/cabanas/rochas por colisão espacial existente; verificação de terreno, encostas e borda do oceano. Ao travar, a IA escolhe uma nova direção.
+- Hitboxes da vila passam a acompanhar a posição real; grade espacial só é invalidada quando a área de colisão muda de célula, evitando reconstrução cara a cada frame.
+- Astrid, Forja e Cabeça de Vento usam clipes GLB Walking, removendo movimento X/Z embutido na animação (root motion) para não deslizar; crossfade para Idle.
+- Lume, Nara e Suri movimentam pernas e braços procedurais no caminhar; nome, halo e contratos seguem o NPC móvel.
+- NPCs próximos param e viram para o jogador durante interações, mantendo o botão E e as missões. AI distante é suspensa pelo LOD.
+- Testes Node de IA, pathfinding básico, interação, colisões e orçamento; smoke Chromium simula 54s de movimento, valida seis colisores, GLBs e contratos.
+
 ## v1.5.7 — NPCs 1 para 1 com novos GLBs (02/11/2026)
 
 - Substituição exclusiva de três NPCs: Iara/exploradora → Astrid.glb; Borin/ferreiro → forja.glb; Tavi/vigia → cabeça de vento (2).glb. Sem repetição de GLB.
