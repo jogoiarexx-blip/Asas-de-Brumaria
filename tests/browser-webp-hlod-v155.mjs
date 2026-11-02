@@ -55,7 +55,8 @@ try{
   cam.position.set(island.x,40,island.z);
   world.detailStream.plan(cam.position,'balanced');
   for(let i=0;i<4;i++)world.detailStream.step(1);
-  world.updateDetail(cam.position,1,null,cam);
+  // Crossfade intentionally overlaps WebP and mesh for two streaming ticks.
+  for(let i=0;i<3;i++)world.updateDetail(cam.position,1,null,cam);
   const group=world.impostors.groups.get(island.name);
   return {state:group.state,proxyVisible:group.batches.some(b=>b.mesh.visible),
    realMeshes:(world.foliageByIsland.get(island.name)??[]).filter(m=>m.visible).length,
