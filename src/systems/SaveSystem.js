@@ -1,6 +1,6 @@
 import {PREVIOUS_ISLAND_SPACING,migrateLegacyMapPoint} from '../world/IslandLayout.js';
 import {normalizeWildBonds} from './WildBonds.js';
-import {normalizeExpedition} from './ExpeditionRules.js';
+import {normalizeExpedition,MOUNTAIN_PORTAL} from './ExpeditionRules.js';
 import {normalizeWeather} from './weatherMath.js';
 import {normalizeDayCycle} from './dayCycleMath.js';
 import {normalizeDiscoveries,LANDMARKS} from './Discovery.js';
@@ -19,8 +19,19 @@ export function normalizeSave(payload){
   const spacing=layout===2?PREVIOUS_ISLAND_SPACING:1;
   const dragon=layout===3?{x:p.x,z:p.z}:migrateLegacyMapPoint(p.x??8,p.z??7,spacing);
   const hero=layout===3?{x:p.heroX,z:p.heroZ}:migrateLegacyMapPoint(p.heroX??2,p.heroZ??11,spacing);
+  // Reposition only old checkpoints parked at the original gateway.
+  // No adjustment for players in the mountain map or new-version saves.
+  const oldGateway=payload.portalVersion!==2&&Number.isFinite(p.x)&&Number.isFinite(p.z)&&
+    p.x<=650&&Math.hypot(p.x-328,p.z-35)<75;
+  if(oldGateway){
+    dragon.x=MOUNTAIN_PORTAL.returnX;dragon.z=MOUNTAIN_PORTAL.returnZ;
+    if(Number.isFinite(p.heroX)&&Number.isFinite(p.heroZ)&&
+      Math.hypot(p.heroX-328,p.heroZ-35)<100){
+      hero.x=MOUNTAIN_PORTAL.returnX-8;hero.z=MOUNTAIN_PORTAL.returnZ;
+    }
+  }
   return {
-    version:1,layoutVersion:3,
+    version:1,layoutVersion:3,portalVersion:2,
     mission:{stage,progress:count(m.progress,MAX_PROGRESS[stage]),crystals:bools(m.crystals,3),targets:bools(m.targets,3),hatchlings:bools(m.hatchlings,3),carriedIndex:Number.isInteger(m.carriedIndex)&&m.carriedIndex>=0&&m.carriedIndex<3?m.carriedIndex:-1,rescueHold:finite(m.rescueHold,0,1.25),enemies:Array.from({length:3},(_,i)=>finite(m.enemies?.[i],0,3,3))},
     progression:payload.progression,
     contracts:isPlainObject(payload.contracts)?payload.contracts:null,
