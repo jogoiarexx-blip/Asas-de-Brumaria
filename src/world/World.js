@@ -12,6 +12,8 @@ import {makeGrassTuftGeometry,terrainColorGrain,makeTreeCrownGeometry} from './N
 import {applyIslandVisibility,shouldRefreshClouds,wrappedCloudX} from './VisibilityBudget.js';
 import {IslandDetailStream,ISLAND_DETAIL_PHASES} from './IslandDetailStream.js';
 import {IslandImpostorLOD} from './ImpostorWebP.js';
+import {natureBudget,grassDrawCount,birdFlightPose,natureGust,pollenDrift} from './NatureLife.js';
+import {windShaderState,installGrassWind,installBirdWingMotion} from './NatureShaders.js';
 const brown = new THREE.MeshLambertMaterial({color:0x855b37});
 const leafPalette = [0x245d49,0x2b7355,0x398565,0x31735c];
 const rand = seededRandom(18971);
@@ -40,6 +42,11 @@ export class World {
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
     this.cloudWind=1;
+    this.natureWeatherWind=0;
+    this.natureWind=windShaderState();
+    this.natureWind.player.value=new THREE.Vector2(1e6,1e6);
+    this.birdWingTime={value:0};this.birdUpdateClock=Infinity;
+    this.pollenUpdateClock=Infinity;
     this.populate();
     this.detailStream=new IslandDetailStream(ISLANDS,{
       coast:island=>this._buildCoastForIsland(island),
@@ -85,7 +92,7 @@ export class World {
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
-    this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds();
+    this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds(); this.buildPollen();
   }
   makeWaterTexture() {
     const canvas=document.createElement('canvas');canvas.width=384;canvas.height=384;
@@ -215,10 +222,11 @@ export class World {
     if(this.grassByIsland.has(island.name))return;
     const geometry=this._grassGeo??(this._grassGeo=makeGrassTuftGeometry());
     const material=this._grassMat??(this._grassMat=new THREE.MeshLambertMaterial({color:0xffffff,vertexColors:true,side:THREE.DoubleSide}));
+    if(!this._grassWindInstalled){installGrassWind(material,this.natureWind);this._grassWindInstalled=true;}
     const dummy=new THREE.Object3D();
     const rand=seededRandom(19001+ISLANDS.indexOf(island)*1709);
     {
-      const count=island.r>70?220:115;
+      const count=island.r>70?440:250;
       const mesh=new THREE.InstancedMesh(geometry,material,count);
       const palette=island.biome==='crystal'?[0x66b5b7,0x82cad0,0x548f9e]:
         island.biome==='ash'?[0x8b8074,0x6a7370,0x9b8a7b]:
@@ -236,7 +244,8 @@ export class World {
         mesh.setColorAt(placed,new THREE.Color(palette[Math.floor(rand()*palette.length)]));
         placed++;
       }
-      mesh.count=placed;mesh.instanceMatrix.needsUpdate=true;
+      mesh.count=placed;mesh.userData.totalCount=placed;
+      mesh.instanceMatrix.needsUpdate=true;
       if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
       this.scene.add(mesh);this.grassByIsland.set(island.name,mesh);
     }
@@ -500,6 +509,8 @@ export class World {
     this.detailTier=tier;
     this.detailElapsed=Infinity;
     this.cloudElapsed=Infinity;
+    if(this.birdMesh)this.birdMesh.count=Math.min(this.birds.length,natureBudget(tier).birds);
+    this.birdUpdateClock=Infinity;this.pollenUpdateClock=Infinity;
   }
   updateDetail(observer,dt=0,flight=null,camera=null){
     if(this.visualStreamingEnabled)this.detailStream.step(1);
@@ -515,6 +526,7 @@ export class World {
     this.detailElapsed+=Math.max(0,dt);
     if(this.detailElapsed<(this.detailTier==='economy'?.30:this.detailTier==='balanced'?.20:.15))return;
     this.detailElapsed=0;
+    this.natureFocus=observer;
     // Predict the next island from actual movement direction, not the camera.
     // Stream a distant coast/tree batch and its 512px preview in advance.
     const predicted=flight?.airborne?predictFlightIsland(flight.position,flight.direction,
@@ -528,6 +540,7 @@ export class World {
       const bloom=this.flowersByIsland.get(island.name);
       if(!bloom)continue;
       const grass=this.grassByIsland.get(island.name);
+      if(grass)grass.count=grassDrawCount(grass.userData.totalCount??grass.count,this.detailTier);
       bloom.visible=(grass?.visible??true)&&this.detailTier!=='economy';
       const accents=this.biomeAccentsByIsland.get(island.name);
       if(accents)accents.visible=this.foliageByIsland.get(island.name)?.[0]?.visible??true;
@@ -605,7 +618,19 @@ export class World {
     const elapsed=Math.max(0,dt);
     this.cloudTravel+=elapsed*this.cloudWind;this.cloudElapsed+=elapsed;
     if(shouldRefreshClouds(this.cloudElapsed,this.detailTier))this.updateClouds(this.cloudTravel);
-    this.updateSeabirds(time);
+    // GPU uniforms only: no per-blade geometry updates or extra draw calls.
+    this.natureWind.time.value=time;
+    this.natureWind.strength.value=natureGust(time,this.natureWeatherWind)*natureBudget(this.detailTier).wind;
+    if(this.natureFocus)this.natureWind.player.value.set(this.natureFocus.x,this.natureFocus.z);
+    this.birdWingTime.value=time;
+    this.birdUpdateClock+=elapsed;
+    if(this.birdUpdateClock>=natureBudget(this.detailTier).interval){
+      this.birdUpdateClock=0;this.updateSeabirds(time,this.natureFocus);
+    }
+    this.pollenUpdateClock+=elapsed;
+    if(this.pollenUpdateClock>=natureBudget(this.detailTier).interval*1.8){
+      this.pollenUpdateClock=0;this.updatePollen(time,this.natureFocus);
+    }
   }
 }
 function sceneAdd(scene,mesh){scene.add(mesh);}
