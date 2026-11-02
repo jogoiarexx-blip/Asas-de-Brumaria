@@ -48,7 +48,7 @@ function boundsOfVegetation(item,kind,resources){
   }
   return boxSize(box);
 }
-const EMPTY={conifer:[],broadleaf:[],rock:[]};
+
 export class IslandImpostorLOD{
   constructor(world,scene){
     this.world=world;this.scene=scene;this.groups=new Map();this.registered=[];
@@ -75,7 +75,7 @@ export class IslandImpostorLOD{
       depthWrite:false,side:THREE.DoubleSide,fog:true,opacity:1
     });
     const mesh=new THREE.InstancedMesh(this.geometry,material,items.length);
-    mesh.frustumCulled=false;mesh.visible=false;mesh.castShadow=false;
+    mesh.frustumCulled=true;mesh.visible=false;mesh.castShadow=false;
     mesh.userData.impostorKind=kind;
     this.scene.add(mesh);
     return {mesh,items,kind};
@@ -92,6 +92,10 @@ export class IslandImpostorLOD{
     }
     for(const r of rocks)all.rock.push({...r,bounds:boundsOfVegetation(r,'rock',resources)});
     const group={state:'far',batches:Object.entries(all).map(([k,v])=>this.makeBatch(v,k)).filter(Boolean)};
+    for(const b of group.batches){
+      b.mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(island.x,24,island.z),
+        island.r+90);
+    }
     this.groups.set(island.name,group);return group;
   }
   /** Register any static procedural object or loaded GLB, preserving exact
@@ -107,6 +111,7 @@ export class IslandImpostorLOD{
     const batch=this.makeBatch([{x:(bounds.min.x+bounds.max.x)/2,
       y:bounds.min.y,z:(bounds.min.z+bounds.max.z)/2,bounds:{...size,centerY:size.height/2}}],kind);
     if(!batch)return false;
+    batch.mesh.boundingSphere=bounds.getBoundingSphere(new THREE.Sphere()).expandByScalar(6);
     this.registered.push({object,batch,near,far,state:'full'});
     return true;
   }
@@ -133,7 +138,8 @@ export class IslandImpostorLOD{
       const hasProxy=group.batches.every(b=>this.textureReady.has(b.kind));
       const nearMeshes=this.world.foliageByIsland.get(island.name)??[];
       const nearReady=nearMeshes.length>0;
-      const state=(target==='far'||target==='hidden')&&!hasProxy&&nearReady?'mid':target;
+      const state=target!=='hidden'&&!nearReady&&hasProxy?'far':
+        (target==='far'||target==='hidden')&&!hasProxy&&nearReady?'mid':target;
       group.state=state;
       const proxyOn=state==='far'&&hasProxy;
       for(const batch of group.batches){
