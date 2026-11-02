@@ -32,6 +32,10 @@ export function migrateSeparatedIslandPoint(x,z){
     const d=Math.hypot(x-old.x*ISLAND_SPACING,z-old.z*ISLAND_SPACING);
     if(d<distance){distance=d;nearest=name;}
   }
+  const old=ORIGINAL_ISLAND_CENTERS[nearest];
+  // Open-ocean saves must keep their exact positions; only island-local
+  // checkpoints need to follow the shifted terrain and its objects.
+  if(distance>old.r*ISLAND_SIZE_SCALE+65)return {x,z};
   const o=islandOffset(nearest);
   return {x:x+o.x,z:z+o.z};
 }
