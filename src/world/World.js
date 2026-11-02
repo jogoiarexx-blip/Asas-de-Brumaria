@@ -342,7 +342,7 @@ export class World {
       }
       batch.instanceMatrix.needsUpdate=true;
       if(batch.instanceColor)batch.instanceColor.needsUpdate=true;
-      batch.castShadow=shadows===true;batch.userData.lodLayer=typeof shadows==='string'?shadows:'base';batch.computeBoundingSphere();
+      batch.castShadow=shadows===true||shadows==='base';batch.userData.lodLayer=typeof shadows==='string'?shadows:'base';batch.computeBoundingSphere();
       this.scene.add(batch);this.foliageMeshes.push(batch);
       this.foliageByIsland.get(islandName).push(batch);
     };
