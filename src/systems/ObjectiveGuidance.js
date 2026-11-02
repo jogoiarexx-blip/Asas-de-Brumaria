@@ -1,3 +1,4 @@
+import {MOUNTAIN_PORTAL} from './ExpeditionRules.js';
 /** Compact, contextual mission guidance, independent of Three.js and saved data. */
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -37,5 +38,5 @@ export function missionNextStep({stage=0,progress=0,riding=false,carriedIndex=-1
 }
 export function shouldShowMountainHint(position,missionStage,inMountain,complete){
   if(inMountain||complete||missionStage<3||!position)return false;
-  return finite(position.x)&&finite(position.z)&&Math.hypot(position.x-328,position.z-35)<170;
+  return finite(position.x)&&finite(position.z)&&Math.hypot(position.x-MOUNTAIN_PORTAL.x,position.z-MOUNTAIN_PORTAL.z)<190;
 }
