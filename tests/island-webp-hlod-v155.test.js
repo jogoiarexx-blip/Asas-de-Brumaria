@@ -54,7 +54,7 @@ test('proporções reais usam Box3 da fonte e pivot do modelo, sem depender de p
  const b=boxSize({min:{x:-2,y:1,z:-3},max:{x:4,y:9,z:2}});
  assert.deepEqual(b,{width:6,height:8,centerY:5});
  const src=readFileSync(new URL('../src/world/ImpostorWebP.js',import.meta.url),'utf8');
- assert.match(src,/geometry\.boundingBox/);
+ assert.match(src,/geo\.boundingBox/);
  assert.match(src,/applyMatrix4\(dummy\.matrix\)/);
  assert.match(src,/setFromObject\(object\)/);
  assert.match(src,/dummy\.scale\.set\(size\.width,size\.height,1\)/);
