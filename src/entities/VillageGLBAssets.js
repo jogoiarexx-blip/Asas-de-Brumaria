@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {inspectGLB} from './glbValidation.js';
+import {createPedestrianIdle} from './heroPedestrianIdle.js';
 import {villageModelUrl} from './villageModelCatalog.js';
 
 const VERSION='0.180.0';
@@ -61,8 +62,12 @@ export async function loadVillageModel(spec,{fetcher=(...a)=>fetch(...a),base=im
   if(!gltf?.scene)throw new Error('GLB sem cena 3D para NPC: '+spec.file);
   const model=fitVillageModel(gltf.scene,spec);
   const animations=gltf.animations??[];
-  const idle=animations.find(clip=>/idle|rest|stand|breath|talk|speak/i.test(clip.name));
+  const authoredIdle=animations.find(clip=>/idle|rest|stand|breath|talk|speak/i.test(clip.name));
+  // The uploaded Astrid / Forja / Cabeça de Vento have Running and Walking,
+  // but no standing pose. Sample the real walk at mid-stride and generate a
+  // subtle 3-second breathing loop, freezing feet/root motion (no moonwalk).
+  const idle=authoredIdle??createPedestrianIdle(animations);
   const mixer=idle?new THREE.AnimationMixer(gltf.scene):null;
   if(idle)mixer.clipAction(idle).play();
-  return {...model,mixer,info,clips:animations.map(clip=>clip.name)};
+  return {...model,mixer,info,clips:animations.map(clip=>clip.name),syntheticIdle:!authoredIdle&&!!idle};
 }
