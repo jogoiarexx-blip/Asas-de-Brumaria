@@ -3,7 +3,7 @@ import {stretchPointOnIsland} from '../world/IslandLayout.js';
  * when the *in-game* day advances. The main story never resets. */
 export const CONTRACTS=Object.freeze({
   correio:{title:'CORREIO DOS CÉUS',npc:'iara',reward:2,requiresMount:true,
-    description:'Entregue três mensagens nos faróis luminosos e volte para Iara.',
+    description:'Entregue três mensagens nos faróis luminosos e volte para Astrid.',
     points:[[103,35,43],stretchPointOnIsland([166,37,106],'Ilha do Farol'),stretchPointOnIsland([-119,35,152],'Ilha da Névoa')]},
   ervas:{title:'ERVAS DO REFÚGIO',npc:'lume',reward:1,requiresMount:false,
     description:'Encontre três plantas curativas a pé e volte para Lume.',
@@ -15,7 +15,7 @@ export const CONTRACTS=Object.freeze({
     description:'Leve três caixas de suprimentos às ilhas afastadas e retorne para Nara.',
     points:[stretchPointOnIsland([-182,30,-123],'Ilha das Cascatas'),stretchPointOnIsland([168,35,104],'Ilha do Farol'),stretchPointOnIsland([196,32,-160],'Atol Esquecido')]},
   patrulha:{title:'VIGÍLIA DOS HORIZONTES',npc:'tavi',reward:2,requiresMount:true,
-    description:'Sobrevoe três balizas de patrulha entre as ilhas e informe Tavi ao regressar.',
+    description:'Sobrevoe três balizas de patrulha entre as ilhas e informe Cabeça de Vento ao regressar.',
     points:[stretchPointOnIsland([-115,42,79],'Ilha da Névoa'),stretchPointOnIsland([121,44,32],'Ilha do Farol'),stretchPointOnIsland([174,38,-110],'Atol Esquecido')]},
   brasas:{title:'CHAMAS DOS FARÓIS',npc:'suri',reward:3,requiresMount:true,requiresFire:true,
     description:'Monte no dragão e acenda com FOGO as três balizas laranjas das ilhas. Volte para Suri.',
