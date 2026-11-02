@@ -589,7 +589,7 @@ export class Game {
       const nearPortal=shouldLoadMountain(pos,riding);
       // Do not reload/re-enter immediately after returning to this same gate.
       // Leaving the vicinity and approaching again re-arms the portal.
-      if(!nearPortal)this.gateMustLeave=false;
+      if(shouldUnloadMountain(pos))this.gateMustLeave=false;
       if(nearPortal&&!this.gateMustLeave){
         if(this.missions.stage<3){
           if(!this.gateWarned){this.ui.toast('Conclua as runas para liberar fogo antes de entrar nas montanhas!',4);this.gateWarned=true;}
