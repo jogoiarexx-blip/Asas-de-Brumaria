@@ -50,6 +50,14 @@ test('HLOD alterna WebP/low-poly/full com histerese, sem oscilar na borda',()=>{
  assert.equal(lodFromShore(1060,p,'far'),'hidden');
  assert.equal(IMPOSTOR_PROFILES.economy.far<IMPOSTOR_PROFILES.quality.far,true);
 });
+test('imagens binárias reais são WebP pequenas, sem placeholders PNG ou SVG',()=>{
+ for(const kind of ['conifer','broadleaf','rock','cabin']){
+  const binary=readFileSync(new URL('../assets/impostors/'+kind+'.webp',import.meta.url));
+  assert.equal(binary.toString('ascii',0,4),'RIFF',kind+' cabeçalho RIFF');
+  assert.equal(binary.toString('ascii',8,12),'WEBP',kind+' formato WebP');
+  assert.ok(binary.length>200&&binary.length<8192,kind+' WebP fora do orçamento');
+ }
+});
 test('proporções reais usam Box3 da fonte e pivot do modelo, sem depender de pixels',()=>{
  const b=boxSize({min:{x:-2,y:1,z:-3},max:{x:4,y:9,z:2}});
  assert.deepEqual(b,{width:6,height:8,centerY:5});
