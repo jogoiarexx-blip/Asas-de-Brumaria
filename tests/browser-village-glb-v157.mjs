@@ -39,7 +39,6 @@ try{
     const models=list.map(n=>{
       const holder=n.model?.holder;
       const scene=holder?.children?.[0];
-      const worldBox=holder?new (g.scene.constructor.prototype.constructor===undefined?Object:Object)():null;
       return {
         id:n.spec.id,name:n.spec.name,
         status:n.modelStatus,hasModel:!!n.model,
