@@ -12,6 +12,8 @@ import {makeGrassTuftGeometry,terrainColorGrain,makeTreeCrownGeometry} from './N
 import {applyIslandVisibility,shouldRefreshClouds,wrappedCloudX} from './VisibilityBudget.js';
 import {IslandDetailStream,ISLAND_DETAIL_PHASES} from './IslandDetailStream.js';
 import {IslandImpostorLOD} from './ImpostorWebP.js';
+import {natureBudget,grassDrawCount,birdFlightPose,natureGust,pollenDrift} from './NatureLife.js';
+import {windShaderState,installGrassWind,installBirdWingMotion} from './NatureShaders.js';
 const brown = new THREE.MeshLambertMaterial({color:0x855b37});
 const leafPalette = [0x245d49,0x2b7355,0x398565,0x31735c];
 const rand = seededRandom(18971);
@@ -40,6 +42,11 @@ export class World {
     this.detailTier='balanced';this.detailElapsed=Infinity;this.cloudElapsed=Infinity;
     this.cloudTravel=0;this.visibleIslandCount=ISLANDS.length;
     this.cloudWind=1;
+    this.natureWeatherWind=0;
+    this.natureWind=windShaderState();
+    this.natureWind.player.value=new THREE.Vector2(1e6,1e6);
+    this.birdWingTime={value:0};this.birdUpdateClock=Infinity;
+    this.pollenUpdateClock=Infinity;
     this.populate();
     this.detailStream=new IslandDetailStream(ISLANDS,{
       coast:island=>this._buildCoastForIsland(island),
@@ -85,7 +92,7 @@ export class World {
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
-    this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds();
+    this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds(); this.buildPollen();
   }
   makeWaterTexture() {
     const canvas=document.createElement('canvas');canvas.width=384;canvas.height=384;
@@ -215,10 +222,11 @@ export class World {
     if(this.grassByIsland.has(island.name))return;
     const geometry=this._grassGeo??(this._grassGeo=makeGrassTuftGeometry());
     const material=this._grassMat??(this._grassMat=new THREE.MeshLambertMaterial({color:0xffffff,vertexColors:true,side:THREE.DoubleSide}));
+    if(!this._grassWindInstalled){installGrassWind(material,this.natureWind);this._grassWindInstalled=true;}
     const dummy=new THREE.Object3D();
     const rand=seededRandom(19001+ISLANDS.indexOf(island)*1709);
     {
-      const count=island.r>70?220:115;
+      const count=island.r>70?440:250;
       const mesh=new THREE.InstancedMesh(geometry,material,count);
       const palette=island.biome==='crystal'?[0x66b5b7,0x82cad0,0x548f9e]:
         island.biome==='ash'?[0x8b8074,0x6a7370,0x9b8a7b]:
@@ -236,7 +244,8 @@ export class World {
         mesh.setColorAt(placed,new THREE.Color(palette[Math.floor(rand()*palette.length)]));
         placed++;
       }
-      mesh.count=placed;mesh.instanceMatrix.needsUpdate=true;
+      mesh.count=placed;mesh.userData.totalCount=placed;
+      mesh.instanceMatrix.needsUpdate=true;
       if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
       this.scene.add(mesh);this.grassByIsland.set(island.name,mesh);
     }
@@ -500,6 +509,8 @@ export class World {
     this.detailTier=tier;
     this.detailElapsed=Infinity;
     this.cloudElapsed=Infinity;
+    if(this.birdMesh)this.birdMesh.count=Math.min(this.birds.length,natureBudget(tier).birds);
+    this.birdUpdateClock=Infinity;this.pollenUpdateClock=Infinity;
   }
   updateDetail(observer,dt=0,flight=null,camera=null){
     if(this.visualStreamingEnabled)this.detailStream.step(1);
@@ -515,6 +526,7 @@ export class World {
     this.detailElapsed+=Math.max(0,dt);
     if(this.detailElapsed<(this.detailTier==='economy'?.30:this.detailTier==='balanced'?.20:.15))return;
     this.detailElapsed=0;
+    this.natureFocus=observer;
     // Predict the next island from actual movement direction, not the camera.
     // Stream a distant coast/tree batch and its 512px preview in advance.
     const predicted=flight?.airborne?predictFlightIsland(flight.position,flight.direction,
@@ -528,6 +540,7 @@ export class World {
       const bloom=this.flowersByIsland.get(island.name);
       if(!bloom)continue;
       const grass=this.grassByIsland.get(island.name);
+      if(grass)grass.count=grassDrawCount(grass.userData.totalCount??grass.count,this.detailTier);
       bloom.visible=(grass?.visible??true)&&this.detailTier!=='economy';
       const accents=this.biomeAccentsByIsland.get(island.name);
       if(accents)accents.visible=this.foliageByIsland.get(island.name)?.[0]?.visible??true;
@@ -536,58 +549,122 @@ export class World {
     if(this.visualStreamingEnabled&&this.impostors)this.impostors.update(observer,camera,this.detailTier,dt);
     this.visibleIslandCount=state.visible;
   }
+  /** One instanced flock draw. A single geometry contains body, tail and
+   * tapered layered wings; per-bird wing bending happens on the GPU.
+   * Different coastal habitats get different birds with no new draw calls. */
   buildSeabirds() {
-    // Merge a pair of wings once and instance the whole bird.
-    // Formerly: 12 bird groups / 24 independent draw calls.
-    // Now: one material + geometry, 12 moving instances, one draw call.
-    const halves=[];
-    for(const side of [-1,1]){
-      const cone=new THREE.ConeGeometry(.25,2.5,3).toNonIndexed();
-      cone.rotateZ(side*Math.PI/2);
-      cone.translate(side*.95,0,0);
-      halves.push(cone);
-    }
-    const geometry=new THREE.BufferGeometry();
-    for(const [name,itemSize] of [['position',3],['normal',3],['uv',2]]){
-      const length=halves.reduce((total,g)=>total+g.getAttribute(name).array.length,0);
-      const data=new Float32Array(length);
-      let offset=0;
-      for(const half of halves){
-        const part=half.getAttribute(name).array;
-        data.set(part,offset);offset+=part.length;
+    const positions=[],colors=[];
+    const pushTriangle=(a,b,c,tint)=>{
+      const color=new THREE.Color(tint);
+      for(const v of [a,b,c]){
+        positions.push(...v);colors.push(color.r,color.g,color.b);
       }
-      geometry.setAttribute(name,new THREE.BufferAttribute(data,itemSize));
+    };
+    const wing=0xe6e9db,feather=0xc4d2ce,body=0xf7f1de,tail=0xaebec0;
+    for(const side of [-1,1]){
+      pushTriangle([side*.23,.06,-.32],[side*1.25,.12,-.92],[side*2.96,.02,-.34],wing);
+      pushTriangle([side*.23,.06,-.32],[side*2.96,.02,-.34],[side*2.04,-.06,.70],feather);
+      pushTriangle([side*.28,.09,-.24],[side*1.16,.15,-.75],[side*2.10,.02,.08],body);
+      pushTriangle([side*.08,.03,.61],[side*.52,.05,1.38],[0,-.08,1.27],tail);
     }
-    halves.forEach(half=>half.dispose());
-    geometry.computeBoundingSphere();
-    const material=new THREE.MeshBasicMaterial({color:0xe3faf9,side:THREE.DoubleSide});
-    const count=12;
-    this.birdMesh=new THREE.InstancedMesh(geometry,material,count);
+    pushTriangle([0,.31,-.96],[-.48,-.05,-.36],[.48,-.05,-.36],body);
+    pushTriangle([-.48,-.05,-.36],[0,-.12,.78],[.48,-.05,-.36],body);
+    pushTriangle([0,.31,-.96],[.48,-.05,-.36],[0,-.12,.78],feather);
+    pushTriangle([0,.31,-.96],[0,-.12,.78],[-.48,-.05,-.36],feather);
+    pushTriangle([0,.22,-1.17],[-.17,.14,-.89],[.17,.14,-.89],0xe8bb78);
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    geometry.computeVertexNormals();geometry.computeBoundingSphere();
+    const material=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide,
+      flatShading:true,fog:true});
+    installBirdWingMotion(material,this.birdWingTime);
+    this.birdMesh=new THREE.InstancedMesh(geometry,material,42);
     this.birdMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    this.birdMesh.frustumCulled=true;this.birdMesh.castShadow=false;
+    this.birdMesh.frustumCulled=false;this.birdMesh.castShadow=false;
     this.scene.add(this.birdMesh);this.birdDummy=new THREE.Object3D();
     this.birds=[];
-    for(let i=0;i<count;i++){
-      this.birds.push({centerX:(rand()-.5)*250,y:38+rand()*28,centerZ:(rand()-.5)*230,
-        offset:rand()*6.2,speed:2+rand()*2});
+    const birdRand=seededRandom(49281);
+    const shades=[0xffffff,0xc3dfe5,0xe6cda8,0xb3c7c7];
+    for(let i=0;i<42;i++){
+      const island=ISLANDS[i%ISLANDS.length];
+      const angle=birdRand()*Math.PI*2;
+      const distance=island.r*(.72+birdRand()*.64);
+      this.birds.push({
+        centerX:island.x+Math.cos(angle)*distance,
+        centerZ:island.z+Math.sin(angle)*distance,
+        y:20+birdRand()*29,
+        offset:birdRand()*Math.PI*2,
+        speed:.24+birdRand()*.19,
+        radius:9+birdRand()*14,depth:8+birdRand()*13,
+        size:.70+birdRand()*.56,
+        tint:new THREE.Color(shades[i%shades.length])
+      });
     }
     this.updateSeabirds(0);
-    // Bird flights orbit up to 18 world units around their initial position.
-    // The enlarged static bounds remain valid without per-frame sphere rebuilds.
-    this.birdMesh.computeBoundingSphere();
-    this.birdMesh.boundingSphere.radius+=36;
   }
-  updateSeabirds(time){
+  updateSeabirds(time,observer=null){
+    if(!this.birdMesh)return;
     const dummy=this.birdDummy;
-    for(let i=0;i<this.birds.length;i++){
-      const bird=this.birds[i],angle=time*.18*bird.speed+bird.offset;
-      dummy.position.set(bird.centerX+Math.cos(angle)*18,bird.y,bird.centerZ+Math.sin(angle)*18);
-      dummy.rotation.set(0,-angle,0);
-      dummy.scale.set(1,1,1);
-      dummy.updateMatrix();
-      this.birdMesh.setMatrixAt(i,dummy.matrix);
+    let visible=0;
+    const max=natureBudget(this.detailTier).birds;
+    for(const bird of this.birds){
+      if(visible>=max)break;
+      const pose=birdFlightPose(bird,time);
+      if(observer&&Math.hypot(pose.x-observer.x,pose.z-observer.z)>390)continue;
+      dummy.position.set(pose.x,pose.y,pose.z);
+      dummy.rotation.set(0,pose.yaw,pose.bank);
+      dummy.scale.setScalar(bird.size);dummy.updateMatrix();
+      this.birdMesh.setMatrixAt(visible,dummy.matrix);
+      this.birdMesh.setColorAt(visible,bird.tint);
+      visible++;
     }
+    this.birdMesh.count=visible;
     this.birdMesh.instanceMatrix.needsUpdate=true;
+    if(this.birdMesh.instanceColor)this.birdMesh.instanceColor.needsUpdate=true;
+  }
+  /** Tiny drifting pollen near flowering coastal groves, drawn in one batch.
+   * Entirely decorative: no shadows, colliders, physics or extra textures. */
+  buildPollen(){
+    const geometry=new THREE.TetrahedronGeometry(.12,0);
+    const material=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,
+      opacity:.64,depthWrite:false,fog:true});
+    this.pollenMesh=new THREE.InstancedMesh(geometry,material,56);
+    this.pollenMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.pollenMesh.frustumCulled=false;this.pollenMesh.castShadow=false;
+    this.scene.add(this.pollenMesh);
+    const pollenRand=seededRandom(82177);
+    const colors=[0xffe7aa,0xf6f6ca,0xc7eae4,0xffd4a2];
+    this.pollen=[];
+    for(const island of ISLANDS)for(let i=0;i<8;i++){
+      const angle=pollenRand()*Math.PI*2,r=island.r*(.26+pollenRand()*.46);
+      const x=island.x+Math.cos(angle)*r,z=island.z+Math.sin(angle)*r;
+      const y=this.heightAt(x,z);
+      if(y<2)continue;
+      this.pollen.push({x,y:y+1.3+pollenRand()*1.8,z,
+        size:.6+pollenRand()*1.3,
+        tint:new THREE.Color(colors[i%colors.length])});
+    }
+    this.pollenDummy=new THREE.Object3D();
+    this.updatePollen(0);
+  }
+  updatePollen(time,observer=null){
+    if(!this.pollenMesh)return;
+    const cap=natureBudget(this.detailTier).pollen;
+    let count=0;
+    for(let i=0;i<this.pollen.length&&count<cap;i++){
+      const p=this.pollen[i];
+      if(observer&&Math.hypot(p.x-observer.x,p.z-observer.z)>85)continue;
+      const drift=pollenDrift(i,time);
+      this.pollenDummy.position.set(p.x+drift.x,p.y+drift.y,p.z+drift.z);
+      this.pollenDummy.scale.setScalar(p.size);this.pollenDummy.rotation.set(0,time*.2+i,0);
+      this.pollenDummy.updateMatrix();
+      this.pollenMesh.setMatrixAt(count,this.pollenDummy.matrix);
+      this.pollenMesh.setColorAt(count,p.tint);count++;
+    }
+    this.pollenMesh.count=count;
+    this.pollenMesh.instanceMatrix.needsUpdate=true;
+    if(this.pollenMesh.instanceColor)this.pollenMesh.instanceColor.needsUpdate=true;
   }
   update(dt,time) {
     this.elapsed=time;
@@ -605,7 +682,19 @@ export class World {
     const elapsed=Math.max(0,dt);
     this.cloudTravel+=elapsed*this.cloudWind;this.cloudElapsed+=elapsed;
     if(shouldRefreshClouds(this.cloudElapsed,this.detailTier))this.updateClouds(this.cloudTravel);
-    this.updateSeabirds(time);
+    // GPU uniforms only: no per-blade geometry updates or extra draw calls.
+    this.natureWind.time.value=time;
+    this.natureWind.strength.value=natureGust(time,this.natureWeatherWind)*natureBudget(this.detailTier).wind;
+    if(this.natureFocus)this.natureWind.player.value.set(this.natureFocus.x,this.natureFocus.z);
+    this.birdWingTime.value=time;
+    this.birdUpdateClock+=elapsed;
+    if(this.birdUpdateClock>=natureBudget(this.detailTier).interval){
+      this.birdUpdateClock=0;this.updateSeabirds(time,this.natureFocus);
+    }
+    this.pollenUpdateClock+=elapsed;
+    if(this.pollenUpdateClock>=natureBudget(this.detailTier).interval*1.8){
+      this.pollenUpdateClock=0;this.updatePollen(time,this.natureFocus);
+    }
   }
 }
 function sceneAdd(scene,mesh){scene.add(mesh);}

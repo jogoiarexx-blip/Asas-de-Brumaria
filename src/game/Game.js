@@ -1185,6 +1185,7 @@ export class Game {
       // Both movement controllers read the exact same horizontal camera yaw.
       this.input.cameraYaw=this.cameraOrbit.yaw;
       this.dragon.setWind(this.weather.mode.wind);
+      this.world.natureWeatherWind=this.weather.mode.wind;
       this.dragon.update(dt,this.input,this.elapsed);
       this.pulseCooldown=Math.max(0,this.pulseCooldown-dt);
       this.wingAudioTime=Math.max(0,this.wingAudioTime-dt);

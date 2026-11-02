@@ -1,0 +1,35 @@
+name: Natureza v1.5.6 — teste visual
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  natureza:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Three e Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1 three@0.180.0
+          npx playwright install --with-deps chromium
+          mkdir -p vendor
+          cp node_modules/three/build/three.module.js vendor/three.module.js
+          cp node_modules/three/build/three.core.js vendor/three.core.js
+      - name: Simular natureza e os três perfis
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/brumaria-nature.log 2>&1 &
+          node tests/browser-nature-v156.mjs
+      - name: Capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nature-v156-capturas
+          path: artifacts/nature-v156-*.png
+          if-no-files-found: ignore

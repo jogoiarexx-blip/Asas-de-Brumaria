@@ -1,3 +1,15 @@
+## v1.5.6 — Grama, aves e ambientação leves (02/11/2026)
+
+- Grama mais densa nas sete ilhas, ainda em um InstancedMesh por ilha; 440 tufos em ilha principal e 250 nas menores.
+- Vento natural no shader de vértices GPU com rajadas em duas frequências, raízes fixas e deslocamento suave ao redor do personagem; vento responde ao clima.
+- Três densidades de grama: Leve 48%, Equilibrado 76%, Detalhado 100%; não recalcula nem retransmite vértices a cada frame.
+- Pássaros passam de cones genéricos para silhuetas em camadas (corpo, cauda, asas); batimentos e planeio animados no shader.
+- Bandos distribuidos entre as sete costas com curvas mais naturais, altitude variável, inclinação nas curvas, diversidade de cores e tamanhos.
+- Máximo de 14/28/42 aves conforme perfil gráfico, com descarte de instâncias fora de 390 unidades da câmera e taxa de atualização reduzida.
+- Partículas sutis de pólen instanciadas perto das flores com 0/16/34 instâncias por qualidade; sem textura, colisão ou sombra.
+- Terreno, colisões, saves e impostores WebP mantidos como antes; regressões de fórmulas, GPU e três níveis de qualidade.
+- Testes Node e Chromium incluem validação do novo visual; FPS em hardware móvel real ainda depende de playtest.
+
 ## v1.5.5 — Arquipélago espaçado e WebP HLOD (02/11/2026)
 
 - Ajustes específicos nas seis ilhas mais próximas; distância costeira mínima de 138,4 para aproximadamente 232,4 unidades, mantendo a Ilha das Cinzas e seu portal exatamente no mesmo local.

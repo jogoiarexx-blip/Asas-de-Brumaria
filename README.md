@@ -1,3 +1,7 @@
+## Novidades v1.5.6 — Natureza viva
+
+Grama com vento contínuo animado na GPU, pequena reação à aproximação do dragão e três níveis de densidade adaptativa. As aves costeiras agora têm corpos, caudas e asas articuladas, bandos que circulam as sete ilhas e variações de cor e tamanho; os movimentos são econômicos e reduzem atualizações em PCs e celulares fracos. Flores recebem partículas discretas de pólen no modo Equilibrado/Detalhado. Tudo é ornamental: colisões, saves, missões e WebP LOD do cenário permanecem intactos.
+
 ## v1.5.5 — Ilhas mais separadas + WebP LOD leve
 
 As sete ilhas continuam explorações reais, com costa/colisões intactas. A distância mínima entre costas aumentou para ~232 unidades; a Ilha das Cinzas e o portal do segundo mapa não mudaram. Saves antigos são migrados de forma transparente. Para vegetação, rochas e cabanas distantes, o jogo usa **WebP transparente** em `assets/impostors/`. Ao se aproximar, volta ao mesh procedural simplificado e em seguida ao completo. O tamanho de cada WebP é aplicado em **metros de mundo** segundo o bounding box real de origem (largura, altura e pivot), e não pelo tamanho em pixels do arquivo. Objetivos, combates e colisões não são trocados por imagens. O streaming mantém a base do terreno sempre presente. A API `IslandImpostorLOD.registerObject` oferece o mesmo mecanismo para **objetos GLB estáticos** quando adicionados às ilhas.
