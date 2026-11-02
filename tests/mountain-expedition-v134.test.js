@@ -26,8 +26,8 @@ test('chefe é invulnerável antes dos barcos e oferece recompensa apenas uma ve
 test('trânsito de mundo só ocorre montado, no ar, na direção da passagem',()=>{
  assert.equal(shouldLoadMountain({x:MOUNTAIN_PORTAL.x-30,y:40,z:MOUNTAIN_PORTAL.z},true),true);
  assert.equal(shouldLoadMountain({x:0,y:40,z:0},true),false);
- assert.equal(shouldEnterMountain({x:361,y:55,z:MOUNTAIN_PORTAL.z},true),true);
- assert.equal(shouldEnterMountain({x:361,y:3,z:MOUNTAIN_PORTAL.z},true),false);
+ assert.equal(shouldEnterMountain({x:MOUNTAIN_PORTAL.x-1,y:MOUNTAIN_PORTAL.y,z:MOUNTAIN_PORTAL.z},true),true);
+ assert.equal(shouldEnterMountain({x:MOUNTAIN_PORTAL.x-1,y:3,z:MOUNTAIN_PORTAL.z},true),false);
  assert.equal(shouldExitMountain({x:733,y:51,z:0},true),true);
 });
 test('dados antigos e malformados restauram progresso seguro',()=>{
