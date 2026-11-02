@@ -77,7 +77,7 @@ export class Game {
     this.graphics.resolutionScale=this.gpuPrefs.resolution;this.graphics.shadowsAllowed=this.gpuPrefs.shadows;this.graphics.apply();
     this.initGPUOptions();this.updateGraphicsLabel();
     this.saveSystem=new SaveSystem();this.savedData=this.saveSystem.read();
-    this.expedition=new ExpeditionProgress(this.savedData?.expedition);this.mountain=null;this.mountainLoading=null;this.inMountain=false;this.bossAttackState={elapsed:0,warned:false};this.bossAttackCount=0;this.bossWarnedPattern=null;this.bossCounterTime=0;this._bossVolleyVector=new THREE.Vector3();this._bossShotDirection=new THREE.Vector3();this._bossPredicted=new THREE.Vector3();this._groundContactPosition=new THREE.Vector3();this.gateLoadingWarned=false;this.gateWarned=false;this.mountainRetryUntil=0;
+    this.expedition=new ExpeditionProgress(this.savedData?.expedition);this.mountain=null;this.mountainLoading=null;this.inMountain=false;this.bossAttackState={elapsed:0,warned:false};this.bossAttackCount=0;this.bossWarnedPattern=null;this.bossCounterTime=0;this._bossVolleyVector=new THREE.Vector3();this._bossShotDirection=new THREE.Vector3();this._bossPredicted=new THREE.Vector3();this._groundContactPosition=new THREE.Vector3();this.gateLoadingWarned=false;this.gateWarned=false;this.gateMustLeave=false;this.mountainRetryUntil=0;
     this.portal=this.makeMountainPortal();
     this.progression=new Progression(this.savedData?.progression);this.autoSaveTime=0;this.lastSaveOk=null;
     this.world=new World(this.scene,this.renderer);
@@ -586,13 +586,17 @@ export class Game {
     const pos=this.dragon.group.position,riding=this.dragon.riding;
     this.portal.visible=!this.inMountain;
     if(!this.inMountain){
-      if(shouldLoadMountain(pos,riding)){
+      const nearPortal=shouldLoadMountain(pos,riding);
+      // Do not reload/re-enter immediately after returning to this same gate.
+      // Leaving the vicinity and approaching again re-arms the portal.
+      if(!nearPortal)this.gateMustLeave=false;
+      if(nearPortal&&!this.gateMustLeave){
         if(this.missions.stage<3){
           if(!this.gateWarned){this.ui.toast('Conclua as runas para liberar fogo antes de entrar nas montanhas!',4);this.gateWarned=true;}
         }else{this.gateWarned=false;this.loadMountain();}
       }else this.gateWarned=false;
       // Stream gate: do not let fast travel outrun the dynamic import.
-      if(shouldHoldMountainGate(pos,riding,this.missions.stage>=3,!!this.mountain)){
+      if(!this.gateMustLeave&&shouldHoldMountainGate(pos,riding,this.missions.stage>=3,!!this.mountain)){
         // Stay just west of the ring until the second map is available.
         pos.x=Math.min(pos.x,MOUNTAIN_PORTAL.x-MOUNTAIN_PORTAL.enterRadius-2);
         this.dragon.speed=Math.min(this.dragon.speed,6);
@@ -601,7 +605,7 @@ export class Game {
           this.gateLoadingWarned=true;
         }
       }else this.gateLoadingWarned=false;
-      if(this.mountain&&shouldEnterMountain(pos,riding)&&this.missions.stage>=3){
+      if(this.mountain&&!this.gateMustLeave&&shouldEnterMountain(pos,riding)&&this.missions.stage>=3){
         this.inMountain=true;this.expedition.inRegion=true;
         this.dragon.group.position.set(MOUNTAIN_ENTRY.x,Math.max(47,pos.y),MOUNTAIN_ENTRY.z);
         this.dragon.airborne=true;this.dragon.speed=Math.max(15,this.dragon.speed);
@@ -611,7 +615,7 @@ export class Game {
       // Keep the dynamically imported chunk cached near the gateway, then free its GPU resources.
       if(this.mountain&&shouldUnloadMountain(pos))this.unloadMountain();
     }else if(shouldExitMountain(pos,riding)){
-      this.inMountain=false;this.expedition.inRegion=false;
+      this.inMountain=false;this.expedition.inRegion=false;this.gateMustLeave=true;
       this.dragon.group.position.set(MOUNTAIN_PORTAL.returnX,Math.max(45,pos.y),MOUNTAIN_PORTAL.returnZ);
       this._camTarget?.copy(this.dragon.group.position);
       if(this.expedition.completeReturn()){
