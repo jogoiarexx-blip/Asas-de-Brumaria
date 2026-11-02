@@ -1,4 +1,4 @@
-import {PREVIOUS_ISLAND_SPACING,migrateLegacyMapPoint} from '../world/IslandLayout.js';
+import {PREVIOUS_ISLAND_SPACING,migrateLegacyMapPoint,migrateSeparatedIslandPoint} from '../world/IslandLayout.js';
 import {normalizeWildBonds} from './WildBonds.js';
 import {normalizeExpedition,MOUNTAIN_PORTAL} from './ExpeditionRules.js';
 import {normalizeWeather} from './weatherMath.js';
@@ -17,8 +17,10 @@ export function normalizeSave(payload){
   // Existing saves use the original island coordinates. Migrate only once.
   const layout=payload.layoutVersion===3?3:payload.layoutVersion===2?2:1;
   const spacing=layout===2?PREVIOUS_ISLAND_SPACING:1;
-  const dragon=layout===3?{x:p.x,z:p.z}:migrateLegacyMapPoint(p.x??8,p.z??7,spacing);
-  const hero=layout===3?{x:p.heroX,z:p.heroZ}:migrateLegacyMapPoint(p.heroX??2,p.heroZ??11,spacing);
+  const formerDragon=layout===3?{x:p.x,z:p.z}:migrateLegacyMapPoint(p.x??8,p.z??7,spacing);
+  const formerHero=layout===3?{x:p.heroX,z:p.heroZ}:migrateLegacyMapPoint(p.heroX??2,p.heroZ??11,spacing);
+  const dragon=payload.islandLayoutVersion===2?formerDragon:migrateSeparatedIslandPoint(formerDragon.x,formerDragon.z);
+  const hero=payload.islandLayoutVersion===2?formerHero:migrateSeparatedIslandPoint(formerHero.x,formerHero.z);
   // Reposition only old checkpoints parked at the original gateway.
   // No adjustment for players in the mountain map or new-version saves.
   const oldGateway=payload.portalVersion!==2&&Number.isFinite(p.x)&&Number.isFinite(p.z)&&
@@ -31,7 +33,7 @@ export function normalizeSave(payload){
     }
   }
   return {
-    version:1,layoutVersion:3,portalVersion:2,
+    version:1,layoutVersion:3,islandLayoutVersion:2,portalVersion:2,
     mission:{stage,progress:count(m.progress,MAX_PROGRESS[stage]),crystals:bools(m.crystals,3),targets:bools(m.targets,3),hatchlings:bools(m.hatchlings,3),carriedIndex:Number.isInteger(m.carriedIndex)&&m.carriedIndex>=0&&m.carriedIndex<3?m.carriedIndex:-1,rescueHold:finite(m.rescueHold,0,1.25),enemies:Array.from({length:3},(_,i)=>finite(m.enemies?.[i],0,3,3))},
     progression:payload.progression,
     contracts:isPlainObject(payload.contracts)?payload.contracts:null,

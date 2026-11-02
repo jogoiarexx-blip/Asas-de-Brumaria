@@ -484,7 +484,7 @@ export class Game {
   saveGame(manual=false){
     if(!this.started&&!manual)return false;
     const p=this.dragon.group.position,h=this.hero._dismountMotion?.end??this.hero.group.position;
-    const payload={version:1,layoutVersion:3,portalVersion:2,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
+    const payload={version:1,layoutVersion:3,islandLayoutVersion:2,portalVersion:2,savedAt:new Date().toISOString(),mission:this.missions.snapshot(),progression:this.progression.snapshot(),
       frontier:this.frontier.snapshot(),
       contracts:this.contracts.snapshot(),weather:this.weather.snapshot(),dayNight:this.dayNight.snapshot(),discoveries:this.discovery.snapshot(),
       wildBonds:this.wildBonds.snapshot(),expedition:this.expedition.snapshot(),islandActivities:this.islandActivities.snapshot(),
@@ -1244,7 +1244,7 @@ export class Game {
       position:this.dragon.group.position,airborne:this.dragon.riding&&this.dragon.airborne,
       speed:this.dragon.speed,
       direction:{x:-Math.sin(this.dragon.yaw),z:-Math.cos(this.dragon.yaw)}
-    });
+    },this.camera);
     this.renderer.render(this.scene,this.camera);
     const benchmarking=this.benchmark.active;
     if(benchmarking)this.updateBenchmark(realDt);

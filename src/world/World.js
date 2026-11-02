@@ -11,6 +11,7 @@ import {treeVariant,treeCrownPose} from './TreeVariation.js';
 import {makeGrassTuftGeometry,terrainColorGrain,makeTreeCrownGeometry} from './NatureGeometry.js';
 import {applyIslandVisibility,shouldRefreshClouds,wrappedCloudX} from './VisibilityBudget.js';
 import {IslandDetailStream,ISLAND_DETAIL_PHASES} from './IslandDetailStream.js';
+import {IslandImpostorLOD} from './ImpostorWebP.js';
 const brown = new THREE.MeshLambertMaterial({color:0x855b37});
 const leafPalette = [0x245d49,0x2b7355,0x398565,0x31735c];
 const rand = seededRandom(18971);
@@ -32,7 +33,7 @@ export class World {
     this.materials = [];
     this.obstacles = [];this.surfaces=[];
     this.obstacleGrid=new ObstacleGrid(()=>this.obstacles,{cellSize:32});
-    this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];
+    this.forestTrees = [];this.forestRocks = [];this.foliageMeshes = [];this.villageCabins=[];
     this.foliageByIsland=new Map();this.grassByIsland=new Map();this.flowersByIsland=new Map();
     this.biomeAccentsByIsland=new Map();this.coastByIsland=new Map();this.coastFade=new Map();
     this.terrainTextures=new TerrainTextureManager(renderer);
@@ -50,6 +51,8 @@ export class World {
     // Starting village is already prepared; nothing remote is eagerly uploaded.
     this.detailStream.markReady(ISLANDS[0].name);
     this.visualStreamingEnabled=false;
+    this.impostors=new IslandImpostorLOD(this,this.scene);
+    for(const house of this.villageCabins)this.impostors.registerObject(house,{kind:'cabin',near:145,far:265});
   }
   islandHeight(island,x,z) {
     const original=naturalIslandHeight(island,x,z);
@@ -131,12 +134,12 @@ export class World {
       const x=island.x+Math.cos(a)*d,z=island.z+Math.sin(a)*d;
       if(island.name==='Ilha do Refúgio' && x>-22 && x<32 && z>-28 && z<34) continue;
       const y=this.heightAt(x,z);if(y<3)continue;
-      if(rand()<.76)this.addTree(x,y,z,.7+rand()*1.25);
-      else this.addRock(x,y,z,.8+rand()*1.5);
+      if(rand()<.76)this.addTree(x,y,z,.7+rand()*1.25,island.name);
+      else this.addRock(x,y,z,.8+rand()*1.5,island.name);
     }
     for(let i=0;i<24;i++) {
       const a=rand()*Math.PI*2,d=island.r*(.84+rand()*.13),x=island.x+Math.cos(a)*d,z=island.z+Math.sin(a)*d;
-      this.addRock(x,this.heightAt(x,z),z,.6+rand()*1.3);
+      this.addRock(x,this.heightAt(x,z),z,.6+rand()*1.3,island.name);
     }
   }
   /** Single instanced draw per new biome. New silhouettes use procedural
@@ -296,12 +299,12 @@ export class World {
   }
   // Batch static vegetation into five draw groups instead of thousands of scene meshes.
   // The collision volumes remain identical to the procedural v0.7 terrain.
-  addTree(x,y,z,size=1) {
-    this.forestTrees.push({x,y,z,size,palette:Math.floor(rand()*leafPalette.length)});
+  addTree(x,y,z,size=1,island='Ilha do Refúgio') {
+    this.forestTrees.push({x,y,z,size,island,palette:Math.floor(rand()*leafPalette.length)});
     this.addObstacle(x,y,z,.82*size,5.2*size,'tree');
   }
-  addRock(x,y,z,size) {
-    this.forestRocks.push({x,y,z,size,palette:rand()>.5?0x829087:0x6c807a,rotation:rand()*6});
+  addRock(x,y,z,size,island='Ilha do Refúgio') {
+    this.forestRocks.push({x,y,z,size,island,palette:rand()>.5?0x829087:0x6c807a,rotation:rand()*6});
     this.addObstacle(x,y,z,1.18*size,1.2*size,'rock');
   }
   flushFoliage(only=ISLANDS[0]) {
@@ -339,7 +342,7 @@ export class World {
       }
       batch.instanceMatrix.needsUpdate=true;
       if(batch.instanceColor)batch.instanceColor.needsUpdate=true;
-      batch.castShadow=shadows;batch.computeBoundingSphere();
+      batch.castShadow=shadows===true||shadows==='base';batch.userData.lodLayer=typeof shadows==='string'?shadows:'base';batch.computeBoundingSphere();
       this.scene.add(batch);this.foliageMeshes.push(batch);
       this.foliageByIsland.get(islandName).push(batch);
     };
@@ -361,13 +364,14 @@ export class World {
           d.scale.set(pose.sx*t.size,pose.sy*t.size,pose.sz*t.size);
         };
         addBatch(coniferCrowns[k],crownMaterial,conifers,placeCrown,
-          t=>leafPalette[(t.palette+k)%leafPalette.length],k===0,island.name);
+          t=>leafPalette[(t.palette+k)%leafPalette.length],k===0?'base':'upper-crown',island.name);
         addBatch(broadleafCrowns[k],crownMaterial,broadleaf,placeCrown,
-          t=>leafPalette[(t.palette+k+1)%leafPalette.length],k===0,island.name);
+          t=>leafPalette[(t.palette+k+1)%leafPalette.length],k===0?'base':'upper-crown',island.name);
       }
       // Sub-bosque instanciado: samambaias de duas tonalidades nas bordas das árvores.
       // Sem hitboxes novas, sem sombras extras e com descarte por ilha já existente.
       const fernGeo=this._fernGeo??(this._fernGeo=new THREE.ConeGeometry(.72,1.42,5));
+      this._foliageResources.fernGeometry=fernGeo;
       const fernMat=this._fernMat??(this._fernMat=new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}));
       for(let layer=0;layer<2;layer++){
         addBatch(fernGeo,fernMat,trees,
@@ -377,7 +381,7 @@ export class World {
             d.rotation.y=angle;d.rotation.z=(layer===0?-.18:.2);
             d.scale.set(.75*t.size,.64*t.size,.82*t.size);
           },
-          t=>layer===0?0x377b56:leafPalette[t.palette],false,island.name);
+          t=>layer===0?0x377b56:leafPalette[t.palette],'fern',island.name);
       }
       addBatch(stoneGeometry,stoneMaterial,rocks,
         (r,d)=>{d.position.set(r.x,r.y+r.size*.45,r.z);d.rotation.y=r.rotation;d.scale.set(1.35*r.size,.67*r.size,.95*r.size);},
@@ -432,7 +436,7 @@ export class World {
       const base=new THREE.Mesh(new THREE.BoxGeometry(6,4.5,5),wood);base.position.y=2.35;base.castShadow=true;group.add(base);
       const top=new THREE.Mesh(new THREE.ConeGeometry(5.3,3.6,4),roof);top.position.y=5.6;top.rotation.y=Math.PI/4;top.castShadow=true;group.add(top);
       const door=new THREE.Mesh(new THREE.BoxGeometry(1.4,2.7,.08),new THREE.MeshLambertMaterial({color:0x513729}));door.position.set(0,1.35,2.54);group.add(door);
-      this.scene.add(group);
+      this.scene.add(group);this.villageCabins.push(group);
       this.addObstacle(x,y,z,Math.hypot(3*size,2.5*size),7.6*size,'cabin');
       Object.assign(this.obstacles.at(-1),{shape:'box',halfWidth:3*size,halfDepth:2.5*size});
       this.obstacles.at(-1).top=y+4.60*size;
@@ -497,7 +501,7 @@ export class World {
     this.detailElapsed=Infinity;
     this.cloudElapsed=Infinity;
   }
-  updateDetail(observer,dt=0,flight=null){
+  updateDetail(observer,dt=0,flight=null,camera=null){
     if(this.visualStreamingEnabled)this.detailStream.step(1);
     // Fade newly streamed coast geometry on its own material: no extra draw calls,
     // and no opacity changes to shared foliage or gameplay colliders.
@@ -529,6 +533,7 @@ export class World {
       if(accents)accents.visible=this.foliageByIsland.get(island.name)?.[0]?.visible??true;
       bloom.count=this.detailTier==='balanced'?Math.ceil(bloom.userData.totalCount*.65):bloom.userData.totalCount;
     }
+    if(this.visualStreamingEnabled&&this.impostors)this.impostors.update(observer,camera,this.detailTier,dt);
     this.visibleIslandCount=state.visible;
   }
   buildSeabirds() {

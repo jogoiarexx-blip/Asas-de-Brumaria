@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  ISLAND_SPACING,ISLAND_SIZE_SCALE,PREVIOUS_ISLAND_SPACING,
- ORIGINAL_ISLAND_CENTERS,migrateLegacyMapPoint,stretchPointOnIsland
+ ORIGINAL_ISLAND_CENTERS,islandOffset,coastGap,migrateLegacyMapPoint,stretchPointOnIsland
 } from '../src/world/IslandLayout.js';
 import {ISLANDS,RING_POSITIONS,CRYSTAL_POSITIONS,HATCHLING_POSITIONS,TARGET_POSITIONS} from '../src/world/config.js';
 import {WILD_DRAGON_DEFS} from '../src/systems/WildBonds.js';
@@ -22,8 +22,8 @@ test('layout v3 aumenta tanto as ilhas quanto todas as distâncias costeiras',()
  assert.equal(ISLANDS[0].r,83*1.18);
  for(const island of ISLANDS){
   const old=ORIGINAL_ISLAND_CENTERS[island.name];
-  assert.equal(island.x,old.x*ISLAND_SPACING);
-  assert.equal(island.z,old.z*ISLAND_SPACING);
+  assert.equal(island.x,old.x*ISLAND_SPACING+islandOffset(island.name).x);
+  assert.equal(island.z,old.z*ISLAND_SPACING+islandOffset(island.name).z);
   assert.equal(island.r,old.r*ISLAND_SIZE_SCALE);
  }
  for(let i=0;i<ISLANDS.length;i++)for(let j=i+1;j<ISLANDS.length;j++){
@@ -32,8 +32,8 @@ test('layout v3 aumenta tanto as ilhas quanto todas as distâncias costeiras',()
   const originalCenterDist=Math.hypot(oldA.x-oldB.x,oldA.z-oldB.z);
   const coastalGap=Math.hypot(a.x-b.x,a.z-b.z)-a.r-b.r;
   const oldGap=originalCenterDist*PREVIOUS_ISLAND_SPACING-oldA.r-oldB.r;
-  assert.ok(Math.abs(Math.hypot(a.x-b.x,a.z-b.z)-originalCenterDist*1.75)<1e-8);
-  assert.ok(coastalGap>oldGap+15,`${a.name} / ${b.name}: intervalo marítimo não aumentou`);
+  assert.ok(Math.abs(coastalGap-coastGap(a,b))<1e-8);
+  assert.ok(coastalGap>230,`${a.name} / ${b.name}: costas muito próximas`);
  }
  const eastern=ISLANDS.find(i=>i.name==='Ilha das Cinzas');
  const western=ISLANDS.find(i=>i.name==='Arquipélago dos Cristais');
@@ -71,18 +71,18 @@ test('saves v1 e v2 migram uma vez para layout v3 sem tocar no portal da montanh
   player:{x:-181,z:-120,heroX:4,heroZ:12,mounted:true,airborne:true}};
  const old=normalizeSave(origin);
  assert.equal(old.layoutVersion,3);
- assert.equal(old.player.x,-181-183*.75);
- assert.equal(old.player.z,-120-126*.75);
+ assert.equal(old.player.x,-181-183*.75+islandOffset('Ilha das Cascatas').x);
+ assert.equal(old.player.z,-120-126*.75+islandOffset('Ilha das Cascatas').z);
  assert.equal(old.player.heroX,4);
  const v2=normalizeSave({...origin,layoutVersion:2,
   player:{x:-181-183*.5,z:-120-126*.5,heroX:4,heroZ:12,mounted:true,airborne:true}});
  assert.equal(v2.layoutVersion,3);
  assert.equal(v2.player.x,old.player.x);
  assert.equal(v2.player.z,old.player.z);
- const newest=normalizeSave({...origin,layoutVersion:3,player:old.player});
+ const newest=normalizeSave({...origin,layoutVersion:3,islandLayoutVersion:2,player:old.player});
  assert.deepEqual(newest.player,old.player);
  assert.deepEqual(migrateLegacyMapPoint(310,35),{x:310,z:35});
  assert.deepEqual(migrateLegacyMapPoint(310,35,1.5),{x:310,z:35});
  assert.deepEqual(migrateLegacyMapPoint(700,0,1.5),{x:700,z:0});
- assert.deepEqual(stretchPointOnIsland([-320,38,95],'Arquipélago dos Cristais'),[-560,38,166.25]);
+ assert.deepEqual(stretchPointOnIsland([-320,38,95],'Arquipélago dos Cristais'),[-560,38,296.25]);
 });

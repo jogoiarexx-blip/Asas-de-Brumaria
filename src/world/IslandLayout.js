@@ -5,6 +5,40 @@
 export const PREVIOUS_ISLAND_SPACING=1.5;
 export const ISLAND_SPACING=1.75;
 export const ISLAND_SIZE_SCALE=1.18;
+/** Fixed, audited v4 island offsets. The refuge and the final ash portal stay put.
+ * New shortest coast-to-coast gap is >230 world units, up from 138.4.
+ * New map anchors must be used by all quests and collectibles (via stretchPointOnIsland).
+ */
+export const ISLAND_LAYOUT_OFFSETS=Object.freeze({
+  'Ilha do Refúgio':Object.freeze({x:0,z:0}),
+  'Ilha das Cascatas':Object.freeze({x:-89.75,z:-49.5}),
+  'Ilha do Farol':Object.freeze({x:56,z:79.5}),
+  'Ilha da Névoa':Object.freeze({x:-5.25,z:72.25}),
+  'Atol Esquecido':Object.freeze({x:-61.25,z:-126.5}),
+  'Arquipélago dos Cristais':Object.freeze({x:0,z:130}),
+  'Ilha das Cinzas':Object.freeze({x:0,z:0})
+});
+export const islandOffset=name=>ISLAND_LAYOUT_OFFSETS[name]??{x:0,z:0};
+export function coastGap(a,b){
+  return Math.hypot(a.x-b.x,a.z-b.z)-a.r-b.r;
+}
+/** Rebase a point from the already-published v3 islands to the v4 layout.
+ * We deliberately do not move the mountain region or eastern portal.
+ */
+export function migrateSeparatedIslandPoint(x,z){
+  if(!Number.isFinite(x)||!Number.isFinite(z)||x>650)return {x,z};
+  let nearest=null,distance=Infinity;
+  for(const [name,old] of Object.entries(ORIGINAL_ISLAND_CENTERS)){
+    const d=Math.hypot(x-old.x*ISLAND_SPACING,z-old.z*ISLAND_SPACING);
+    if(d<distance){distance=d;nearest=name;}
+  }
+  const old=ORIGINAL_ISLAND_CENTERS[nearest];
+  // Open-ocean saves must keep their exact positions; only island-local
+  // checkpoints need to follow the shifted terrain and its objects.
+  if(distance>old.r*ISLAND_SIZE_SCALE+65)return {x,z};
+  const o=islandOffset(nearest);
+  return {x:x+o.x,z:z+o.z};
+}
 export const ORIGINAL_ISLAND_CENTERS=Object.freeze({
   'Ilha do Refúgio':Object.freeze({x:0,z:0,r:83}),
   'Ilha das Cascatas':Object.freeze({x:-183,z:-126,r:55}),
@@ -19,7 +53,8 @@ export function stretchPointOnIsland(point,name){
   const original=ORIGINAL_ISLAND_CENTERS[name];
   if(!original)throw new Error('Ilha inexistente: '+name);
   if(!Array.isArray(point)||point.length!==3)throw new Error('Esperado [x,y,z]');
-  return [point[0]+original.x*(ISLAND_SPACING-1),point[1],point[2]+original.z*(ISLAND_SPACING-1)];
+  const o=islandOffset(name);
+  return [point[0]+original.x*(ISLAND_SPACING-1)+o.x,point[1],point[2]+original.z*(ISLAND_SPACING-1)+o.z];
 }
 export function stretchMarkerOnIsland(point,name){
   const [x,z]=point;

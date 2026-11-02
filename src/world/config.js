@@ -1,4 +1,4 @@
-import {ISLAND_SPACING,ISLAND_SIZE_SCALE,stretchPointOnIsland} from './IslandLayout.js';
+import {ISLAND_SPACING,ISLAND_SIZE_SCALE,islandOffset,stretchPointOnIsland} from './IslandLayout.js';
 
 export const ISLANDS = [
   { name:'Ilha do Refúgio',x:0,z:0,r:83,h:22,seed:0.5 },
@@ -9,7 +9,7 @@ export const ISLANDS = [
   // Capítulo opcional: duas novas ilhas, fora da rota original das missões.
   { name:'Arquipélago dos Cristais',x:-320,z:95,r:54,h:21,seed:6.1,biome:'crystal' },
   { name:'Ilha das Cinzas',x:332,z:-110,r:58,h:23,seed:7.9,biome:'ash' }
-].map(island=>Object.freeze({...island,x:island.x*ISLAND_SPACING,z:island.z*ISLAND_SPACING,r:island.r*ISLAND_SIZE_SCALE}));
+].map(island=>Object.freeze({...island,x:island.x*ISLAND_SPACING+islandOffset(island.name).x,z:island.z*ISLAND_SPACING+islandOffset(island.name).z,r:island.r*ISLAND_SIZE_SCALE}));
 export const QUEST_DEFS = [
   {id:'bond',title:'A PRIMEIRA CONEXÃO',desc:'Encontre sua Fúria da Noite, aproxime-se e pressione E para montar.',total:1},
   {id:'rings',title:'O BATISMO DO VENTO',desc:'Atravesse os cinco aros luminosos para dominar os céus.',total:5},
