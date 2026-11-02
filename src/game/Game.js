@@ -1244,7 +1244,7 @@ export class Game {
       position:this.dragon.group.position,airborne:this.dragon.riding&&this.dragon.airborne,
       speed:this.dragon.speed,
       direction:{x:-Math.sin(this.dragon.yaw),z:-Math.cos(this.dragon.yaw)}
-    });
+    },this.camera);
     this.renderer.render(this.scene,this.camera);
     const benchmarking=this.benchmark.active;
     if(benchmarking)this.updateBenchmark(realDt);
