@@ -1,3 +1,17 @@
+## v1.5.5 — Arquipélago espaçado e WebP HLOD (02/11/2026)
+
+- Ajustes específicos nas seis ilhas mais próximas; distância costeira mínima de 138,4 para aproximadamente 232,4 unidades, mantendo a Ilha das Cinzas e seu portal exatamente no mesmo local.
+- Coordenadas originais preservadas na base, com offsets por ilha em todas as missões, marcos, criaturas, guardiões, circuitos e objetos.
+- Migração de saves das v1.5.4 e anteriores uma vez; saves em oceano aberto, no portal ou na montanha não são deslocados.
+- 4 imagens **WebP reais**, transparentes, 96×160, na pasta `assets/impostors/`: coníferas, árvores folhosas, rochas e cabanas.
+- `ImpostorWebP` usa Box3 da geometria procedural ou GLB registrado; cada instância recebe largura/altura e centro Y reais do modelo, independentemente da resolução WebP.
+- Três níveis de render: far=WebP instanciado (sem animação/colisão extra), mid=procedural simplificado sem samambaias/copa superior, near=procedural completo, incluindo árvores e rochas.
+- Terreno e colisões reais não sofrem downgrade; missões, inimigos e player não viram cartazes.
+- Histerese de 19 unidades, fallback para o mesh até o WebP carregar, culling por ilha, WebP instanciado com 3 tipos e quatro arquivos minúsculos.
+- Cabana registrada pelo Box3 original; API genérica `registerObject` já permite GLB **estático**, sem alterar atores ativos.
+- Travessia das Sete Ilhas ajustada para 315 segundos; teste de layout e streaming real no Chromium incluído.
+- QA: perf em GPU física e uma campanha humana integral continuam pendentes de certificação.
+
 ## v1.5.4 — Portal na extremidade do primeiro mapa (02/11/2026)
 
 - Portal físico deslocado para a costa leste da Ilha das Cinzas, próximo ao fim do arquipélago (x=633, z=-192,5).
