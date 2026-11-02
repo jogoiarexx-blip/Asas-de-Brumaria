@@ -1,4 +1,5 @@
 import { ISLANDS, QUEST_DEFS } from '../world/config.js';
+import {MOUNTAIN_PORTAL} from '../systems/ExpeditionRules.js';
 import {shouldThrottleHUD} from '../systems/PerformanceBudget.js';
 import {headingToObjective,missionNextStep,shouldShowMountainHint} from '../systems/ObjectiveGuidance.js';
 import {SPECIES,SKILLS} from '../systems/Progression.js';
@@ -274,7 +275,7 @@ export class UI {
       ctx.fillStyle='#ffb5a6';mountain.boats.forEach((boat,i)=>{if(expedition?.boatHealth[i]<=0)return;ctx.fillRect(mx(boat.position.x)-4,my(boat.position.z)-2,8,4);});
       if(expedition?.phase==='boss'){ctx.fillStyle='#ff618f';ctx.beginPath();ctx.arc(mx(mountain.boss.position.x),my(mountain.boss.position.z),7,0,Math.PI*2);ctx.fill();}
     }
-    if(position.x<650){ctx.fillStyle='#82eeff';ctx.fillRect(Math.min(W-8,mx(328))-4,my(35)-4,8,8);}
+    if(position.x<650){ctx.fillStyle='#82eeff';const gx=mx(MOUNTAIN_PORTAL.x),gz=my(MOUNTAIN_PORTAL.z);if(gx>=0&&gx<=W&&gz>=0&&gz<=H){ctx.strokeStyle='#a4f8ff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(gx,gz,5,0,Math.PI*2);ctx.stroke();}}
     if(position.x<650&&missions.stage===4){ctx.fillStyle='#f68bab';for(const e of enemies.alive){ctx.beginPath();ctx.arc(mx(e.position.x),my(e.position.z),3.5,0,Math.PI*2);ctx.fill();}}
     if(position.x<650&&missions.stage===5){ctx.fillStyle='#a0ffd2';for(const baby of missions.hatchlings.filter((b,i)=>!b.userData.rescued&&i!==missions.carriedIndex)){ctx.beginPath();ctx.arc(mx(baby.position.x),my(baby.position.z),3.1,0,Math.PI*2);ctx.fill();}}
     if(position.x<650&&missions.stage===5&&missions.carriedIndex>=0){const refuge=missions.nest.position;ctx.strokeStyle='#ffe38b';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(mx(refuge.x),my(refuge.z),6,0,Math.PI*2);ctx.stroke();}
