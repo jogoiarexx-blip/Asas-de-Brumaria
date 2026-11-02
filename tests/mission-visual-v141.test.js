@@ -36,9 +36,9 @@ test('treinamento, circuito e combate têm orientações diferentes',()=>{
 });
 test('portal é contextual, não tapa o minimapa durante missões distantes',()=>{
  assert.equal(shouldShowMountainHint({x:0,z:0},4,false,false),false);
- assert.equal(shouldShowMountainHint({x:285,z:35},4,false,false),true);
- assert.equal(shouldShowMountainHint({x:285,z:35},1,false,false),false);
- assert.equal(shouldShowMountainHint({x:285,z:35},4,true,false),false);
+ assert.equal(shouldShowMountainHint({x:620,z:-192.5},4,false,false),true);
+ assert.equal(shouldShowMountainHint({x:620,z:-192.5},1,false,false),false);
+ assert.equal(shouldShowMountainHint({x:620,z:-192.5},4,true,false),false);
 });
 test('chuva usa linhas finas e não partículas quadradas',()=>{
  const weather=source('../src/systems/Weather.js');
