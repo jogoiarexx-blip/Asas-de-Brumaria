@@ -98,7 +98,7 @@ export class IslandImpostorLOD{
       all[kind].push({...t,bounds:boundsOfVegetation(t,kind,resources)});
     }
     for(const r of rocks)all.rock.push({...r,bounds:boundsOfVegetation(r,'rock',resources)});
-    const group={state:'far',batches:Object.entries(all).map(([k,v])=>this.makeBatch(v,k)).filter(Boolean)};
+    const group={state:'far',blend:0,batches:Object.entries(all).map(([k,v])=>this.makeBatch(v,k)).filter(Boolean)};
     for(const b of group.batches){
       b.mesh.boundingSphere=new THREE.Sphere(new THREE.Vector3(island.x,24,island.z),
         island.r+90);
@@ -149,13 +149,18 @@ export class IslandImpostorLOD{
       const state=target!=='hidden'&&!nearReady&&hasProxy?'far':
         (target==='far'||target==='hidden')&&!hasProxy&&nearReady?'mid':target;
       group.state=state;
-      const proxyOn=state==='far'&&hasProxy;
+      // Two short frames of overlap between WebP and real geometry soften
+      // swaps without allocating new meshes or changing gameplay colliders.
+      const proxyTarget=(state==='far'||!nearReady&&state!=='hidden')&&hasProxy?1:0;
+      group.blend=Math.max(0,Math.min(1,group.blend+(proxyTarget?0.52:-0.52)));
+      const proxyOn=group.blend>0.01&&hasProxy&&state!=='hidden';
       for(const batch of group.batches){
         const appeared=!batch.mesh.visible;
         batch.mesh.visible=proxyOn&&this.textureReady.has(batch.kind);
+        batch.mesh.material.opacity=group.blend;
         if(batch.mesh.visible&&(refresh||appeared))this.face(batch,yaw);
       }
-      const realOn=state==='full'||state==='mid'||!hasProxy&&state!=='hidden';
+      const realOn=state==='full'||state==='mid'||!hasProxy&&state!=='hidden'||group.blend<1&&nearReady;
       for(const mesh of nearMeshes){
         if(!realOn){mesh.visible=false;continue;}
         if(mesh.userData.lodLayer==='fern'||mesh.userData.lodLayer==='upper-crown')
