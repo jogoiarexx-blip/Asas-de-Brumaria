@@ -48,6 +48,27 @@ export class IslandImpostorLOD{
       const url='./assets/impostors/'+kind+'.webp';
       const texture=this.loader.load(url,()=>{
         texture.colorSpace=THREE.SRGBColorSpace;
+        // The WebP has transparent margins for safe atlas rendering. Crop
+        // those by UV (no texture re-upload) so the visible silhouette fills
+        // exactly the source Box3 dimensions when the sprite is scaled.
+        try{
+          const image=texture.image,canvas=document.createElement('canvas');
+          canvas.width=image.width;canvas.height=image.height;
+          const ctx=canvas.getContext('2d',{willReadFrequently:true});
+          ctx.drawImage(image,0,0);
+          const px=ctx.getImageData(0,0,image.width,image.height).data;
+          let minX=image.width,minY=image.height,maxX=-1,maxY=-1;
+          for(let y=0;y<image.height;y++)for(let x=0;x<image.width;x++){
+            if(px[(y*image.width+x)*4+3]<12)continue;
+            minX=Math.min(minX,x);maxX=Math.max(maxX,x);
+            minY=Math.min(minY,y);maxY=Math.max(maxY,y);
+          }
+          if(maxX>=minX&&maxY>=minY){
+            texture.offset.set(minX/image.width,1-(maxY+1)/image.height);
+            texture.repeat.set((maxX-minX+1)/image.width,(maxY-minY+1)/image.height);
+          }
+          texture.needsUpdate=true;
+        }catch{/* WebP still loads normally if canvas readback is restricted. */}
         this.textureReady.add(kind);
       },undefined,()=>{this.textureReady.delete(kind);});
       texture.colorSpace=THREE.SRGBColorSpace;
