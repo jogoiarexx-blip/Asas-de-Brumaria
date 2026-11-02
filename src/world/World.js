@@ -75,7 +75,9 @@ export class World {
   walkable(x,z) { if(x>650&&this.mountainRegion)return this.mountainRegion.heightAt(x,z)>1;return ISLANDS.some(i=>Math.hypot(x-i.x,z-i.z) < i.r*.92 && this.islandHeight(i,x,z)>1); }
   clearanceAt(x,z,radius=1) { return obstacleCeiling(x,z,radius,this.obstacleGrid); }
   addObstacle(x,y,z,radius,height,type){
-    this.obstacles.push({x,z,radius,bottom:y,top:y+height,type});
+    const obstacle={x,z,radius,bottom:y,top:y+height,type};
+    this.obstacles.push(obstacle);
+    return obstacle;
   }
   populate() {
     const scene = this.scene;
