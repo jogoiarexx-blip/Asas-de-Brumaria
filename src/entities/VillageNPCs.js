@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import {CONTRACTS} from '../systems/VillageContracts.js';
 import {actorVisualLevel} from '../systems/ActorLOD.js';
+import {VILLAGE_MODEL_CATALOG,assertUniqueVillageModels} from './villageModelCatalog.js';
+import {loadVillageModel} from './VillageGLBAssets.js';
 export const VILLAGERS=[
-  {id:'iara',name:'IARA',role:'Exploradora dos faróis',x:-17,z:25,coat:0x4b8079,cap:0x975a36},
+  {id:'iara',name:'ASTRID',role:'Exploradora dos faróis',x:-17,z:25,coat:0x4b8079,cap:0x975a36},
   {id:'lume',name:'LUME',role:'Curandeira',x:22,z:14,coat:0x9f835c,cap:0xd1a271},
-  {id:'borin',name:'BORIN',role:'Mestre da forja',x:-7,z:-24,coat:0x71546b,cap:0x62564e},
+  {id:'borin',name:'FORJA',role:'Mestre da forja',x:-7,z:-24,coat:0x71546b,cap:0x62564e},
   {id:'nara',name:'NARA',role:'Guardadora dos filhotes',x:34,z:24,coat:0x7e6b9e,cap:0x6e8b6f},
-  {id:'tavi',name:'TAVI',role:'Vigia dos Horizontes',x:-29,z:31,coat:0x416b8b,cap:0xc69b5e},
+  {id:'tavi',name:'CABEÇA DE VENTO',role:'Vigia dos Horizontes',x:-29,z:31,coat:0x416b8b,cap:0xc69b5e},
   {id:'suri',name:'SURI',role:'Guardiã dos faróis',x:-30,z:-15,coat:0xa7673a,cap:0xc7a256}
 ];
 function cylinderBetween(a,b,r,mat){
@@ -24,27 +26,31 @@ function labelSprite(title,role){
 export class VillageNPCs {
   constructor(scene,world){
     this.scene=scene;this.world=world;this.npcs=[];this.markers=[];
+    assertUniqueVillageModels();
+    this.modelLoading=null;this.loadedModels=new Set();this.modelFailures=new Set();
     const face=new THREE.MeshLambertMaterial({color:0xdba779});
     const hair=new THREE.MeshLambertMaterial({color:0x423631});
     const legs=new THREE.MeshLambertMaterial({color:0x344c50});
     const eye=new THREE.MeshBasicMaterial({color:0x1b292c});
     for(const spec of VILLAGERS){
       const root=new THREE.Group();root.position.set(spec.x,world.heightAt(spec.x,spec.z),spec.z);root.rotation.y=Math.atan2(spec.x,spec.z)+Math.PI;
+      // Keep halo and name label outside the replaceable model.
+      const body=new THREE.Group();body.name='NpcProceduralFallback';root.add(body);
       const coat=new THREE.MeshLambertMaterial({color:spec.coat});
       const cap=new THREE.MeshLambertMaterial({color:spec.cap});
-      const torso=new THREE.Mesh(new THREE.CylinderGeometry(.47,.62,1.3,9),coat);torso.position.y=1.65;torso.castShadow=true;root.add(torso);
-      const head=new THREE.Mesh(new THREE.SphereGeometry(.4,12,9),face);head.position.y=2.7;root.add(head);
-      const hairTop=new THREE.Mesh(new THREE.SphereGeometry(.42,10,7),hair);hairTop.scale.y=.42;hairTop.position.y=3.04;root.add(hairTop);
+      const torso=new THREE.Mesh(new THREE.CylinderGeometry(.47,.62,1.3,9),coat);torso.position.y=1.65;torso.castShadow=true;body.add(torso);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(.4,12,9),face);head.position.y=2.7;body.add(head);
+      const hairTop=new THREE.Mesh(new THREE.SphereGeometry(.42,10,7),hair);hairTop.scale.y=.42;hairTop.position.y=3.04;body.add(hairTop);
       for(const side of [-1,1]){
-        root.add(cylinderBetween(new THREE.Vector3(side*.25,.9,0),new THREE.Vector3(side*.25,.13,0),.19,legs));
+        body.add(cylinderBetween(new THREE.Vector3(side*.25,.9,0),new THREE.Vector3(side*.25,.13,0),.19,legs));
         const arm=new THREE.Group();arm.position.set(side*.56,2.13,0);
-        arm.add(cylinderBetween(new THREE.Vector3(),new THREE.Vector3(side*.11,-.95,.17),.16,coat));root.add(arm);
+        arm.add(cylinderBetween(new THREE.Vector3(),new THREE.Vector3(side*.11,-.95,.17),.16,coat));body.add(arm);
         (root.userData.arms??=[]).push({arm,side});
-        const e=new THREE.Mesh(new THREE.SphereGeometry(.055,7,6),eye);e.position.set(side*.16,2.73,-.36);root.add(e);
+        const e=new THREE.Mesh(new THREE.SphereGeometry(.055,7,6),eye);e.position.set(side*.16,2.73,-.36);body.add(e);
       }
-      const hat=new THREE.Mesh(new THREE.ConeGeometry(.55,.57,8),cap);hat.position.y=3.32;root.add(hat);
+      const hat=new THREE.Mesh(new THREE.ConeGeometry(.55,.57,8),cap);hat.position.y=3.32;body.add(hat);
       const halo=new THREE.Mesh(new THREE.TorusGeometry(.95,.065,6,30),new THREE.MeshBasicMaterial({color:0xffdf98}));halo.rotation.x=Math.PI/2;halo.position.y=.12;root.add(halo);
-      root.add(labelSprite(spec.name,spec.role));scene.add(root);this.npcs.push({spec,root,halo});
+      root.add(labelSprite(spec.name,spec.role));scene.add(root);this.npcs.push({spec,root,body,halo,model:null,modelStatus:'unloaded'});
       world.addObstacle(spec.x,root.position.y,spec.z,.63,3.5,'npc');
     }
     const palette={correio:0xffcb86,ervas:0x89ffc3,minérios:0x9ec1fa,socorro:0xf8a6dc,patrulha:0x92caff,brasas:0xff985c};
@@ -67,10 +73,42 @@ export class VillageNPCs {
     }
   }
   /** Hide distant NPC artwork only: dialogue, saved contracts and colliders stay. */
-  setDetail(observer,tier,camera,forward){
+  /** Load one unique NPC at a time. This is intentionally deferred until
+   * after Play, so large textures do not compete with dragon boot / GPU warmup.
+   * Labels, contracts and physical obstacles exist even before asset loading.
+   */
+  streamModels(observer,canLoad=false){
+    if(!canLoad||this.modelLoading||!observer)return;
+    const candidate=this.npcs
+      .filter(n=>VILLAGE_MODEL_CATALOG[n.spec.id]&&n.modelStatus==='unloaded')
+      .map(n=>({npc:n,d:Math.hypot(n.root.position.x-observer.x,n.root.position.z-observer.z)}))
+      .filter(item=>item.d<78)
+      .sort((a,b)=>a.d-b.d)[0]?.npc;
+    if(!candidate)return;
+    const id=candidate.spec.id,config=VILLAGE_MODEL_CATALOG[id];
+    candidate.modelStatus='loading';
+    this.modelLoading=loadVillageModel(config).then(model=>{
+      // Replace ONLY this NPC's fallback, never reuse a scene for another id.
+      candidate.root.add(model.holder);
+      candidate.model=model;
+      candidate.body.visible=false;
+      candidate.modelStatus='ready';
+      this.loadedModels.add(id);
+      console.info('[Vila GLB] Modelo exclusivo:',id,config.file,
+        'altura:',model.visualHeight,'escala:',model.scale,
+        'clipes:',model.clips.join(', ')||'estático','idle gerado:',model.syntheticIdle);
+    }).catch(error=>{
+      // Transactional fallback: contracts and interactions stay available.
+      candidate.body.visible=true;
+      candidate.modelStatus='failed';this.modelFailures.add(id);
+      console.warn('[Vila GLB] Mantido NPC procedural:',id,config.file,error);
+    }).finally(()=>{this.modelLoading=null;});
+  }
+  setDetail(observer,tier,camera,forward,canLoad=false){
     for(const npc of this.npcs){
       npc.root.visible=actorVisualLevel(observer,npc.root.position,camera,forward,tier,'npc')!=='hidden';
     }
+    this.streamModels(observer,canLoad);
   }
   nearby(position,limit=5){
     let best=null,dist=limit*limit;
@@ -91,7 +129,10 @@ export class VillageNPCs {
     for(let i=0;i<this.npcs.length;i++){
       const npc=this.npcs[i];if(!npc.root.visible)continue;
       npc.halo.rotation.z+=dt*.38;
-      for(const {arm,side} of npc.root.userData.arms)arm.rotation.z=side*Math.sin(time*1.7+i)*.13;
+      if(npc.modelStatus==='ready'){
+        npc.model.mixer?.update(Math.min(.12,Math.max(0,dt)));
+      }else for(const {arm,side} of npc.root.userData.arms)
+        arm.rotation.z=side*Math.sin(time*1.7+i)*.13;
       npc.root.rotation.y=Math.sin(time*.43+i)*.28+Math.PI*.75;
     }
     for(let i=0;i<this.markers.length;i++){

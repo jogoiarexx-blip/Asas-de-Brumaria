@@ -279,6 +279,11 @@ export class Game {
       document.getElementById('performance-panel').textContent+=
         `\nLOD CENÁRIO · ${islandLOD.residentCount}/${ISLANDS.length} ilhas em cache · ${islandLOD.pending} lotes na fila · ${d.jobs} criados · ${d.evicted} ilhas liberadas`;
     }
+    if(this.villagers){
+      document.getElementById('performance-panel').textContent+=
+        '\nNPCs GLB · '+this.villagers.loadedModels.size+'/3 únicos · '+
+        this.villagers.modelFailures.size+' fallback(s)';
+    }
     const spatial=this.world.obstacleGrid;
     if(spatial){
       const q=spatial.stats;
@@ -301,7 +306,7 @@ export class Game {
     this.wildDragons.setDetail(observer,tier,camera,forward);
     this.enemies.setDetail(observer,tier,camera,forward);
     this.frontier.setDetail(observer,tier,camera,forward);
-    this.villagers.setDetail(observer,tier,camera,forward);
+    this.villagers.setDetail(observer,tier,camera,forward,this.started&&!this.preparing);
     const levels=[...this.wildDragons.creatures.map(c=>c.visualLevel),
       ...this.enemies.enemies.filter(e=>e.active&&e.alive).map(e=>e.visualLevel),
       ...this.frontier.activeGuardians.map(e=>e.visualLevel),
