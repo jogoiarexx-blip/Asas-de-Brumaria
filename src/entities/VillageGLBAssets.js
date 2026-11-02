@@ -67,7 +67,22 @@ export async function loadVillageModel(spec,{fetcher=(...a)=>fetch(...a),base=im
   // but no standing pose. Sample the real walk at mid-stride and generate a
   // subtle 3-second breathing loop, freezing feet/root motion (no moonwalk).
   const idle=authoredIdle??createPedestrianIdle(animations);
-  const mixer=idle?new THREE.AnimationMixer(gltf.scene):null;
-  if(idle)mixer.clipAction(idle).play();
-  return {...model,mixer,info,clips:animations.map(clip=>clip.name),syntheticIdle:!authoredIdle&&!!idle};
+  const walking=animations.find(clip=>/walk/i.test(clip.name));
+  // Root X/Z translation belongs to gameplay movement, not animation data.
+  // Preserve local leg/arm tracks and the vertical bounce of the hips.
+  const inPlaceWalk=walking?.clone();
+  if(inPlaceWalk){
+    inPlaceWalk.name='NPC_WALK_IN_PLACE';
+    for(const track of inPlaceWalk.tracks){
+      if(!track.name.endsWith('.position')||track.getValueSize()!==3)continue;
+      const values=track.values,baseX=values[0],baseZ=values[2];
+      for(let i=0;i<values.length;i+=3){values[i]=baseX;values[i+2]=baseZ;}
+    }
+  }
+  const mixer=idle||inPlaceWalk?new THREE.AnimationMixer(gltf.scene):null;
+  const actions={idle:idle&&mixer?mixer.clipAction(idle):null,
+    walk:inPlaceWalk&&mixer?mixer.clipAction(inPlaceWalk):null};
+  actions.idle?.play();
+  return {...model,mixer,actions,active:'idle',info,clips:animations.map(clip=>clip.name),
+    syntheticIdle:!authoredIdle&&!!idle};
 }

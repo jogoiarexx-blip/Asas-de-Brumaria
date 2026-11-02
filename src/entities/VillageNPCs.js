@@ -3,6 +3,8 @@ import {CONTRACTS} from '../systems/VillageContracts.js';
 import {actorVisualLevel} from '../systems/ActorLOD.js';
 import {VILLAGE_MODEL_CATALOG,assertUniqueVillageModels} from './villageModelCatalog.js';
 import {loadVillageModel} from './VillageGLBAssets.js';
+import {makeVillageBrain,advanceVillageBrain,distanceXZ} from './VillageNPCAI.js';
+import {moveWithCollisions,overlapsCircle,obstacleBlocks} from '../utils/collision.js';
 export const VILLAGERS=[
   {id:'iara',name:'ASTRID',role:'Exploradora dos faróis',x:-17,z:25,coat:0x4b8079,cap:0x975a36},
   {id:'lume',name:'LUME',role:'Curandeira',x:22,z:14,coat:0x9f835c,cap:0xd1a271},
@@ -42,7 +44,9 @@ export class VillageNPCs {
       const head=new THREE.Mesh(new THREE.SphereGeometry(.4,12,9),face);head.position.y=2.7;body.add(head);
       const hairTop=new THREE.Mesh(new THREE.SphereGeometry(.42,10,7),hair);hairTop.scale.y=.42;hairTop.position.y=3.04;body.add(hairTop);
       for(const side of [-1,1]){
-        body.add(cylinderBetween(new THREE.Vector3(side*.25,.9,0),new THREE.Vector3(side*.25,.13,0),.19,legs));
+        const leg=new THREE.Group();leg.position.set(side*.25,.95,0);
+        leg.add(cylinderBetween(new THREE.Vector3(),new THREE.Vector3(0,-.8,0),.19,legs));
+        body.add(leg);(root.userData.legs??=[]).push({leg,side});
         const arm=new THREE.Group();arm.position.set(side*.56,2.13,0);
         arm.add(cylinderBetween(new THREE.Vector3(),new THREE.Vector3(side*.11,-.95,.17),.16,coat));body.add(arm);
         (root.userData.arms??=[]).push({arm,side});
@@ -50,8 +54,11 @@ export class VillageNPCs {
       }
       const hat=new THREE.Mesh(new THREE.ConeGeometry(.55,.57,8),cap);hat.position.y=3.32;body.add(hat);
       const halo=new THREE.Mesh(new THREE.TorusGeometry(.95,.065,6,30),new THREE.MeshBasicMaterial({color:0xffdf98}));halo.rotation.x=Math.PI/2;halo.position.y=.12;root.add(halo);
-      root.add(labelSprite(spec.name,spec.role));scene.add(root);this.npcs.push({spec,root,body,halo,model:null,modelStatus:'unloaded'});
-      world.addObstacle(spec.x,root.position.y,spec.z,.63,3.5,'npc');
+      root.add(labelSprite(spec.name,spec.role));scene.add(root);
+      const collider=world.addObstacle(spec.x,root.position.y,spec.z,.63,3.5,'npc');
+      this.npcs.push({spec,root,body,halo,collider,
+        brain:makeVillageBrain(spec,this.npcs.length),
+        blocked:false,model:null,modelStatus:'unloaded'});
     }
     const palette={correio:0xffcb86,ervas:0x89ffc3,minérios:0x9ec1fa,socorro:0xf8a6dc,patrulha:0x92caff,brasas:0xff985c};
     for(const [id,def] of Object.entries(CONTRACTS)){
@@ -125,15 +132,86 @@ export class VillageNPCs {
       marker.group.visible=state.status==='active'&&!state.collected[marker.index];
     }
   }
-  update(dt,time){
-    for(let i=0;i<this.npcs.length;i++){
-      const npc=this.npcs[i];if(!npc.root.visible)continue;
-      npc.halo.rotation.z+=dt*.38;
-      if(npc.modelStatus==='ready'){
-        npc.model.mixer?.update(Math.min(.12,Math.max(0,dt)));
-      }else for(const {arm,side} of npc.root.userData.arms)
-        arm.rotation.z=side*Math.sin(time*1.7+i)*.13;
-      npc.root.rotation.y=Math.sin(time*.43+i)*.28+Math.PI*.75;
+  /** Static-path world obstacles remain spatially indexed. An NPC collider
+   * invalidates the grid only when crossing a 32m cell boundary. */
+  colliderCellKey(collider){
+    const cell=this.world.obstacleGrid.cellSize,r=collider.radius;
+    return [Math.floor((collider.x-r)/cell),Math.floor((collider.x+r)/cell),
+      Math.floor((collider.z-r)/cell),Math.floor((collider.z+r)/cell)].join(',');
+  }
+  /** Check terrain/props ahead, so a destination is walkable before moving.
+   * The NPC never leaves the Refúgio, walks on water or scales cabin roofs. */
+  canVisit(npc,x,z,from=npc.root.position){
+    if(!this.world.walkable(x,z))return false;
+    const y=this.world.heightAt(x,z);
+    if(!Number.isFinite(y)||y<2||Math.abs(y-from.y)>2.8)return false;
+    const obstacles=this.world.obstacleGrid.queryCircle(x,z,.85);
+    return !obstacles.some(o=>o!==npc.collider&&obstacleBlocks(o,y+1.4,1.4)
+      &&overlapsCircle(x,z,.67,o));
+  }
+  animateNpcModel(npc,state,dt){
+    if(npc.modelStatus==='ready'){
+      const model=npc.model,next=state==='walk'&&model.actions?.walk?'walk':'idle';
+      if(model.active!==next){
+        const target=model.actions[next],previous=model.actions[model.active];
+        target?.reset().fadeIn(.18).play();
+        previous?.fadeOut(.18);
+        model.active=next;
+      }
+      // Maintain authored feet cadence at the actual gameplay movement speed.
+      model.actions?.walk?.setEffectiveTimeScale(Math.max(.65,Math.min(1.65,
+        npc.brain.profile.speed/1.15)));
+      if(npc.root.visible)model.mixer?.update(Math.min(.12,Math.max(0,dt)));
+    }else if(npc.root.visible){
+      const stride=state==='walk'?Math.sin(npc.brain.steps*.43)*.43:0;
+      for(const {arm,side} of npc.root.userData.arms)
+        arm.rotation.x=-side*stride*.65;
+      for(const {leg,side} of npc.root.userData.legs??[])
+        leg.rotation.x=side*stride;
+      npc.body.position.y=state==='walk'?Math.abs(stride)*.045:0;
+    }
+  }
+  update(dt,time,player=null,dialogueOpen=false){
+    const step=Math.max(0,Math.min(.1,Number.isFinite(dt)?dt:0));
+    for(const npc of this.npcs){
+      const pos=npc.root.position,brain=npc.brain;
+      const playerClose=player&&distanceXZ(pos,player)<88;
+      // Distant NPCs keep their last safe waypoint; never run AI for an island
+      // that has been completely culled to save CPU on long flights.
+      const simulate=npc.root.visible||playerClose;
+      if(simulate&&step){
+        const current={x:pos.x,z:pos.z};
+        const valid=(x,z)=>this.canVisit(npc,x,z);
+        const decision=advanceVillageBrain(brain,current,step,{
+          player,dialogue:dialogueOpen,canVisit:valid,blocked:npc.blocked
+        });
+        npc.blocked=false;
+        if(decision.state==='walk'){
+          const previousY=pos.y,stamp=this.colliderCellKey(npc.collider);
+          const move=moveWithCollisions(pos,{x:decision.dx,z:decision.dz},.55,
+            this.world.obstacleGrid,(x,z)=>this.world.walkable(x,z),
+            o=>o!==npc.collider&&obstacleBlocks(o,previousY+1.55,1.55),
+            {groundAt:(x,z)=>this.world.heightAt(x,z),maxStepUp:1});
+          const moved=Math.hypot(move.x-pos.x,move.z-pos.z);
+          const destinationY=this.world.heightAt(move.x,move.z);
+          if(!Number.isFinite(destinationY)||destinationY<2||
+             Math.abs(destinationY-previousY)>1.45){
+            npc.blocked=true;
+          }else{
+            pos.x=move.x;pos.z=move.z;pos.y=destinationY;
+            npc.collider.x=pos.x;npc.collider.z=pos.z;
+            npc.collider.bottom=destinationY;npc.collider.top=destinationY+3.5;
+            if(stamp!==this.colliderCellKey(npc.collider))
+              this.world.obstacleGrid.invalidate();
+            npc.blocked=moved<Math.hypot(decision.dx,decision.dz)*.28;
+          }
+        }
+        const angle=Math.atan2(Math.sin(decision.yaw-npc.root.rotation.y),
+          Math.cos(decision.yaw-npc.root.rotation.y));
+        npc.root.rotation.y+=angle*Math.min(1,step*5.2);
+        this.animateNpcModel(npc,decision.state,step);
+      }
+      if(npc.root.visible)npc.halo.rotation.z+=step*.38;
     }
     for(let i=0;i<this.markers.length;i++){
       const marker=this.markers[i];if(!marker.group.visible)continue;

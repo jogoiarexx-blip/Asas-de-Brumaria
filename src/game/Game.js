@@ -1226,7 +1226,8 @@ export class Game {
       const frontierEvents=this.frontier.update(dt,this.elapsed,this.dragon,
         (origin,direction)=>this.spawnProjectile(origin,direction,'enemy'),this.missions.stage>=3);
       for(const event of frontierEvents)this.handleFrontierEvent(event);
-      this.villagers.update(dt,this.elapsed);
+      this.villagers.update(dt,this.elapsed,
+        this.dragon.riding?null:this.hero.group.position,this.ui.dialogueOpen);
       this.wildDragons.update(dt,this.elapsed,this.hero.group.position,this.dragon.riding,this.hero.moveSpeed);
       const trainMsg=this.training.update(dt,this.elapsed,this.dragon);
       if(trainMsg)this.ui.toast(trainMsg,4);
