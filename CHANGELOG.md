@@ -1,3 +1,12 @@
+## v1.5.7 — NPCs 1 para 1 com novos GLBs (02/11/2026)
+
+- Substituição exclusiva de três NPCs: Iara/exploradora → Astrid.glb; Borin/ferreiro → forja.glb; Tavi/vigia → cabeça de vento (2).glb. Sem repetição de GLB.
+- Modelos conservam escala uniforme, alvo de altura natural de aproximadamente 3,4 unidades e pés no chão através de bounds reais; sprites de nome/ocupação ficam sobre o visual.
+- Modelo original procedural fica invisível somente após importação validada. Se GLB estiver indisponível ou corrompido, NPC procedural permanece funcional.
+- Carregamento sequencial e sob demanda na vila após a tela de iniciar jogo, sem baixar 40 MB de NPCs no menu.
+- Animações idle/talk são reproduzidas quando presentes; estados, hitboxes, missões, diálogos e salvos mantêm os IDs anteriores.
+- Testes Node verificam glTF 2.0, arquivos existentes e não duplicados; teste real Chromium verifica os três GLBs, escala e contratos.
+
 ## v1.5.6 — Grama, aves e ambientação leves (02/11/2026)
 
 - Grama mais densa nas sete ilhas, ainda em um InstancedMesh por ilha; 440 tufos em ilha principal e 250 nas menores.
