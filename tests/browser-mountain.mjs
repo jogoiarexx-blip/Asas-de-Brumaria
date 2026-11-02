@@ -75,13 +75,13 @@ try{
   const gate=await run('Portal monta região sob demanda, entra sem limpar progresso',async()=>{
     const g=window.__brumariaQAGame;
     g.dragon.airborne=true;
-    g.dragon.group.position.set(309,50,35);
+    g.dragon.group.position.set(515,50,-192.5);
     const obstaclesBefore=g.world.obstacles.length;
     await g.loadMountain();
     if(!g.mountain||!g.world.mountainRegion)throw Error('Carregamento dinâmico não criou MountainRegion');
     const added=g.world.obstacles.length-obstaclesBefore;
     if(added<3)throw Error('Região não tem colisões');
-    g.dragon.group.position.set(363,53,35);
+    g.dragon.group.position.set(632,44,-192.5);
     g.updateExpedition(.05);
     if(!g.inMountain||!g.expedition.inRegion)throw Error('Portal não moveu para nova região');
     return {inMountain:g.inMountain,x:g.dragon.group.position.x,added};
@@ -155,7 +155,7 @@ try{
     if(g.dragon.group.position.x>650)throw Error('Save distante não voltou ao portal');
     await g.loadMountain();
     g.dragon.airborne=true;
-    g.dragon.group.position.set(365,55,35);
+    g.dragon.group.position.set(632,44,-192.5);
     g.updateExpedition(.05);
     if(!g.inMountain||g.expedition.phase!=='boss')throw Error('Retorno à montanha falhou');
     return {phase:g.expedition.phase,boats:g.expedition.boatsSunk,entry:g.dragon.group.position.x};
