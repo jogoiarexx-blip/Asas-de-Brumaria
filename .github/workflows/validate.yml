@@ -46,7 +46,7 @@ jobs:
           # Run all scenarios even if one fails, so a single timeout cannot
           # conceal defects in missions, mountain, textures or performance.
           failures=0
-          for script in tests/browser-nature-v156.mjs tests/browser-webp-hlod-v155.mjs tests/browser-main-menu.mjs tests/browser-smoke.mjs tests/browser-camera-movement.mjs tests/browser-hero-mounted.mjs tests/browser-hero-saddle.mjs tests/browser-frontier-encounters.mjs tests/browser-fury-assets.mjs tests/browser-fury-auto.mjs tests/browser-missions.mjs tests/browser-mountain.mjs tests/browser-performance.mjs tests/browser-terrain-stream-queue.mjs tests/browser-terrain-textures.mjs tests/browser-island-detail-stream.mjs tests/browser-prefetch-spatial-v1425.mjs tests/browser-v151-upgrades.mjs tests/browser-island-scale-v153.mjs; do
+          for script in tests/browser-village-ai-v158.mjs tests/browser-nature-v156.mjs tests/browser-webp-hlod-v155.mjs tests/browser-main-menu.mjs tests/browser-smoke.mjs tests/browser-camera-movement.mjs tests/browser-hero-mounted.mjs tests/browser-hero-saddle.mjs tests/browser-frontier-encounters.mjs tests/browser-fury-assets.mjs tests/browser-fury-auto.mjs tests/browser-missions.mjs tests/browser-mountain.mjs tests/browser-performance.mjs tests/browser-terrain-stream-queue.mjs tests/browser-terrain-textures.mjs tests/browser-island-detail-stream.mjs tests/browser-prefetch-spatial-v1425.mjs tests/browser-v151-upgrades.mjs tests/browser-island-scale-v153.mjs; do
             echo "::group::QA $script"
             node "$script" || failures=$((failures+1))
             echo "::endgroup::"
