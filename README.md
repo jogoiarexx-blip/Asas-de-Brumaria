@@ -1,3 +1,7 @@
+## v1.5.7 — NPCs exclusivos usando os novos arquivos GLB
+
+Três NPCs da vila do Refúgio receberam modelos diferentes dos arquivos adicionados a `npc/`: **Astrid.glb → exploradora**, **forja.glb → ferreiro**, **cabeça de vento (2).glb → vigia**. Cada personagem usa um arquivo único, sem compartilhar ou clonar o mesmo visual entre NPCs. Os GLBs são normalizados com escala uniforme e pés alinhados ao terreno; os antigos NPCs procedurais permanecem como fallback se algum arquivo falhar. Os três arquivos são carregados sequencialmente e apenas depois de iniciar a aventura e se aproximar da vila, poupando memória durante a tela inicial. Missões, IDs salvos e interações permanecem compatíveis.
+
 ## Novidades v1.5.6 — Natureza viva
 
 Grama com vento contínuo animado na GPU, pequena reação à aproximação do dragão e três níveis de densidade adaptativa. As aves costeiras agora têm corpos, caudas e asas articuladas, bandos que circulam as sete ilhas e variações de cor e tamanho; os movimentos são econômicos e reduzem atualizações em PCs e celulares fracos. Flores recebem partículas discretas de pólen no modo Equilibrado/Detalhado. Tudo é ornamental: colisões, saves, missões e WebP LOD do cenário permanecem intactos.
