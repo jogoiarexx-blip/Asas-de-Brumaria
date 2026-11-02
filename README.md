@@ -1,3 +1,7 @@
+## v1.5.8 — IA de NPCs e passeios pela ilha
+
+Os seis moradores do Refúgio agora têm rotinas próprias: passeiam pela ilha, escolhem pequenos trajetos, param para descansar, retornam ao posto e olham para o jogador quando ele se aproxima. Astrid, Forja e Cabeça de Vento alternam animações de **Idle** e **Walking** com transição suave e caminhada *in place*, sem deslocar duas vezes o modelo; os outros NPCs movem pernas e braços procedurais. Cada NPC usa o terreno real, desvia dos obstáculos e atualiza seu colisor na grade espacial; o diálogo, o rótulo e os contratos seguem a posição atual. Há limites de patrulha por profissão e desativação de IA/animadores distantes para poupar CPU. Os saves continuam com os mesmos IDs e nenhum modelo GLB é repetido.
+
 ## v1.5.7 — NPCs exclusivos usando os novos arquivos GLB
 
 Três NPCs da vila do Refúgio receberam modelos diferentes dos arquivos adicionados a `npc/`: **Astrid.glb → exploradora**, **forja.glb → ferreiro**, **cabeça de vento (2).glb → vigia**. Cada personagem usa um arquivo único, sem compartilhar ou clonar o mesmo visual entre NPCs. Os GLBs são normalizados com escala uniforme e pés alinhados ao terreno; os antigos NPCs procedurais permanecem como fallback se algum arquivo falhar. Os três arquivos são carregados sequencialmente e apenas depois de iniciar a aventura e se aproximar da vila, poupando memória durante a tela inicial. Missões, IDs salvos e interações permanecem compatíveis.
