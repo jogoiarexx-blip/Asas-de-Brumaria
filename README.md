@@ -1,3 +1,7 @@
+## v1.5.4 — Portal das Montanhas no fim do primeiro mapa
+
+O portal azul fica agora na **ponta leste da Ilha das Cinzas**, perto do fim do arquipélago. Voe até o anel azul e atravesse-o na altura adequada para visitar as Montanhas da Sombra. O mapa é carregado durante a aproximação e o retorno coloca o jogador novamente nas Cinzas. Progresso e saves antigos são preservados, inclusive para jogadores que estavam próximos ao portal anterior.
+
 ## Novidades v1.5.3 — arquipélago expandido
 
 As sete ilhas cresceram **18% de raio** (aproximadamente **39% a mais de área**) e os centros ficaram **16,7% mais afastados** que na v1.5.2. Há mais mar para sobrevoar e explorar, sem alterar a campanha, os controles ou o portal das montanhas. O circuito de travessia passou a 270 segundos. Os saves antigos migram automaticamente para o mapa v3, preservando habilidades, missões e posição local sobre cada ilha. O streaming antecipado continua ativo para evitar travamentos ao chegar nas novas costas.
