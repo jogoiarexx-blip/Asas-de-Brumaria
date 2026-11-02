@@ -1,0 +1,35 @@
+name: NPCs GLB únicos — teste visual v1.5.7
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  npc-visual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar Three e navegador Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1 three@0.180.0
+          npx playwright install --with-deps chromium
+          mkdir -p vendor
+          cp node_modules/three/build/three.module.js vendor/three.module.js
+          cp node_modules/three/build/three.core.js vendor/three.core.js
+      - name: Carregar os três NPCs reais, sem reutilizar asset
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/asa-village.log 2>&1 &
+          node tests/browser-village-glb-v157.mjs
+      - name: Capturas dos NPCs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npc-glb-unicos-v157
+          path: artifacts/v157-npcs-*.png
+          if-no-files-found: ignore
