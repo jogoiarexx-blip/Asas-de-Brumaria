@@ -6,21 +6,7 @@ import {treeVariant,treeCrownPose} from './TreeVariation.js';
  * never in image pixels. Terrain/colliders/quests remain original geometry.
  * When a new GLB is supplied, registerObject() takes its real Box3.
  */
-export const IMPOSTOR_PROFILES=Object.freeze({
-  economy:Object.freeze({near:85,far:145,hide:880}),
-  balanced:Object.freeze({near:125,far:215,hide:1050}),
-  quality:Object.freeze({near:180,far:325,hide:1300})
-});
-export function lodFromShore(distance,profile,previous='far'){
-  const h=19;
-  const near=previous==='full'?profile.near+h:profile.near-h;
-  const far=previous==='far'?profile.far-h:profile.far+h;
-  return distance<near?'full':distance<far?'mid':distance<profile.hide?'far':'hidden';
-}
-export function boxSize(b){
-  return {width:Math.max(.02,b.max.x-b.min.x,b.max.z-b.min.z),
-    height:Math.max(.02,b.max.y-b.min.y),centerY:(b.min.y+b.max.y)/2};
-}
+import {IMPOSTOR_PROFILES,lodFromShore,boxSize} from './ImpostorRules.js';
 function boundsOfVegetation(item,kind,resources){
   const box=new THREE.Box3().makeEmpty(),part=new THREE.Box3(),dummy=new THREE.Object3D();
   const extend=(geo,x,y,z,sx,sy,sz,yaw=0)=>{
@@ -111,7 +97,8 @@ export class IslandImpostorLOD{
     const batch=this.makeBatch([{x:(bounds.min.x+bounds.max.x)/2,
       y:bounds.min.y,z:(bounds.min.z+bounds.max.z)/2,bounds:{...size,centerY:size.height/2}}],kind);
     if(!batch)return false;
-    batch.mesh.boundingSphere=bounds.getBoundingSphere(new THREE.Sphere()).expandByScalar(6);
+    batch.mesh.boundingSphere=bounds.getBoundingSphere(new THREE.Sphere());
+    batch.mesh.boundingSphere.radius+=6;
     this.registered.push({object,batch,near,far,state:'full'});
     return true;
   }
