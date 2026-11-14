@@ -66,26 +66,132 @@ export class MountainRegion {
     const beacon=new THREE.Mesh(new THREE.TorusGeometry(9,.55,8,36),new THREE.MeshBasicMaterial({color:0x8bf2e9}));
     beacon.position.set(806,55,35);beacon.rotation.y=Math.PI/2;this.root.add(beacon);this.entryBeacon=beacon;
   }
+  /** Three enemy longships in the Mountains of Shadow.
+   * Only their appearance changes: mission hitboxes, health, saves and
+   * the sinking animation remain handled by the original systems.
+   * All detailed hull/plank/sail geometry is built once per streamed map. */
   buildShips(){
-    const hullMat=new THREE.MeshLambertMaterial({color:0x5d3b32});
-    const sailMat=new THREE.MeshLambertMaterial({color:0xa13f3d,side:THREE.DoubleSide});
-    const wood=new THREE.MeshLambertMaterial({color:0xb38b62});
+    const hullMat=new THREE.MeshLambertMaterial({color:0x503329,side:THREE.DoubleSide,flatShading:true});
+    const keelMat=new THREE.MeshLambertMaterial({color:0x33241e,flatShading:true});
+    const plankMat=new THREE.MeshLambertMaterial({color:0x926a47,flatShading:true});
+    const trimMat=new THREE.MeshLambertMaterial({color:0xc3995b,flatShading:true});
+    const ironMat=new THREE.MeshLambertMaterial({color:0x414b50,flatShading:true});
+    const sailMats=[0x8e3434,0x6b3549,0x8d5134].map(color=>
+      new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide,flatShading:true}));
+    const ropeMat=new THREE.MeshLambertMaterial({color:0xa18d6e});
+    const foamMat=new THREE.MeshBasicMaterial({color:0xb9eced,transparent:true,opacity:.36,depthWrite:false,side:THREE.DoubleSide});
+    const add=(parent,geo,mat,x=0,y=0,z=0)=>{
+      const mesh=new THREE.Mesh(geo,mat);mesh.position.set(x,y,z);parent.add(mesh);return mesh;
+    };
+    // Longship's broad midsection narrows toward raised, pointed bow/stern.
+    // World ship length remains 14 units so the original hit area fits.
+    const stations=[[-7,0.18,1.65],[-6.15,1.35,.65],[-4.9,2.15,-.05],
+      [-2.7,2.65,-.2],[0,2.78,-.2],[2.7,2.65,-.2],[4.9,2.15,-.05],
+      [6.2,1.25,.65],[7,0.18,1.65]];
+    const hullVertices=[],hullIndices=[],boardVertices=[],boardIndices=[];
+    for(const [x,width,lip] of stations){
+      // Four points around each cross-section: gunwale, chine, keel, chine, gunwale.
+      hullVertices.push(x,lip,width,x,-.62,width*.67,x,-1.55,0,x,-.62,-width*.67,x,lip,-width);
+      boardVertices.push(x,lip+.025,width*1.008,x,lip-.26,width*.97,
+        x,lip+.025,-width*1.008,x,lip-.26,-width*.97);
+    }
+    for(let i=0;i<stations.length-1;i++){
+      for(let j=0;j<4;j++){const a=i*5+j,b=(i+1)*5+j;hullIndices.push(a,b,a+1,b,b+1,a+1);}
+      for(let j=0;j<2;j++){const a=i*4+j*2,b=(i+1)*4+j*2;boardIndices.push(a,b,a+1,b,b+1,a+1);}
+    }
+    const makeGeo=(vertices,indices)=>{
+      const geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
+      geo.setIndex(indices);geo.computeVertexNormals();return geo;
+    };
+    const hullGeo=makeGeo(hullVertices,hullIndices);
+    const boardGeo=makeGeo(boardVertices,boardIndices);
+    // Curved sail, tapered to its bottom corners, with a dark central emblem.
+    const sailGeo=new THREE.BufferGeometry(),sailVertices=[],sailIndices=[];
+    const sailSteps=6;
+    for(let row=0;row<=sailSteps;row++){
+      const t=row/sailSteps,y=4.8+t*8.2;
+      const width=4.35*(.87+.13*Math.sin(t*Math.PI));
+      for(let col=0;col<=6;col++){
+        const u=col/6,z=(u*2-1)*width;
+        const bulge=.47*Math.sin(u*Math.PI)*Math.sin(t*Math.PI);
+        sailVertices.push(bulge,y,z);
+        if(row&&col){const k=row*7+col;sailIndices.push(k,k-1,k-7,k-1,k-8,k-7);}
+      }
+    }
+    sailGeo.setAttribute('position',new THREE.Float32BufferAttribute(sailVertices,3));
+    sailGeo.setIndex(sailIndices);sailGeo.computeVertexNormals();
+    const stripeGeo=new THREE.BoxGeometry(.075,.055,9);
+    const railGeo=new THREE.BoxGeometry(12.5,.25,.19);
+    const shieldGeo=new THREE.CylinderGeometry(.63,.63,.13,10);
+    const hubGeo=new THREE.CylinderGeometry(.15,.15,.2,8);
+    const ropeGeo=new THREE.CylinderGeometry(.033,.033,1,4);
+    const frameGeo=new THREE.BoxGeometry(.16,.14,9.1);
+    const mastGeo=new THREE.CylinderGeometry(.22,.31,14.2,7);
+    const bowGeo=new THREE.ConeGeometry(.85,2.8,6);
+    const seatGeo=new THREE.BoxGeometry(.33,.12,4.25);
+    const finGeo=new THREE.ConeGeometry(.26,1.2,5);
+    const setRigging=(parent,from,to)=>{
+      const x=to[0]-from[0],y=to[1]-from[1],z=to[2]-from[2];
+      const len=Math.hypot(x,y,z);
+      const m=add(parent,ropeGeo,ropeMat,(from[0]+to[0])/2,(from[1]+to[1])/2,(from[2]+to[2])/2);
+      m.scale.y=len;
+      // Align the thin rope along its segment without per-frame allocations.
+      if(m.quaternion?.setFromUnitVectors)m.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0,1,0),new THREE.Vector3(x/len,y/len,z/len));
+    };
+    this.boatWakes=[];
     for(let i=0;i<BOAT_POSITIONS.length;i++){
       const [x,y,z]=BOAT_POSITIONS[i],group=new THREE.Group();group.position.set(x,y,z);
-      const hull=new THREE.Mesh(new THREE.CylinderGeometry(2.9,4.5,16,8,1),hullMat);
-      hull.rotation.z=Math.PI/2;hull.scale.set(.55,1,.74);group.add(hull);
-      const deck=new THREE.Mesh(new THREE.BoxGeometry(14,1.1,5.4),wood);deck.position.y=1;group.add(deck);
-      const mast=new THREE.Mesh(new THREE.CylinderGeometry(.25,.32,16,7),wood);mast.position.y=9;group.add(mast);
-      const sail=new THREE.Mesh(new THREE.PlaneGeometry(9,11),sailMat);sail.position.set(0,10,0);sail.rotation.y=Math.PI/2;group.add(sail);
-      const banner=new THREE.Mesh(new THREE.ConeGeometry(1.5,3,5),new THREE.MeshBasicMaterial({color:0xf4c084}));banner.position.set(-4,2,0);group.add(banner);
+      group.name='NAVIO_INIMIGO_'+(i+1);
+      add(group,hullGeo,hullMat);
+      add(group,boardGeo,trimMat);
+      const keel=add(group,new THREE.BoxGeometry(11.9,.28,.58),keelMat,0,-1.28,0);
+      // Deck retains its original reference for damage-stage roll.
+      const deck=new THREE.Group();deck.position.y=.35;group.add(deck);
+      add(deck,new THREE.BoxGeometry(11.7,.18,4.55),plankMat);
+      for(let n=-2;n<=2;n++)add(deck,new THREE.BoxGeometry(11.45,.035,.055),keelMat,0,.12,n*.82);
+      for(const side of [-1,1]){
+        add(deck,railGeo,trimMat,0,.48,side*2.4).rotation.y=Math.PI/2;
+        for(let n=-5;n<=5;n+=2)add(deck,new THREE.BoxGeometry(.16,.72,.2),keelMat,n,.15,side*2.4);
+        for(let n=0;n<4;n++){
+          const pos=-4.4+n*2.9;
+          const shield=add(group,shieldGeo,i===1?ironMat:i===2?trimMat:sailMats[i],pos,.56,side*2.57);
+          shield.rotation.x=Math.PI/2;
+          const boss=add(group,hubGeo,ironMat,pos,.56,side*2.68);boss.rotation.x=Math.PI/2;
+        }
+      }
+      for(const pos of [-3.1,0,3.1])add(deck,seatGeo,keelMat,pos,.36,0);
+      const prow=add(group,bowGeo,trimMat,-6.3,1.35,0);prow.rotation.z=-.4;
+      const prowHead=add(group,new THREE.IcosahedronGeometry(.68,0),ironMat,-6.75,2.57,0);
+      for(const side of [-1,1]){
+        const horn=add(group,finGeo,trimMat,-6.83,3.05,side*.45);horn.rotation.z=-side*.25;
+        add(group,new THREE.BoxGeometry(.2,.8,.18),keelMat,5.5,1,side*.75);
+      }
+      const stern=add(group,new THREE.BoxGeometry(.45,1.35,3.2),keelMat,5.7,1.18,0);
+      const mast=add(group,mastGeo,keelMat,0,6.3,0);
+      const sail=new THREE.Mesh(sailGeo,sailMats[i]);group.add(sail);
+      // Sail scales from the middle so the established damage response remains visible.
+      sail.position.y=-.2;
+      for(const yLevel of [4.82,13.02])add(group,frameGeo,trimMat,.12,yLevel,0);
+      for(const side of [-1,1]){
+        setRigging(group,[0,12.8,0],[-5.7,.85,side*2.05]);
+        setRigging(group,[0,12.8,0],[5.4,1.05,side*1.7]);
+      }
+      const flag=add(group,new THREE.PlaneGeometry(1.9,1.05),sailMats[i],0,14,1.0);
+      flag.rotation.y=Math.PI/2;
+      // Low-cost broad highlight around the waterline, no dynamic reflections.
+      const wake=add(group,new THREE.TorusGeometry(5.5,.065,4,28),foamMat,0,-1.75,0);
+      wake.rotation.x=Math.PI/2;wake.scale.set(1.22,.47,1);
+      this.boatWakes.push(wake);
       this.boatDecks.push(deck);this.boatMasts.push(mast);
       group.rotation.y=.4+i*1.18;this.root.add(group);this.boats.push(group);this.boatSails.push(sail);
+      // Preserve EXACT hit area used by aerial combat and saves.
       const obstacle={x,z,radius:7,bottom:2,top:17,type:'enemy-ship',shape:'box',halfWidth:7,halfDepth:3.8,angle:group.rotation.y};
       this.obstacles.push(obstacle);this.boatObstacles.push(obstacle);
     }
-    // A single GPU draw call for nine transient wood fragments. All matrices
-    // start hidden, and are populated only when a boat sinks during play.
-    this.boatDebrisMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1.8,.7,1.1),wood,BOAT_POSITIONS.length*3);
+    // Pool the original fragments and water impact rings. No per-frame mesh creation.
+    this.boatDebrisMesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1.8,.7,1.1),plankMat,BOAT_POSITIONS.length*3);
     this.boatDebrisMesh.frustumCulled=false;this.boatDebrisMesh.visible=false;
     this.debrisDummy=new THREE.Object3D();
     for(let i=0;i<BOAT_POSITIONS.length*3;i++){
@@ -93,7 +199,6 @@ export class MountainRegion {
       this.boatDebrisMesh.setMatrixAt(i,this.debrisDummy.matrix);
     }
     this.root.add(this.boatDebrisMesh);
-    // Three pooled transparent rings, allocated once with the streamed region.
     const rippleGeometry=new THREE.TorusGeometry(1,.035,4,32);
     this.boatRipples=[];
     for(let i=0;i<BOAT_POSITIONS.length;i++){
@@ -151,6 +256,7 @@ export class MountainRegion {
       this.boatSails[i].scale.set(appearance.sailScale,appearance.sailScale,1);
       this.boatMasts[i].rotation.z=appearance.mastTilt;
       this.boatDecks[i].rotation.z=appearance.deckTilt;
+      if(this.boatWakes?.[i])this.boatWakes[i].visible=exists;
       const hull=this.boatObstacles[i];if(hull){hull.top=exists?17:2;hull.bottom=exists?2:2;}
     });
     this.boss.visible=this.progress.phase==='boss';
@@ -185,7 +291,8 @@ export class MountainRegion {
       }else if(this.progress.boatHealth[i]>0){
         boat.visible=true;
         boat.position.y=BOAT_POSITIONS[i][1]+Math.sin(time*1.7+i)*.5;
-        boat.rotation.z=0;
+        boat.rotation.z=Math.sin(time*1.15+i*.8)*.038;
+        boat.rotation.x=Math.sin(time*.85+i*1.4)*.026;
       }else boat.visible=false;
     });
     // Update at most nine transient fragments; no new meshes in the combat loop.

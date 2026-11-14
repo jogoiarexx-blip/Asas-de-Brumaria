@@ -1,3 +1,13 @@
+## v1.7.3 — Navios inimigos das Montanhas da Sombra (14/11/2026)
+
+- Remodelados os **três navios inimigos** do mapa Montanhas da Sombra — não os barcos decorativos do píer.
+- Cascos longos com proa e popa afiladas, bordas, quilha, convés de tábuas, bancos, escudos laterais e ferragens.
+- Velas curvas em malha leve, mastros com cordas, bandeiras e três paletas inimigas.
+- Balanço suave em dois eixos e espuma visual discreta na linha d’água.
+- Preservadas posições, colisões, dois acertos para afundar, navios destruídos nos saves, destroços, ondas e fase do chefão.
+- Geometrias e materiais reutilizados entre os três navios; região continua carregada sob demanda.
+- Adicionados testes de regressão do cenário dos navios inimigos.
+
 ## v1.7.2 — Dragões, casas e ilhas renovados (14/11/2026)
 
 - **Cascata corrigida**: a água subia a encosta; agora desce até o mar.
