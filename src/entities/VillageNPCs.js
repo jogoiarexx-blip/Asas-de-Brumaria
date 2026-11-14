@@ -23,7 +23,7 @@ function labelSprite(title,role){
   ctx.strokeStyle='#e3ca8b';ctx.lineWidth=4;ctx.stroke();ctx.textAlign='center';ctx.fillStyle='#ffe3a5';ctx.font='bold 35px sans-serif';ctx.fillText(title,256,55);
   ctx.fillStyle='#c5e7dc';ctx.font='22px sans-serif';ctx.fillText(role,256,88);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(8,2,1);sprite.position.y=5.6;return sprite;
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));sprite.scale.set(8,2,1);sprite.position.y=5.6;sprite.userData.npcLabel=true;return sprite;
 }
 export class VillageNPCs {
   constructor(scene,world){
@@ -119,6 +119,10 @@ export class VillageNPCs {
       npc.root.visible=actorVisualLevel(observer,npc.root.position,camera,forward,tier,'npc')!=='hidden';
     }
     this.streamModels(observer,canLoad);
+  }
+  /** Modo foto: esconde só as plaquinhas de nome; NPCs e contratos intactos. */
+  setLabelsVisible(visible){
+    for(const npc of this.npcs)for(const child of npc.root.children)if(child.userData?.npcLabel)child.visible=!!visible;
   }
   nearby(position,limit=5){
     let best=null,dist=limit*limit;

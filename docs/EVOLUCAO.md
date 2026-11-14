@@ -1,6 +1,6 @@
 # Brumária: Elo dos Dragões — Auditoria e Plano de Evolução
 
-> Antigo **Asas de Brumária**. Documento criado na v1.6.0 e atualizado na v1.6.1 (14/11/2026).
+> Antigo **Asas de Brumária**. Documento criado na v1.6.0 e atualizado na v1.7.1 (14/11/2026).
 > Parte 1: o que a auditoria encontrou e o que já foi corrigido.
 > Parte 2: o que ainda falta corrigir, por prioridade.
 > Parte 3: o plano de evolução, com novos capítulos, fases, chefes e sistemas.
@@ -78,8 +78,23 @@ consciente: sombra a menos em vez de travada a mais.
 - **Pausa (Esc)** com retomar, vídeo/áudio e salvar. Com painéis abertos, Esc ainda fecha primeiro.
 - **Cascatas** na Ilha das Cascatas (1 draw call, sem colisão).
 - **Lanternas da vila acendem ao anoitecer** e **aurora** ao norte nas noites.
-- Texturas do herói em 1024² (4× menos memória de vídeo) preparadas; substituição do GLB no GitHub pendente.
+- Texturas do herói em 1024² (4× menos memória de vídeo).
 - Teste de desempenho em navegador corrigido (28 aves).
+
+### v1.7.0 — Nível de Elo e modo foto
+
+- **Nível de Elo (1 a 5)** com barra no HUD e painel no estábulo. Cresce com voo montado, carinho
+  em dragões selvagens e pontos de treino. Bônus: recuperação de energia (2), **assobio para
+  chamar o dragão** (3), gasto menor e velocidade (4), sopro mais forte e mais energia (5).
+- **Modo foto** dentro da pausa: mundo congelado, HUD oculto, câmera livre em órbita.
+- Saves antigos recebem Elo proporcional ao que já conquistaram.
+
+### v1.7.1 — Trilha sonora e estábulo
+
+- **Trilha generativa** com quatro climas (vila, voo, noite, combate), sem arquivos de áudio.
+  Foi validada por testes de agendamento, não por ouvido: vale ajustar volumes e notas depois de escutar.
+- **Estábulo**: jogo primeiro, ferramentas de modelo no fim.
+- Quadro de missões com os nomes reais dos moradores; plaquinhas ocultas no modo foto.
 
 ---
 
@@ -104,19 +119,17 @@ consciente: sombra a menos em vez de travada a mais.
 
 4. **`Game.js` tem 1.280 linhas** e concentra entrada, combate, câmera, expedição e salvamento.
    Dividir em `CombatController`, `ExpeditionController` e `CameraRig` antes do Capítulo 2.
-5. **Sem música.** Todo o áudio é sintetizado (efeitos e ambiente). Uma trilha por bioma muda
-   muito a percepção de qualidade.
-6. **Repositório com 186 MB** e 80 MB de histórico. Os 22 arquivos `TESTES-v*.txt` e o README de
+5. **Repositório com 186 MB** e 80 MB de histórico. Os 22 arquivos `TESTES-v*.txt` e o README de
    106 KB podem ir para `docs/historico/`.
-7. **Sombra do sol em 512²** cobrindo 280×280 unidades: serrilhada de perto. Sombra em cascata
+6. **Sombra do sol em 512²** cobrindo 280×280 unidades: serrilhada de perto. Sombra em cascata
    simples (2 níveis) só no modo DETALHADO.
 
 ### Prioridade baixa
 
-8. Texturas em **KTX2/Basis** (4–6× menos memória de vídeo) e malhas com **Meshopt**. Exige
+7. Texturas em **KTX2/Basis** (4–6× menos memória de vídeo) e malhas com **Meshopt**. Exige
     publicar os decodificadores junto.
-9. Cabeça de Vento ainda tem 5,8 MB de geometria: simplificar a malha.
-10. Nome de arquivo `npc/cabeça de vento (2).glb` com acento, espaço e parênteses: renomear
+8. Cabeça de Vento ainda tem 5,8 MB de geometria: simplificar a malha.
+9. Nome de arquivo `npc/cabeça de vento (2).glb` com acento, espaço e parênteses: renomear
     para `cabeca-de-vento.glb`.
 
 ---
@@ -152,29 +165,31 @@ Checklist "sem travada" para qualquer conteúdo novo:
 |--------|------|--------------------|
 | **1.6.0** ✅ | Voo sem engasgos | Este documento |
 | **1.6.1** ✅ | Pausa e cenário | Pausa, cascatas, lanternas noturnas, aurora |
-| **1.6.x** | Fundação | Pendências 1–3, divisão do `Game.js`, modo foto, Nível de Elo |
-| **1.7** | Capítulo 2 — Recifes do Trovão | 3 ilhas, 4 fases, chefe Leviatã |
-| **1.8** | Capítulo 3 — Floresta Suspensa | 3 ilhas flutuantes, 4 fases, chefe Matriarca |
-| **1.9** | Capítulo 4 — Geleiras do Silêncio | 2 ilhas + caverna, 4 fases, chefe Colosso |
-| **2.0** | Capítulo 5 — Coração da Bruma | Fase final, chefe em 3 etapas, epílogo |
+| **1.7.0** ✅ | Elo | Nível de Elo com assobio, modo foto |
+| **1.7.1** ✅ | Som e estábulo | Trilha generativa, estábulo reorganizado |
+| **1.7.x** | Fundação | Pendências 1–3, divisão do `Game.js`, Diário do Domador |
+| **1.8** | Capítulo 2 — Recifes do Trovão | 3 ilhas, 4 fases, chefe Leviatã |
+| **1.9** | Capítulo 3 — Floresta Suspensa | 3 ilhas flutuantes, 4 fases, chefe Matriarca |
+| **2.0** | Capítulo 4 — Geleiras do Silêncio | 2 ilhas + caverna, 4 fases, chefe Colosso |
+| **2.1** | Capítulo 5 — Coração da Bruma | Fase final, chefe em 3 etapas, epílogo |
 | **2.x** | Pós-jogo | Desafios diários ampliados, Nova Jornada+, corridas contra fantasma |
 
 O Capítulo 1 é o que existe hoje: sete ilhas, sete missões e a expedição às Montanhas da Sombra.
 
 ---
 
-### v1.6.x — Fundação
+### v1.7.x — Fundação
 
-- ~~Pausa (Esc)~~ feita na v1.6.1. Falta o **modo foto**: câmera livre e esconder HUD.
-- **Nível de Elo** (dá sentido ao novo nome): carinho, voo junto e resgates enchem uma barra
-  de 1 a 5. Cada nível libera algo: assobio para chamar o dragão, mergulho rápido, rasante,
-  sopro carregado, voo em formação com um dragão selvagem amigo.
+- ~~Pausa (Esc)~~ (v1.6.1) e ~~modo foto~~ (v1.7.0) feitos.
+- ~~Nível de Elo~~ feito na v1.7.0 (barra de 1 a 5, assobio e bônus de atributos). Ideias que
+  ficaram para níveis futuros: mergulho rápido, rasante e voo em formação com um dragão amigo.
+- ~~Estábulo reorganizado~~ e ~~música~~ feitos na v1.7.1. Próximo passo da trilha: um tema por
+  bioma (cristais, cinzas, montanhas) e instrumentos com mais corpo.
 - **Diário do Domador**: páginas de espécies, marcos e moradores preenchidas ao descobrir.
-- **Música**: 4 faixas curtas em loop (vila, voo, combate, noite) com transição suave.
 
 ---
 
-### v1.7 — Capítulo 2: Recifes do Trovão
+### v1.8 — Capítulo 2: Recifes do Trovão
 
 **Bioma:** arquipélago de recife negro sob tempestade permanente, a sul. Raios de verdade
 (o clima "tempestade" já existe), colunas de basalto e navios naufragados.
@@ -193,7 +208,7 @@ nuvens carregadas avisam com 1,5 s de antecedência antes de descarregar.
 - **Custo técnico:** 3 ilhas no fluxo de detalhes já existente; raio = 1 malha instanciada + a
   luz de clarão que já está na cena; Leviatã = 1 malha articulada por segmentos (como a cauda do dragão).
 
-### v1.8 — Capítulo 3: Floresta Suspensa
+### v1.9 — Capítulo 3: Floresta Suspensa
 
 **Bioma:** ilhas flutuantes cobertas de árvores gigantes, ligadas por raízes e cipós, a norte.
 Cachoeiras que caem no vazio, pólen luminoso à noite.
@@ -213,7 +228,7 @@ criaturas adormecidas acordam se o dragão passar rápido ou usar fogo.
 - **Custo técnico:** ilhas flutuantes reutilizam o gerador de terreno com base invertida; túneis
   usam a grade de colisão existente; cachoeira = 1 plano com shader de rolagem.
 
-### v1.9 — Capítulo 4: Geleiras do Silêncio
+### v2.0 — Capítulo 4: Geleiras do Silêncio
 
 **Bioma:** duas ilhas de gelo e uma caverna interna enorme, a oeste, depois dos Cristais.
 Aurora no céu noturno (extensão do `SkyDome`), neve com vento lateral.
@@ -232,7 +247,7 @@ termais e o próprio fogo do dragão aquecem. Gelo fino quebra com fogo e abre p
 - **Custo técnico:** caverna carregada como região separada, igual às Montanhas da Sombra
   (já com pré-aquecimento); neve reutiliza o sistema de chuva com outra velocidade e cor.
 
-### v2.0 — Capítulo 5: Coração da Bruma
+### v2.1 — Capítulo 5: Coração da Bruma
 
 **Bioma:** o olho da névoa no centro do mapa, antes intransponível. Ruínas da primeira vila de
 domadores, ilhas em espiral ao redor de um redemoinho de nuvens.
@@ -256,13 +271,13 @@ Os dragões amigos conquistados nos capítulos anteriores voam em formação e a
 
 | Sistema | Versão | Descrição |
 |---------|--------|-----------|
-| Nível de Elo | 1.6.x | Barra de 1 a 5 com habilidades de parceria |
-| Árvore de habilidades em 3 ramos | 1.7 | Voo, Sopro e Elo, no lugar da lista única do estábulo |
-| Equipamento do herói | 1.7 | Sela, óculos e capa com bônus pequenos, ganhos em contratos |
-| Dragões aliados | 1.8 | Amizades selvagens passam a acompanhar em missões escolhidas |
-| Moradores com rotina diária | 1.8 | A patrulha atual ganha horários: forja de dia, fogueira à noite |
-| Corridas contra fantasma | 1.9 | Grava o melhor tempo do jogador em cada circuito |
-| Conquistas e Diário completo | 2.0 | 40 conquistas ligadas a exploração, elo e desafio |
+| Nível de Elo | 1.7.0 ✅ | Barra de 1 a 5 com habilidades de parceria |
+| Árvore de habilidades em 3 ramos | 1.8 | Voo, Sopro e Elo, no lugar da lista única do estábulo |
+| Equipamento do herói | 1.8 | Sela, óculos e capa com bônus pequenos, ganhos em contratos |
+| Dragões aliados | 1.9 | Amizades selvagens passam a acompanhar em missões escolhidas |
+| Moradores com rotina diária | 1.9 | A patrulha atual ganha horários: forja de dia, fogueira à noite |
+| Corridas contra fantasma | 2.0 | Grava o melhor tempo do jogador em cada circuito |
+| Conquistas e Diário completo | 2.1 | 40 conquistas ligadas a exploração, elo e desafio |
 | Acessibilidade | contínuo | Zoom liberado, daltonismo no minimapa, legendas dos sons, voo assistido |
 
 ### Cenários: próximos passos visuais
@@ -277,7 +292,7 @@ Os dragões amigos conquistados nos capítulos anteriores voam em formação e a
 
 ### Como medir cada entrega
 
-- `npm run check` — testes de lógica (593 hoje).
+- `npm run check` — testes de lógica (604 hoje).
 - Roteiro de engasgos: shaders compilados e maior envio de textura por fase (tabela da Parte 1).
 - F3 em jogo: FPS, draw calls e triângulos. Tecla B: comparação entre LEVE, EQUILIBRADO e DETALHADO.
 - Critério de aceite de uma fase nova: zero shader compilado em voo, orçamento da tabela

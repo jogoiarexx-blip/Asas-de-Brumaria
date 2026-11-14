@@ -61,11 +61,11 @@ test('sete desafios exclusivos aceitam requisitos de voo e solo',()=>{
   assert.equal(activityAllowed('glide',{mounted:true,airborne:true,speed:10}),true);
   assert.equal(activityAllowed('boost',{mounted:true,airborne:true,speed:12}),false);
 });
-test('volume de áudio aplica limite e separa os três grupos',()=>{
+test('volume de áudio aplica limite e separa os grupos (música incluída na v1.7.1)',()=>{
   const audio=new AudioSystem();
   assert.equal(audio.setVolume('ambience',.2,false),true);
   assert.equal(audio.setVolume('effects',1.5,false),true);
   assert.equal(audio.setVolume('interface',-2,false),true);
-  assert.deepEqual(audio.volumes,{effects:1,ambience:.2,interface:0});
+  assert.deepEqual(audio.volumes,{effects:1,ambience:.2,interface:0,music:.6});
   assert.equal(audio.setVolume('unknown',.5,false),false);
 });

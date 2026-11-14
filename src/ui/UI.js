@@ -1,6 +1,7 @@
 import { ISLANDS, QUEST_DEFS } from '../world/config.js';
 import {MOUNTAIN_PORTAL} from '../systems/ExpeditionRules.js';
 import {shouldThrottleHUD} from '../systems/PerformanceBudget.js';
+import {bondProgress,BOND_PERKS,BOND_LEVELS} from '../systems/Progression.js';
 import {headingToObjective,missionNextStep,shouldShowMountainHint} from '../systems/ObjectiveGuidance.js';
 import {SPECIES,SKILLS} from '../systems/Progression.js';
 import {CONTRACTS} from '../systems/VillageContracts.js';
@@ -85,14 +86,30 @@ export class UI {
     // sempre chama renderStable com o painel já visível.
     if(this.stable?.classList?.contains('hidden')){this.stableDirty=true;return;}
     this.stableDirty=false;
+    const bondList=document.getElementById('bond-list');
+    if(bondList){
+      const info=bondProgress(game.progression.bond);
+      bondList.replaceChildren();
+      for(const perk of BOND_PERKS){
+        const row=document.createElement('div');row.className='bond-perk'+(perk.level<=info.level?' unlocked':'');
+        const title=document.createElement('strong');title.textContent=`NV ${perk.level} · ${perk.name.toUpperCase()}`;
+        const text=document.createElement('span');text.textContent=perk.level<=info.level?perk.description:`Libera com ${BOND_LEVELS[perk.level-1]} de Elo. ${perk.description}`;
+        row.append(title,text);bondList.append(row);
+      }
+      const head=document.getElementById('bond-summary');
+      if(head)head.textContent=info.next===null?`NÍVEL ${info.level} · ELO PLENO`:`NÍVEL ${info.level} · ${Math.floor(info.xp)}/${info.next} DE ELO`;
+    }
     const p=game.progression,atVillage=game.nearStable();
     document.getElementById('daily-day').textContent=`DIA ${game.dayNight.state.day}`;
     const board=document.getElementById('daily-board');board.replaceChildren();
     for(const [key,def] of Object.entries(CONTRACTS)){
       const state=game.contracts.state[key];
+      // v1.7.1: o quadro mostra o nome que aparece na plaquinha do morador
+      // (antes dizia IARA/BORIN/TAVI, que não existem mais na vila).
+      const giver=game.villagers?.npcs?.find(n=>n.spec.id===def.npc)?.spec.name??def.npc.toUpperCase();
       const row=document.createElement('div');row.className='daily-job';
       const title=document.createElement('strong');title.textContent=def.title;
-      const status=document.createElement('span');status.textContent=state.status==='done'?'✓ CONCLUÍDO · AMANHÃ':state.status==='ready'?'VOLTE AO MORADOR':state.status==='active'?`${state.collected.filter(Boolean).length}/3 · EM ANDAMENTO`:`FALE COM ${def.npc.toUpperCase()} · +${def.reward} PT`;
+      const status=document.createElement('span');status.textContent=state.status==='done'?'✓ CONCLUÍDO · AMANHÃ':state.status==='ready'?'VOLTE AO MORADOR':state.status==='active'?`${state.collected.filter(Boolean).length}/3 · EM ANDAMENTO`:`FALE COM ${giver} · +${def.reward} PT`;
       row.append(title,status);board.append(row);
     }
     document.getElementById('train-points').textContent=p.points;
@@ -169,6 +186,15 @@ export class UI {
   update(dt,game){
     this.uiClock+=dt;if(shouldThrottleHUD(this.uiClock,game.graphics?.tier??'balanced'))return;this.uiClock=0;
     const {dragon,hero,missions,world}=game;
+    // v1.7.0 — barra de Elo: só toca no DOM quando o XP muda.
+    const bondXp=game.progression.bond;
+    if(bondXp!==this.bondShown){
+      this.bondShown=bondXp;
+      const info=bondProgress(bondXp);
+      this.bondLabel??=document.getElementById('bond-status');this.bondBar??=document.getElementById('bond-bar');
+      if(this.bondLabel)this.bondLabel.textContent=info.next===null?`ELO NV ${info.level} · MÁXIMO`:`ELO NV ${info.level} · ${Math.floor(info.xp-info.floor)}/${info.next-info.floor}`;
+      if(this.bondBar)this.bondBar.style.width=Math.round(info.fraction*100)+'%';
+    }
     this.updateQuest(missions);
     if(game.inMountain){
       const exp=game.expedition;

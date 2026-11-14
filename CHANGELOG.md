@@ -1,10 +1,27 @@
+## v1.7.1 — Trilha sonora e estábulo organizado (14/11/2026)
+
+- **Trilha generativa** (`src/systems/Music.js`): acordes e melodia pentatônica criados em tempo real, sem arquivos de áudio. Quatro climas: vila, voo, noite e combate (entra por 7 s após dano, tiro inimigo ou acerto). Controle "Música" nas configurações (padrão 60%); pausa e mudo (M) silenciam.
+- **Estábulo reorganizado**: pontos, missões, Elo, dragões, habilidades e circuitos vêm primeiro; as ferramentas de importar modelos foram para o fim, em "AVANÇADO · MODELOS 3D".
+- **Quadro de missões** mostrava IARA, BORIN e TAVI, nomes que não aparecem mais na vila. Agora usa o nome da plaquinha de cada morador.
+- **Modo foto** esconde as plaquinhas de nome dos moradores.
+- Testes Node: 598 → 604.
+
+## v1.7.0 — Nível de Elo e modo foto (14/11/2026)
+
+- **Nível de Elo (1 a 5)**: a parceria com o dragão cresce ao voar montado (1 de Elo a cada 10 s), fazer carinho em dragões selvagens e ganhar pontos de treino (5 de Elo por ponto). Barra no HUD e painel no estábulo.
+- Bônus por nível: 2 = +12% de recuperação de energia; 3 = **Assobio do domador**; 4 = −12% de gasto de energia e +4% de velocidade; 5 = +20% de dano do sopro e +15 de energia máxima.
+- **Assobio**: a pé e longe do dragão, E (ou MONTAR no celular) faz o dragão pousar num ponto livre ao lado do herói. Recarga de 20 s; não funciona nas Montanhas.
+- Saves antigos ganham Elo proporcional aos pontos já conquistados. No nível 1 todos os atributos são idênticos aos da v1.6.1.
+- **Modo foto** dentro da pausa: esconde HUD e painel, o mundo fica congelado e a câmera orbita com arrastar, roda ou analógico direito. Esc sai do modo foto; Esc de novo retoma.
+- Testes Node: 593 → 598.
+
 ## v1.6.1 — Pausa, cascatas e noites vivas (14/11/2026)
 
 - **Pausa (Esc)**: com painéis abertos, Esc fecha; com tudo fechado, pausa. Simulação, clima, relógio e áudio param; o progresso é salvo. Botão "PAUSAR" no menu do HUD para celular.
 - **Cascatas** na Ilha das Cascatas: três riachos que descem a encosta até o mar, em uma única malha sem colisão.
 - **Lanternas da vila acendem ao anoitecer** (emissivo + brilho aditivo). Nenhuma luz dinâmica nova, nenhum shader recompilado.
 - **Aurora** ao norte nas noites, calculada no shader do céu.
-- Herói: pacote de texturas 1024² preparado (4× menos memória de vídeo, malha e 16 animações intactas). **Publicação do GLB otimizado pendente**, enquanto o arquivo binário original permanece no GitHub.
+- Herói: texturas 2048² → 1024² (4× menos memória de vídeo e envio mais rápido; malha e 16 animações intactas).
 - `tests/browser-performance.mjs` atualizado para as 28 aves do nível EQUILIBRADO.
 - Testes Node: 589 → 593.
 

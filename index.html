@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#071a25">
   <meta name="description" content="Brumária: Elo dos Dragões — explore ilhas, crie laços com dragões e proteja o arquipélago.">
-  <title>Brumária: Elo dos Dragões v1.6.1 — Pausa, cascatas e noites vivas</title>
+  <title>Brumária: Elo dos Dragões v1.7.1 — Trilha sonora e estábulo organizado</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071a25'/%3E%3Cpath d='M32 8l6 18 18 6-18 6-6 18-6-18-18-6 18-6z' fill='%23e8c98a'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./src/ui/style.css">
   <link rel="stylesheet" href="./src/ui/mainMenu.css">
@@ -15,7 +15,7 @@
   <div id="hud">
     <div class="hud-top">
       <div class="brand"><span class="brand-icon">◆</span><div><strong>BRUMÁRIA</strong><small>ELO DOS DRAGÕES</small></div></div>
-      <div class="top-pills"><span id="mode-pill">EXPLORAÇÃO</span><span id="clock-pill">10:19</span><details id="hud-options" class="hud-options"><summary aria-label="Mostrar opções e ajuda do jogo" title="Opções, atalhos e indicadores">☰ <span>MENU</span></summary><div class="hud-options-panel"><strong>OPÇÕES E AJUDA</strong><span id="weather-pill">CÉU ABERTO</span><span id="fps-pill">60 FPS</span><span id="controller-status" aria-live="polite">TECLADO / TOQUE</span><button id="gpu-toggle" type="button" title="Preferência de GPU, resolução e sombras">⚙ VÍDEO</button><button id="pause-hud" type="button" title="Pausar o jogo (Esc)">⏸ PAUSAR · ESC</button><button id="save-export-hud" type="button">EXPORTAR SAVE</button><button id="quality-toggle" type="button" title="Alternar qualidade gráfica">GRÁFICOS: AUTO · G</button><p><b>WASD</b> mover · <b>Espaço</b> subir · <b>Ctrl</b> descer · <b>F</b> fogo · <b>H</b> onda elemental · <b>Q</b> esquiva · <b>E</b> interagir · <b>Shift</b> turbo · <b>V</b> câmera · <b>T</b> estábulo · <b>Esc</b> pausar</p></div></details></div>
+      <div class="top-pills"><span id="mode-pill">EXPLORAÇÃO</span><span id="clock-pill">10:19</span><details id="hud-options" class="hud-options"><summary aria-label="Mostrar opções e ajuda do jogo" title="Opções, atalhos e indicadores">☰ <span>MENU</span></summary><div class="hud-options-panel"><strong>OPÇÕES E AJUDA</strong><span id="weather-pill">CÉU ABERTO</span><span id="fps-pill">60 FPS</span><span id="controller-status" aria-live="polite">TECLADO / TOQUE</span><button id="gpu-toggle" type="button" title="Preferência de GPU, resolução e sombras">⚙ VÍDEO</button><button id="pause-hud" type="button" title="Pausar o jogo (Esc)">⏸ PAUSAR · ESC</button><button id="save-export-hud" type="button">EXPORTAR SAVE</button><button id="quality-toggle" type="button" title="Alternar qualidade gráfica">GRÁFICOS: AUTO · G</button><p><b>WASD</b> mover · <b>Espaço</b> subir · <b>Ctrl</b> descer · <b>F</b> fogo · <b>H</b> onda elemental · <b>Q</b> esquiva · <b>E</b> interagir · <b>Shift</b> turbo · <b>V</b> câmera · <b>T</b> estábulo · <b>Esc</b> pausar e modo foto</p></div></details></div>
     </div>
     <div class="mission-card"><div class="eyebrow"><span class="pulse"></span> OBJETIVO <span id="quest-index">01 / 04</span></div><h2 id="quest-title">A PRIMEIRA CONEXÃO</h2><div id="quest-progress"></div><details id="mission-extra"><summary>VER DETALHES</summary><p id="quest-desc">Aproxime-se do dragão e monte nele.</p><div id="quest-guide" aria-live="off">SIGA O OBJETIVO MARCADO NO MAPA</div></details><div id="quest-hint" aria-live="off">Siga o objetivo no mapa</div></div>
     <div class="map-panel"><div class="map-head"><span>MAPA DAS ILHAS</span><span class="map-north">N ↑</span></div><canvas id="mini-map" width="160" height="160" aria-label="Minimapa"></canvas><div class="map-footer" id="waypoint">OBJETIVO A 0m</div></div>
@@ -28,7 +28,7 @@
     <div id="dragon-model-status" class="dragon-model-status" data-state="loading" role="status" aria-live="polite">Carregando Fúria da Noite 3D…</div>
     <div id="interaction" class="hidden">E · MONTAR NO DRAGÃO</div>
     <div id="hit-confirm" class="hit-confirm hidden" role="status" aria-live="off">ACERTO</div><div id="target-lock" class="target-lock hidden">◆ SENTINELA NA MIRA</div><div class="crosshair">+</div><div id="hurt-overlay" class="hurt-overlay"></div>
-    <div class="bottom-hud"><div class="status-card"><div class="stat-head"><span>ENERGIA DO DRAGÃO</span><span id="energy-number">100%</span></div><div class="energy-track"><div id="energy-bar"></div></div><div class="stat-head health-head"><span id="health-label">RESISTÊNCIA DA FÚRIA DA NOITE</span><span id="health-number">100%</span></div><div class="energy-track health-track"><div id="health-bar"></div></div><div class="stat-row"><span id="speed-text">NO SOLO</span><span id="altitude-text">ALT 0 m</span><span id="dodge-status">ESQUIVA · EM VOO</span></div><div class="power-line" id="pulse-status">H · PODER PRONTO</div></div><div id="keyboard-help" aria-hidden="true"><b>W A S D</b> MOVER NA DIREÇÃO DA CÂMERA <span>•</span> <b>ESPAÇO</b> SUBIR <span>•</span> <b>CTRL</b> DESCER <span>•</span> <b>E</b> INTERAGIR <span>•</span> <b>F</b> FOGO <span>•</span> <b>H</b> ONDA ELEMENTAL <span>•</span> <b>Q</b> ESQUIVAR (VOANDO) <span>•</span> <b>SHIFT</b> TURBO / ANDAR DEVAGAR <span>•</span> <b>T</b> ESTÁBULO <span>•</span> <b>P</b> SALVAR <span>•</span> <b>C</b> CLIMA <span>•</span> <b>N</b> HORÁRIO <span>•</span> <b>G</b> GRÁFICOS <span>•</span> <b>⚙ GPU</b> VÍDEO <span>•</span> <b>V</b> CÂMERA ATRÁS · ARRASTE / RODA</div></div>
+    <div class="bottom-hud"><div class="status-card"><div class="stat-head"><span>ENERGIA DO DRAGÃO</span><span id="energy-number">100%</span></div><div class="energy-track"><div id="energy-bar"></div></div><div class="stat-head health-head"><span id="health-label">RESISTÊNCIA DA FÚRIA DA NOITE</span><span id="health-number">100%</span></div><div class="energy-track health-track"><div id="health-bar"></div></div><div class="stat-row"><span id="speed-text">NO SOLO</span><span id="altitude-text">ALT 0 m</span><span id="dodge-status">ESQUIVA · EM VOO</span></div><div class="power-line" id="pulse-status">H · PODER PRONTO</div><div class="bond-head"><span id="bond-status">ELO NV 1</span></div><div class="energy-track bond-track"><div id="bond-bar"></div></div></div><div id="keyboard-help" aria-hidden="true"><b>W A S D</b> MOVER NA DIREÇÃO DA CÂMERA <span>•</span> <b>ESPAÇO</b> SUBIR <span>•</span> <b>CTRL</b> DESCER <span>•</span> <b>E</b> INTERAGIR <span>•</span> <b>F</b> FOGO <span>•</span> <b>H</b> ONDA ELEMENTAL <span>•</span> <b>Q</b> ESQUIVAR (VOANDO) <span>•</span> <b>SHIFT</b> TURBO / ANDAR DEVAGAR <span>•</span> <b>T</b> ESTÁBULO <span>•</span> <b>P</b> SALVAR <span>•</span> <b>C</b> CLIMA <span>•</span> <b>N</b> HORÁRIO <span>•</span> <b>G</b> GRÁFICOS <span>•</span> <b>⚙ GPU</b> VÍDEO <span>•</span> <b>V</b> CÂMERA ATRÁS · ARRASTE / RODA</div></div>
     <div id="gamepad-help" class="gamepad-help">🎮 ANALÓGICO E: MOVER · ANALÓGICO D: CÂMERA · A: INTERAGIR · X: FOGO · Y/START: ESTÁBULO · Y+X: PODER · LB/RB: DESCER/SUBIR · LT/RT: FREAR/ACELERAR · L3: TURBO · R3: ESQUIVA · B: VOLTAR</div>
     <div class="mobile-controls" id="mobile-controls">
       <div class="touch-dpad"><button data-hold="w" class="pad-up" aria-label="Avançar">▲</button><button data-hold="a" class="pad-left" aria-label="Virar à esquerda">◀</button><button data-hold="s" class="pad-down" aria-label="Recuar">▼</button><button data-hold="d" class="pad-right" aria-label="Virar à direita">▶</button></div>
@@ -48,20 +48,40 @@
     <label>Efeitos de combate <input id="audio-effects" type="range" min="0" max="100" step="5" value="100"></label>
     <label>Ambiente e vento <input id="audio-ambience" type="range" min="0" max="100" step="5" value="100"></label>
     <label>Interface e recompensas <input id="audio-interface" type="range" min="0" max="100" step="5" value="100"></label>
+    <label>Música <input id="audio-music" type="range" min="0" max="100" step="5" value="60"></label>
     <p>Volumes aplicados imediatamente e lembrados neste navegador.</p>
     <button id="gpu-apply" type="button">SALVAR, APLICAR E REINICIAR</button>
   </section>
   <div id="pause-screen" class="pause-screen hidden" role="dialog" aria-label="Jogo pausado" aria-modal="true">
     <section class="pause-card"><small>BRUMÁRIA · ELO DOS DRAGÕES</small><h2>JOGO PAUSADO</h2><p>O mundo espera por você. O progresso foi salvo.</p>
       <button id="pause-resume" type="button" class="pause-primary">▶ RETOMAR · ESC</button>
+      <button id="pause-photo" type="button">📷 MODO FOTO</button>
       <button id="pause-video" type="button">⚙ VÍDEO E ÁUDIO</button>
       <button id="pause-save" type="button">SALVAR AGORA</button>
     </section>
+    <button id="photo-exit" class="photo-exit" type="button">✕ SAIR DO MODO FOTO · ESC</button>
   </div>
   <div id="npc-dialogue" class="npc-dialogue hidden" role="dialog" aria-label="Conversa com morador" aria-modal="false"><div class="npc-dialogue-heading"><strong id="npc-name">MORADOR</strong><span id="npc-role"></span></div><p id="npc-text"></p><button id="npc-close" type="button">CONTINUAR · E</button></div>
   <div id="stable" class="stable-screen hidden" role="dialog" aria-label="Estábulo e treinamento" aria-modal="true">
     <section class="stable-card">
       <div class="stable-heading"><div><small>VILA DE BRUMÁRIA</small><h2>ESTÁBULO DOS DRAGÕES</h2><p>Treine habilidades, descubra espécies e domine os circuitos aéreos.</p></div><button id="stable-close" class="stable-close" type="button" aria-label="Fechar estábulo">✕</button></div>
+      <div id="stable-village-note" class="stable-note"></div>
+      <div class="stable-balance"><strong id="train-points">0</strong> PONTOS DE TREINAMENTO <span id="train-circuits">0 circuitos</span></div>
+      <div id="discovery-list" class="discovery-list">Marcos encontrados: 0/7</div>
+      <div id="frontier-list" class="discovery-list" role="status" aria-live="polite">FRONTEIRA: 0/6 fragmentos · 2 guardiões</div>
+      <h3>QUADRO DE MISSÕES · <span id="daily-day">DIA 1</span></h3>
+      <p class="daily-board-note">Fale com os moradores da vila para aceitar tarefas. A cada novo dia surgem novas rotas e recompensas.</p>
+      <div id="daily-board" class="daily-board" aria-label="Missões diárias disponíveis"></div>
+      <div id="wild-list" class="wild-list" aria-label="Dragões selvagens para amansar"></div>
+      <div class="preview-panel"><canvas id="stable-preview-canvas" aria-label="Modelo 3D giratório do dragão selecionado"></canvas><div class="preview-info"><strong id="stable-preview-name">Fúria da Noite · Dragão Inicial</strong><small id="stable-preview-caption">Arraste para girar · Visualização 3D dos dragões</small><label for="stable-preview-motion">Testar animação:</label><select id="stable-preview-motion" aria-label="Animação do dragão na prévia"><option value="fly">Voar (Fly)</option><option value="glide">Planar (Glide)</option><option value="idle">Parado (Idle)</option><option value="walk">Andar (Walk)</option><option value="attack">Atacar (Attack)</option><option value="hurt">Reagir (Hurt)</option><option value="takeoff">Decolar (Takeoff)</option><option value="land">Pousar (Landing)</option></select></div></div>
+      <h3>ELO COM SEU DRAGÃO · <span id="bond-summary">NÍVEL 1</span></h3><p class="bond-intro">O Elo cresce ao voar junto, fazer carinho em dragões e ganhar pontos de treino.</p><div id="bond-list" class="bond-list"></div>
+      <h3>SEUS DRAGÕES</h3><div id="species-list" class="species-list"></div>
+      <h3>EVOLUÇÃO DAS HABILIDADES</h3><div id="skill-list" class="skill-list"></div>
+      <div class="training-footer"><div><strong>DESAFIO DOS VENTOS</strong><small>Três aros dourados em 95 segundos. Ganhe +1 ponto ao completar.</small></div><button id="train-start" type="button">INICIAR CIRCUITO</button></div>
+      <div class="training-footer advanced-footer"><div><strong>CIRCUITO DA TEMPESTADE</strong><small>Cinco aros em 80 segundos, velocidade mínima de 18 m/s. Recompensa +2 pontos.</small></div><button id="train-advanced" type="button">CIRCUITO AVANÇADO</button></div>
+      <div class="training-footer advanced-footer"><div><strong>TRAVESSIA DAS SETE ILHAS</strong><small>Nova fase: 7 balizas, duas ilhas inéditas e 315 segundos. Recompensa +4 pontos após dois circuitos.</small></div><button id="train-frontier" type="button">TRAVESSIA DAS SETE ILHAS</button></div>
+      <p class="stable-tip">Complete missões para ganhar pontos. Troque de dragão e melhore atributos somente na vila. O progresso é salvo automaticamente.</p>
+      <h3 id="stable-advanced-title">AVANÇADO · MODELOS 3D</h3><p class="bond-intro">Ferramentas opcionais para trocar ou testar os modelos do herói e dos dragões. Não afetam missões nem o progresso.</p>
       <section class="hero-glb-panel" aria-label="Importar modelo 3D do personagem">
         <strong>NOVO HERÓI ANIMADO · A PÉ E SOBRE O DRAGÃO</strong>
         <p>O novo personagem usa as animações de caminhar, correr, montar, cavalgar, decolar, voar, planar, atacar, pousar e desmontar. Se o modelo ainda não apareceu, clique em IMPORTAR GLB e escolha <b>personagem_animado_montaria.glb</b>. A importação permanece salva no navegador.</p>
@@ -87,21 +107,6 @@
         </div>
         <p id="fury-glb-status" data-state="neutral" role="status" aria-live="polite">Se os modelos ainda não aparecem, escolha os arquivos .glb do pacote de animações enviado.</p>
       </section>
-      <div id="stable-village-note" class="stable-note"></div>
-      <div class="stable-balance"><strong id="train-points">0</strong> PONTOS DE TREINAMENTO <span id="train-circuits">0 circuitos</span></div>
-      <div id="discovery-list" class="discovery-list">Marcos encontrados: 0/7</div>
-      <div id="frontier-list" class="discovery-list" role="status" aria-live="polite">FRONTEIRA: 0/6 fragmentos · 2 guardiões</div>
-      <h3>QUADRO DE MISSÕES · <span id="daily-day">DIA 1</span></h3>
-      <p class="daily-board-note">Fale com Iara, Lume, Borin ou Nara para aceitar tarefas. A cada novo dia surgem novas rotas e recompensas.</p>
-      <div id="daily-board" class="daily-board" aria-label="Missões diárias disponíveis"></div>
-      <div id="wild-list" class="wild-list" aria-label="Dragões selvagens para amansar"></div>
-      <div class="preview-panel"><canvas id="stable-preview-canvas" aria-label="Modelo 3D giratório do dragão selecionado"></canvas><div class="preview-info"><strong id="stable-preview-name">Fúria da Noite · Dragão Inicial</strong><small id="stable-preview-caption">Arraste para girar · Visualização 3D dos dragões</small><label for="stable-preview-motion">Testar animação:</label><select id="stable-preview-motion" aria-label="Animação do dragão na prévia"><option value="fly">Voar (Fly)</option><option value="glide">Planar (Glide)</option><option value="idle">Parado (Idle)</option><option value="walk">Andar (Walk)</option><option value="attack">Atacar (Attack)</option><option value="hurt">Reagir (Hurt)</option><option value="takeoff">Decolar (Takeoff)</option><option value="land">Pousar (Landing)</option></select></div></div>
-      <h3>SEUS DRAGÕES</h3><div id="species-list" class="species-list"></div>
-      <h3>EVOLUÇÃO DAS HABILIDADES</h3><div id="skill-list" class="skill-list"></div>
-      <div class="training-footer"><div><strong>DESAFIO DOS VENTOS</strong><small>Três aros dourados em 95 segundos. Ganhe +1 ponto ao completar.</small></div><button id="train-start" type="button">INICIAR CIRCUITO</button></div>
-      <div class="training-footer advanced-footer"><div><strong>CIRCUITO DA TEMPESTADE</strong><small>Cinco aros em 80 segundos, velocidade mínima de 18 m/s. Recompensa +2 pontos.</small></div><button id="train-advanced" type="button">CIRCUITO AVANÇADO</button></div>
-      <div class="training-footer advanced-footer"><div><strong>TRAVESSIA DAS SETE ILHAS</strong><small>Nova fase: 7 balizas, duas ilhas inéditas e 315 segundos. Recompensa +4 pontos após dois circuitos.</small></div><button id="train-frontier" type="button">TRAVESSIA DAS SETE ILHAS</button></div>
-      <p class="stable-tip">Complete missões para ganhar pontos. Troque de dragão e melhore atributos somente na vila. O progresso é salvo automaticamente.</p>
     </section>
   </div>
   <section id="start-screen" class="modal-screen" role="main" aria-labelledby="menu-title">

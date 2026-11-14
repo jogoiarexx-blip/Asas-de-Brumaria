@@ -21,7 +21,9 @@ import { AudioSystem } from '../systems/Audio.js';
 import { Effects } from '../systems/Effects.js';
 import {segmentSphereHit} from '../systems/combatMath.js';
 import { UI } from '../ui/UI.js';
-import {Progression,SPECIES,REWARDS} from '../systems/Progression.js';
+import {Progression,SPECIES,REWARDS,BOND_PERKS} from '../systems/Progression.js';
+import {obstacleCandidates} from '../utils/ObstacleGrid.js';
+import {overlapsCircle} from '../utils/collision.js';
 import {SaveSystem} from '../systems/SaveSystem.js';
 import {Training,CIRCUITS} from '../systems/Training.js';
 import {VillageContracts,CONTRACTS} from '../systems/VillageContracts.js';
@@ -35,6 +37,7 @@ import {StablePreview} from '../ui/StablePreview.js';
 import {GraphicsQuality} from '../systems/GraphicsQuality.js';
 import {GraphicsBenchmark,formatBenchmark} from '../systems/GraphicsBenchmark.js';
 import {SkyDome} from '../world/SkyDome.js';
+import {MusicSystem,musicMood} from '../systems/Music.js';
 import {prewarmObject} from '../systems/GpuPrewarm.js';
 import {GraphicsWarmup} from '../systems/GraphicsWarmup.js';
 import {performanceSnapshot,shouldSkipRendering} from '../systems/PerformanceDiagnostics.js';
@@ -113,6 +116,7 @@ export class Game {
     this.contracts=new VillageContracts(this.savedData?.contracts,this.dayNight.state.day);
     this.villagers=new VillageNPCs(this.scene,this.world);
     this.paused=false;this.initPauseControls();
+    this.music=new MusicSystem(this.audio);this.combatHeat=0;
     this.villagers.prewarm=root=>prewarmObject(this.renderer,root,{camera:this.camera,scene:this.scene});
     this.wildDragons=new WildDragons(this.scene,this.world,this.wildBonds);
     this.villagers.refresh(this.contracts);
@@ -345,7 +349,7 @@ export class Game {
     },{passive:false});
   }
   initAudioControls(){
-    for(const name of ['effects','ambience','interface']){
+    for(const name of ['effects','ambience','interface','music']){
       const slider=document.getElementById('audio-'+name);
       if(!slider)continue;
       slider.value=String(Math.round(this.audio.volumes[name]*100));
@@ -383,6 +387,7 @@ export class Game {
     });
   }
   showHitConfirm(label='ACERTO'){
+    this.combatHeat=Math.max(this.combatHeat??0,7);
     const el=document.getElementById('hit-confirm');
     if(!el)return;
     el.textContent=label;el.classList.remove('hidden');this.hitConfirmTime=.6;
@@ -743,6 +748,7 @@ export class Game {
       if(pet){
         this.effects.burst(creature.group.position.clone().add(new THREE.Vector3(0,2.5,0)),'rescue',6);
         this.audio.play('pickup');
+        this.progression.addBond(2);
         this.ui.toast(`${creature.spec.name} adora seu carinho! Amizade já conquistada.`,3);
       }else this.ui.toast(`${creature.spec.name} está descansando. Espere um instante para outro carinho.`,3);
       return true;
@@ -758,7 +764,7 @@ export class Game {
       this.progression.grant(1);
       this.ui.toast(`${creature.spec.name} confia em você! ${newlyUnlocked?'Espécie liberada no estábulo. ':''}+1 ponto de treino · ${this.wildBonds.total}/3`,6);
       this.ui.renderStable(this);
-    }else this.ui.toast(`${creature.spec.name}: confiança ${result.progress}/3 · aguarde um instante para novo carinho.`,4);
+    }else{this.progression.addBond(4);this.ui.toast(`${creature.spec.name}: confiança ${result.progress}/3 · aguarde um instante para novo carinho.`,4);}
     this.saveGame();
     return true;
   }
@@ -786,7 +792,10 @@ export class Game {
     if(this.hero._mountMotion||this.hero._dismountMotion)return;
     if(!this.dragon.riding){
       const distance=this.hero.group.position.distanceTo(this.dragon.group.position);
-      if(distance>10.5){this.ui.toast('Aproxime-se do dragão para montar.');this.audio.play('error');return;}
+      if(distance>10.5){
+        if(this.callDragon())return;
+        this.ui.toast(this.progression.bondLevel>=3?'Seu dragão não encontrou onde pousar. Vá para um lugar aberto.':'Aproxime-se do dragão para montar.');this.audio.play('error');return;
+      }
       this.dragon.mount();this.hero.setMounted(true);this.audio.play('mount');this.saveGame();
       if(this.missions.finishBond())this.ui.toast(`${SPECIES[this.progression.species]?.name??'Seu dragão'} confia em você! Atravesse o primeiro aro luminoso.`,5);
       else this.ui.toast('Montado! W acelera · Espaço sobe · Ctrl desce.');
@@ -804,6 +813,55 @@ export class Game {
     // Procedural fallback has no mounted GLB; keep legacy instant dismount.
     if(!this.hero._dismountMotion)this.hero.group.position.set(spot.x,spot.y,spot.z);
     this.ui.toast('Você desmontou do dragão.');this.saveGame();
+  }
+  /** v1.7.0 — Assobio do domador (Elo nível 3): a pé e longe do dragão, ele
+   * pousa num ponto livre ao lado do herói. Devolve false se não for possível. */
+  callDragon(){
+    if(this.progression.bondLevel<3||this.dragon.riding||this.inMountain)return false;
+    if(this.elapsed<(this.whistleReadyAt??0)){
+      this.ui.toast(`Assobio recarregando: ${Math.ceil(this.whistleReadyAt-this.elapsed)}s.`,2);return true;
+    }
+    const hero=this.hero.group.position,facing=this.hero.group.rotation.y;
+    for(let i=0;i<24;i++){
+      const radius=7+Math.floor(i/8)*2.5,angle=facing+Math.PI+(i%8)*Math.PI/4;
+      const x=hero.x+Math.sin(angle)*radius,z=hero.z+Math.cos(angle)*radius;
+      if(!this.world.walkable(x,z))continue;
+      const blocked=obstacleCandidates(this.world.obstacleGrid,x-5,z-5,x+5,z+5,0)
+        .some(obstacle=>overlapsCircle(x,z,3.2,obstacle));
+      if(blocked)continue;
+      const dragon=this.dragon;
+      this.effects.burst(dragon.group.position,'rescue',8);
+      dragon.group.position.set(x,this.world.groundHeightAt(x,z)+2.58,z);
+      dragon.yaw=Math.atan2(x-hero.x,z-hero.z);dragon.turnAxis=0;dragon.speed=0;dragon.airborne=false;dragon.verticalVelocity=0;
+      this.effects.burst(dragon.group.position,'rescue',14);
+      this.audio.play('pickup');this.audio.play('wingbeat');
+      this.whistleReadyAt=this.elapsed+20;
+      this.ui.toast(`${SPECIES[this.progression.species]?.name??'Seu dragão'} ouviu seu assobio!`,3);
+      this.saveGame();
+      return true;
+    }
+    return false;
+  }
+  /** Anuncia subida de nível de Elo e reaplica os bônus. Chamado por quadro:
+   * custa uma comparação de inteiros. */
+  updateBond(dt){
+    if(this.dragon.riding&&this.dragon.airborne){
+      this.bondFlightTime=(this.bondFlightTime??0)+dt;
+      if(this.bondFlightTime>=10){this.bondFlightTime-=10;this.progression.addBond(1);}
+    }
+    const level=this.progression.bondLevel;
+    if(level===this.bondLevelSeen)return;
+    const first=this.bondLevelSeen===undefined;
+    const rose=!first&&level>this.bondLevelSeen;
+    this.bondLevelSeen=level;
+    this.dragon.setStats(this.progression.stats);
+    if(rose){
+      const perk=BOND_PERKS[level-1];
+      this.audio.play('complete');
+      this.effects.burst(this.dragon.group.position,'rescue',16);
+      this.ui.toast(`ELO NÍVEL ${level}: ${perk.name}! ${perk.description}`,7);
+      this.ui.renderStable(this);this.saveGame();
+    }
   }
   getProjectile(owner){
     // Reuse the entire projectile record and its velocity vector, not just the mesh.
@@ -834,6 +892,7 @@ export class Game {
     bullet.life=owner==='enemy'?3.2:2.4;
     this.projectiles.push(bullet);
     this.audio.play(owner==='enemy'?'enemyFire':'fire');
+    if(owner==='enemy')this.combatHeat=7;
     return true;
   }
   fire(){
@@ -914,6 +973,7 @@ export class Game {
     return true;
   }
   takeDamage(amount){
+    this.combatHeat=7;
     // The short lateral evasive window avoids a projectile, even if its
     // swept sphere intersects the player on this frame.
     if(!this.dragon.riding||this.hurtImmunity>0||this.dragon.dodgeRemaining>0)return false;
@@ -1127,6 +1187,7 @@ export class Game {
     const next=!!paused&&this.started&&!this.benchmark?.active;
     if(next===!!this.paused)return this.paused;
     this.paused=next;
+    if(!next&&this.photoMode){this.photoMode=false;document.body.classList.remove('photo-mode');this.villagers.setLabelsVisible(true);}
     document.getElementById('pause-screen')?.classList.toggle('hidden',!next);
     document.body.classList.toggle('game-paused',next);
     this.input.down.clear();this.input.clearActions();
@@ -1136,7 +1197,17 @@ export class Game {
     }catch(error){console.warn('Pausa: áudio/salvamento indisponível:',error);}
     return this.paused;
   }
+  /** v1.7.0 — modo foto: só existe dentro da pausa; esconde HUD e painel. */
+  setPhotoMode(on){
+    this.photoMode=!!on&&this.paused;
+    this.villagers.setLabelsVisible(!this.photoMode);
+    document.body.classList.toggle('photo-mode',this.photoMode);
+    if(!this.photoMode&&this.paused)document.getElementById('pause-resume')?.focus();
+    return this.photoMode;
+  }
   initPauseControls(){
+    document.getElementById('pause-photo')?.addEventListener('click',()=>this.setPhotoMode(true));
+    document.getElementById('photo-exit')?.addEventListener('click',()=>this.setPhotoMode(false));
     document.getElementById('pause-resume')?.addEventListener('click',()=>this.setPaused(false));
     document.getElementById('pause-hud')?.addEventListener('click',()=>{document.getElementById('hud-options')?.removeAttribute('open');this.setPaused(true);});
     document.getElementById('pause-video')?.addEventListener('click',()=>{this.setPaused(false);document.getElementById('gpu-panel')?.classList.remove('hidden');});
@@ -1168,8 +1239,18 @@ export class Game {
     // v1.6.1 — pausa: nada de IA, física, clima, relógio ou salvamento
     // automático; a cena continua desenhada parada atrás do painel.
     if(this.paused){
-      if(this.input.consume('escape')||this.input.consume('start'))this.setPaused(false);
+      if(this.input.consume('escape')||this.input.consume('start')){
+        if(this.photoMode)this.setPhotoMode(false);else this.setPaused(false);
+      }
       this.input.clearActions();
+      // Modo foto: mundo congelado, só a câmera orbita (arrastar / roda / analógico D).
+      if(this.photoMode){
+        const look=this.input.lookAxis;
+        if(look&&(Math.abs(look.x)>.06||Math.abs(look.y)>.06))this.cameraOrbit.drag(look.x*210*dt,look.y*150*dt);
+        this.cameraManualUntil=performance.now()+2600;
+        this.updateCamera(dt);
+        this.skyDome.update(this.camera,{sun:this.world.sunOrb,moon:this.dayNight.moon,night:this.dayNight.starMaterial.opacity/.88,time:this.elapsed});
+      }
       this.renderer.render(this.scene,this.camera);
       return;
     }
@@ -1302,6 +1383,10 @@ export class Game {
       this.updateProjectiles(dt);
       this.updateExpedition(dt);
       this.effects.update(dt);
+      this.updateBond(dt);
+      // v1.7.1 — trilha: combate por 7 s após dano, tiro inimigo ou acerto.
+      this.combatHeat=Math.max(0,this.combatHeat-dt);
+      this.music.update(musicMood({combat:this.combatHeat>0,flying:this.dragon.riding&&this.dragon.airborne,night:this.dayNight.starMaterial.opacity/.88}));
       this.hurtImmunity=Math.max(0,this.hurtImmunity-dt);
       this.hitFlash=Math.max(0,this.hitFlash-dt);
       if(this.hitConfirmTime>0){

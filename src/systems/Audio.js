@@ -4,13 +4,13 @@ export class AudioSystem {
   constructor(){
     this.ctx=null;this.muted=false;this.master=null;this.noiseBuffer=null;
     this.ambience=null;this.activeVoices=0;this.maxVoices=20;
-    this.volumes={effects:1,ambience:1,interface:1};
+    this.volumes={effects:1,ambience:1,interface:1,music:.6};
     try{
       const saved=JSON.parse(globalThis.localStorage?.getItem('brumaria-audio-levels-v1')??'null');
       for(const key of Object.keys(this.volumes))if(Number.isFinite(saved?.[key]))
         this.volumes[key]=Math.max(0,Math.min(1,saved[key]));
     }catch{}
-    this.effectsChannel=null;this.ambienceChannel=null;this.interfaceChannel=null;this.activeChannel=null;
+    this.effectsChannel=null;this.ambienceChannel=null;this.interfaceChannel=null;this.musicChannel=null;this.activeChannel=null;
   }
   unlock(){
     if(this.muted)return;
@@ -28,6 +28,7 @@ export class AudioSystem {
         this.effectsChannel=this.ctx.createGain();this.effectsChannel.connect(master);
         this.ambienceChannel=this.ctx.createGain();this.ambienceChannel.connect(master);
         this.interfaceChannel=this.ctx.createGain();this.interfaceChannel.connect(master);
+        this.musicChannel=this.ctx.createGain();this.musicChannel.connect(master);
         for(const key of Object.keys(this.volumes))this.setVolume(key,this.volumes[key],false);
         this.noiseBuffer=this.createNoiseBuffer();
         this.startAmbience();
@@ -38,7 +39,7 @@ export class AudioSystem {
   setVolume(group,value,persist=true){
     if(!Object.hasOwn(this.volumes,group)||!Number.isFinite(Number(value)))return false;
     this.volumes[group]=Math.max(0,Math.min(1,Number(value)));
-    const node=group==='effects'?this.effectsChannel:group==='ambience'?this.ambienceChannel:this.interfaceChannel;
+    const node=group==='effects'?this.effectsChannel:group==='ambience'?this.ambienceChannel:group==='music'?this.musicChannel:this.interfaceChannel;
     if(node)node.gain.value=this.volumes[group];
     if(persist)try{globalThis.localStorage?.setItem('brumaria-audio-levels-v1',JSON.stringify(this.volumes));}catch{}
     return true;

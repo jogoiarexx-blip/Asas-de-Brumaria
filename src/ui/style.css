@@ -267,3 +267,18 @@ body:has(#controller-status.connected) .gamepad-help{opacity:.92}
 .pause-card button{display:block;width:100%;margin-top:9px;padding:13px 14px;border-radius:9px;border:1px solid rgba(149,216,205,.34);background:rgba(15,48,60,.9);color:#e6f6f2;font-weight:900;font-size:12px;letter-spacing:1.4px;cursor:pointer}
 .pause-card button:hover,.pause-card button:focus-visible{border-color:var(--gold);outline:none}
 .pause-card .pause-primary{background:linear-gradient(180deg,#f3d9a1,#d9ae68);color:#12262d;border-color:#f3d9a1}
+
+/* v1.7.0 — Nível de Elo e modo foto */
+.bond-head{margin-top:9px;font-size:9px;font-weight:900;letter-spacing:1px;color:#ffe2a6;white-space:nowrap}
+.bond-track{margin:6px 0 0;height:5px}.bond-track>div{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#e8c98a,#fff0c4);transition:width .35s ease}
+.bond-intro{margin:4px 0 10px;color:#b9d3cf;font-size:12px}
+.bond-list{display:grid;gap:7px;margin-bottom:16px}
+.bond-perk{padding:9px 11px;border-radius:8px;border:1px solid rgba(149,216,205,.18);background:rgba(8,30,39,.55);opacity:.62}
+.bond-perk.unlocked{opacity:1;border-color:rgba(232,201,138,.55)}
+.bond-perk strong{display:block;font-size:11px;letter-spacing:1.2px;color:#ffe2a6}
+.bond-perk span{display:block;margin-top:3px;font-size:12px;color:#d6e8e4}
+.photo-exit{display:none;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);padding:10px 16px;border-radius:999px;border:1px solid rgba(149,216,205,.4);background:rgba(8,30,39,.72);color:#e6f6f2;font-weight:900;font-size:11px;letter-spacing:1.3px;cursor:pointer}
+body.photo-mode #hud,body.photo-mode .pause-card{display:none}
+body.photo-mode .pause-screen{background:transparent;backdrop-filter:none;pointer-events:none}
+body.photo-mode .photo-exit{display:block;pointer-events:auto;opacity:.55}
+body.photo-mode .photo-exit:hover{opacity:1}
