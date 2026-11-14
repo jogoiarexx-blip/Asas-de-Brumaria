@@ -46,17 +46,73 @@ function checkWebGL(){
   if(!ctx)throw new Error('WebGL indisponível. No Chrome/Edge, ative a aceleração gráfica e atualize o driver de vídeo.');
 }
 
+// GitHub Pages can occasionally reply 503 even after a successful deployment.
+// A failed dynamic import is remembered by the browser for that URL: retry with
+// a distinct query so a transient 503 does not poison the entire session.
+const GAME_MODULE=new URL('./game/Game.js',import.meta.url).href;
+const GAME_MODULE_MIRROR='https://cdn.jsdelivr.net/gh/jogoiarexx-blip/Asas-de-Brumaria@main/src/game/Game.js';
+const BOOT_RETRY_DELAYS=[0,600,1400];
+const bootSleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+function bootStatus(message){
+  const status=document.getElementById('menu-load-status');
+  if(status)status.textContent=message;
+}
+
+async function checkGameResponse(url,cache){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),10000);
+  try{
+    const response=await fetch(url,{cache,signal:controller.signal});
+    if(!response.ok)throw new Error(`HTTP ${response.status} ao carregar ${new URL(url).pathname}`);
+    const type=(response.headers.get('content-type')||'').toLowerCase();
+    if(type.includes('text/html'))throw new Error(`O servidor devolveu HTML em vez do módulo: ${new URL(url).pathname}`);
+    await response.arrayBuffer(); // Leitura completa antes do import dinâmico.
+  }finally{clearTimeout(timer);}
+}
+
+async function loadGameModule(){
+  let lastError=null;
+  for(let attempt=0;attempt<BOOT_RETRY_DELAYS.length;attempt++){
+    if(attempt)await bootSleep(BOOT_RETRY_DELAYS[attempt]);
+    const url=new URL(GAME_MODULE);
+    if(attempt)url.searchParams.set('brumaria-retry',`1711-${attempt}-${Date.now()}`);
+    bootStatus(attempt?`RECONECTANDO AO JOGO · TENTATIVA ${attempt+1}/3`:'CARREGANDO O MUNDO...');
+    try{
+      await checkGameResponse(url.href,attempt?'reload':'default');
+      return await import(url.href);
+    }catch(error){
+      // Sintaxe defeituosa não é falha temporária de rede: mostrar a causa.
+      if(error instanceof SyntaxError)throw error;
+      lastError=error;
+      console.warn(`Falha ao obter o jogo (tentativa ${attempt+1}):`,error);
+    }
+  }
+  // Se a origem do GitHub Pages falhar, carrega os módulos da cópia pública
+  // no jsDelivr. Imports relativos usam a mesma origem do espelho.
+  bootStatus('GITHUB PAGES INDISPONÍVEL · TENTANDO SERVIDOR ALTERNATIVO...');
+  try{
+    await checkGameResponse(GAME_MODULE_MIRROR,'no-store');
+    return await import(GAME_MODULE_MIRROR);
+  }catch(error){
+    console.warn('Servidor alternativo também indisponível:',error);
+    throw new Error(`Não foi possível baixar os módulos do jogo. GitHub Pages: ${String(lastError)}. Servidor alternativo: ${String(error)}.`);
+  }
+}
+
 (async function boot(){
   try{
     checkWebGL();
     await resolveThree();
-    const {Game}=await import('./game/Game.js');
+    const {Game}=await loadGameModule();
     new Game();
   }catch(error){
     console.error('Falha ao iniciar Brumária: Elo dos Dragões:',error);
     const panel=document.getElementById('fatal');
+    if(!panel)return;
     panel.classList.remove('hidden');
-    panel.innerHTML='<h2>Não foi possível abrir o jogo</h2><p>Abra com <b>INICIAR-JOGO.bat</b> ou <b>python start_game.py</b>. Use uma conexão para baixar o Three.js na primeira execução; depois ele pode ser reutilizado offline. Para erro de WebGL, habilite aceleração gráfica. Consulte o arquivo de instruções.</p><pre></pre>';
+    panel.innerHTML='<h2>Não foi possível abrir Brumária</h2><p>O servidor pode estar temporariamente indisponível (HTTP 503), ou o navegador pode estar sem WebGL. Seus saves estão preservados. Tente novamente; se persistir, abra em outra rede ou verifique o status do GitHub Pages.</p><button type="button" id="retry-game-load">↻ TENTAR NOVAMENTE</button><pre></pre>';
     panel.querySelector('pre').textContent=String(error);
+    panel.querySelector('#retry-game-load').addEventListener('click',()=>window.location.reload());
   }
 })();

@@ -282,3 +282,7 @@ body.photo-mode #hud,body.photo-mode .pause-card{display:none}
 body.photo-mode .pause-screen{background:transparent;backdrop-filter:none;pointer-events:none}
 body.photo-mode .photo-exit{display:block;pointer-events:auto;opacity:.55}
 body.photo-mode .photo-exit:hover{opacity:1}
+
+/* Recuperação de módulo HTTP 503 — botão acessível no painel de erro. */
+.fatal #retry-game-load{padding:13px 18px;border-radius:9px;border:1px solid #f0bf92;background:#e8c98a;color:#16232b;font-weight:900;cursor:pointer;min-height:44px}
+.fatal #retry-game-load:focus-visible{outline:3px solid #fff;outline-offset:3px}
