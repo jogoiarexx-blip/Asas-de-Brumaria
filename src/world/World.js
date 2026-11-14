@@ -92,6 +92,19 @@ export class World {
     const water = new THREE.Mesh(new THREE.PlaneGeometry(2400,2400),new THREE.MeshPhongMaterial({color:0x287da2,shininess:120,specular:0xb6ebed,map:waterTexture,bumpMap:waterTexture,bumpScale:.12,transparent:false}));
     this.water=water;
     water.rotation.x=-Math.PI/2; water.position.y=-.9; water.receiveShadow=true;scene.add(water);
+    // v1.6.0 — mar com reflexo do céu por ângulo de visão (Fresnel) e brilho do
+    // sol mais concentrado. Mesmo material Phong: nenhuma textura ou passe extra.
+    this.waterSkyTint={value:new THREE.Color(0xa3e2ed)};
+    water.material.shininess=64;water.material.specular.setRGB(.022,.027,.029);
+    water.material.onBeforeCompile=shader=>{
+      shader.uniforms.uSkyTint=this.waterSkyTint;
+      shader.fragmentShader=shader.fragmentShader
+        .replace('#include <common>','#include <common>\nuniform vec3 uSkyTint;')
+        .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+          float brumFresnel=pow(1.0-clamp(dot(normalize(vViewPosition),normal),0.0,1.0),3.2);
+          diffuseColor.rgb=mix(diffuseColor.rgb*vec3(.86,.95,1.02),uSkyTint,brumFresnel*.62);`);
+    };
+    water.material.customProgramCacheKey=()=>'brumaria-water-fresnel-v160';
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
     this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds(); this.buildPollen();
@@ -676,6 +689,7 @@ export class World {
     const seaLight=THREE.MathUtils.clamp(this.sun.intensity/2.65,.22,1.15);
     this.water.material.color.setRGB(.075+.07*seaLight,.27+.11*seaLight,.37+.13*seaLight);
     this.water.material.bumpScale=.105+Math.sin(time*.35)*.022;
+    if(this.scene.fog?.color)this.waterSkyTint.value.copy(this.scene.fog.color);
     // One wave amplitude update per island; no particles or extra draw calls.
     for(const bands of this.coastByIsland.values())for(let i=0;i<bands.length;i++){
       bands[i].material.opacity=(i===0?.28:.17)*(0.86+.14*Math.sin(time*1.3+i));

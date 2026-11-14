@@ -34,6 +34,8 @@ import {DayNight} from '../systems/DayNight.js';
 import {StablePreview} from '../ui/StablePreview.js';
 import {GraphicsQuality} from '../systems/GraphicsQuality.js';
 import {GraphicsBenchmark,formatBenchmark} from '../systems/GraphicsBenchmark.js';
+import {SkyDome} from '../world/SkyDome.js';
+import {prewarmObject} from '../systems/GpuPrewarm.js';
 import {GraphicsWarmup} from '../systems/GraphicsWarmup.js';
 import {performanceSnapshot,shouldSkipRendering} from '../systems/PerformanceDiagnostics.js';
 import {sceneActorStats} from '../systems/ActorLOD.js';
@@ -83,6 +85,7 @@ export class Game {
     this.world=new World(this.scene,this.renderer);
     this.weather=new Weather(this.scene,this.world,this.camera,this.savedData?.weather);
     this.dayNight=new DayNight(this.scene,this.world,this.savedData?.dayNight);
+    this.skyDome=new SkyDome(this.scene);
     this.discovery=new Discovery(this.savedData?.discoveries);
     this.wildBonds=new WildBonds(this.savedData?.wildBonds);
     this.landmarks=new Landmarks(this.scene,this.world);
@@ -109,6 +112,7 @@ export class Game {
     this.applySceneQuality();
     this.contracts=new VillageContracts(this.savedData?.contracts,this.dayNight.state.day);
     this.villagers=new VillageNPCs(this.scene,this.world);
+    this.villagers.prewarm=root=>prewarmObject(this.renderer,root,{camera:this.camera,scene:this.scene});
     this.wildDragons=new WildDragons(this.scene,this.world,this.wildBonds);
     this.villagers.refresh(this.contracts);
     this.missions=new Missions(this.scene,this.audio,()=>{if(this.missions)this.ui.updateQuest(this.missions);},this.enemies,
@@ -169,7 +173,7 @@ export class Game {
     this.renderer.domElement.addEventListener('webglcontextrestored',()=>{
       this.webglLost=false;
       // Reconfigure buffers and shadows after a driver/browser GPU restart.
-      this.graphics.tier='economy';this.graphics.apply();this.applySceneQuality();this.updateGraphicsLabel();
+      this.graphics.tier='economy';this.graphics.apply({relock:true});this.applySceneQuality({relock:true});this.updateGraphicsLabel();
       this.ui.toast('Gráficos restaurados no modo LEVE. O progresso foi preservado.',6);
     });
     this.renderer.setAnimationLoop(()=>{
@@ -212,7 +216,7 @@ export class Game {
     document.getElementById('benchmark-copy').disabled=!this.benchmark.results.length;
   }
   setBenchmarkTier(tier){
-    this.graphics.tier=tier;this.graphics.apply();this.applySceneQuality();this.updateGraphicsLabel();
+    this.graphics.tier=tier;this.graphics.apply({relock:true});this.applySceneQuality({relock:true});this.updateGraphicsLabel();
   }
   restoreBenchmarkGraphics(){
     if(!this.benchmarkPrevious)return;
@@ -356,7 +360,7 @@ export class Game {
       if(!data){announce('Não há progresso salvo para exportar.');return;}
       const url=URL.createObjectURL(new Blob([data],{type:'application/json'}));
       const link=document.createElement('a');
-      link.href=url;link.download='asas-de-brumaria-progresso.json';
+      link.href=url;link.download='brumaria-elo-dos-dragoes-progresso.json';
       document.body.append(link);link.click();link.remove();
       setTimeout(()=>URL.revokeObjectURL(url),2000);
       announce('Backup JSON do progresso exportado.');
@@ -428,6 +432,8 @@ export class Game {
     }).then(report=>{
       this.preparing=false;this.started=true;
       this.graphicsPreparationReport=report;
+      // Daqui em diante o ajuste automático de FPS não recompila shaders.
+      this.graphics.lockLighting(true);
       panel.classList.add('hidden');
       document.body.classList.remove('menu-open');
       document.getElementById('start-screen').classList.add('hidden');
@@ -525,18 +531,36 @@ export class Game {
     if(p.mounted){this.dragon.mount();this.hero.setMounted(true,{animate:false});}
     this.health=p.health;
   }
-  applySceneQuality(){
+  applySceneQuality({relock=false}={}){
     const tier=this.graphics.tier;
+    // v1.6.0 — com a iluminação travada (ajuste automático durante o voo) só
+    // uniformes mudam: intensidade das luzes e das sombras. Alterar `visible`
+    // ou `castShadow` muda a contagem de luzes e recompila todos os shaders.
+    const structural=relock||!this.graphics.lightingLocked;
+    // Troca manual: o terreno pode redefinir se usa normal map (recompila uma vez).
+    if(relock&&this.world?.terrainTextures)this.world.terrainTextures.normalSlot=null;
     this.effects?.setQuality(tier);this.weather?.setQuality(tier);this.world?.setDetailQuality(tier);
-    if(this.world?.sun){this.world.sun.castShadow=tier!=='economy'&&this.graphics.shadowsAllowed;}
-    if(this.world?.fireLight)this.world.fireLight.visible=tier!=='economy';
-    if(this.dragon?.accentLight)this.dragon.accentLight.visible=tier==='quality';
+    const sun=this.world?.sun;
+    if(sun){
+      if(structural)sun.castShadow=tier!=='economy'&&this.graphics.shadowsAllowed;
+      if(sun.shadow)sun.shadow.intensity=this.graphics.shadowsActive?1:0;
+    }
+    const fire=this.world?this.world.fireLight:null,accent=this.dragon?this.dragon.accentLight:null;
+    if(fire){
+      fire.userData.baseIntensity??=fire.intensity;
+      if(structural)fire.visible=tier!=='economy';
+      fire.intensity=tier!=='economy'?fire.userData.baseIntensity:0;
+    }
+    if(accent){
+      if(structural)accent.visible=tier==='quality';
+      this.dragon.setAccentEnabled?.(tier==='quality');
+    }
     // Shadows are fully disabled in economy. Never change map size on each shot.
   }
   updateGraphicsLabel(){document.getElementById('quality-toggle').textContent=`GRÁFICOS: ${this.graphics.label} · G`;}
   cycleGraphics(){
     if(this.benchmark.active)this.cancelBenchmark('Teste interrompido: modo gráfico alterado.');
-    this.graphics.cycle();this.applySceneQuality();this.updateGraphicsLabel();this.ui.toast(`Qualidade: ${this.graphics.label}`,3);
+    this.graphics.cycle();this.applySceneQuality({relock:true});this.updateGraphicsLabel();this.ui.toast(`Qualidade: ${this.graphics.label}`,3);
   }
   initGPUOptions(){
     const panel=document.getElementById('gpu-panel');
@@ -573,6 +597,12 @@ export class Game {
     this.mountainLoading=(async()=>{
       const {MountainRegion}=await import('../world/MountainRegion.js');
       const chunk=new MountainRegion(this.scene,this.world,this.expedition);
+      // v1.6.0: a região fica oculta enquanto texturas e shaders são preparados;
+      // o portão já segura o jogador até `this.mountain` existir.
+      chunk.root.visible=false;
+      try{await prewarmObject(this.renderer,chunk.root,{camera:this.camera,scene:this.scene});}
+      catch(error){console.warn('[Montanhas] Pré-aquecimento ignorado:',error);}
+      chunk.root.visible=true;
       this.world.mountainRegion=chunk;this.mountain=chunk;
       this.ui.toast('Montanhas da Sombra carregadas. Siga em frente para entrar!',5);
     })().catch(error=>{
@@ -757,7 +787,7 @@ export class Game {
       const distance=this.hero.group.position.distanceTo(this.dragon.group.position);
       if(distance>10.5){this.ui.toast('Aproxime-se do dragão para montar.');this.audio.play('error');return;}
       this.dragon.mount();this.hero.setMounted(true);this.audio.play('mount');this.saveGame();
-      if(this.missions.finishBond())this.ui.toast('Nimbo confia em você! Atravesse o primeiro aro luminoso.',5);
+      if(this.missions.finishBond())this.ui.toast(`${SPECIES[this.progression.species]?.name??'Seu dragão'} confia em você! Atravesse o primeiro aro luminoso.`,5);
       else this.ui.toast('Montado! W acelera · Espaço sobe · Ctrl desce.');
       return;
     }
@@ -767,7 +797,7 @@ export class Game {
       this.ui.toast('Para desmontar: pouse numa ilha e reduza a velocidade.');this.audio.play('error');return;
     }
     const spot=safeDismountSpot({x,z},{obstacles:this.world.obstacleGrid,walkable:(a,b)=>this.world.walkable(a,b),groundAt:(a,b)=>this.world.groundHeightAt(a,b,.52)});
-    if(!spot){this.ui.toast('Não há espaço livre para desmontar aqui. Mova Nimbo para um local aberto.');this.audio.play('error');return;}
+    if(!spot){this.ui.toast('Não há espaço livre para desmontar aqui. Leve seu dragão para um local aberto.');this.audio.play('error');return;}
     this.dragon.dismount();
     this.hero.setMounted(false,{dismountTarget:spot});
     // Procedural fallback has no mounted GLB; keep legacy instant dismount.
@@ -1252,6 +1282,7 @@ export class Game {
       speed:this.dragon.speed,
       direction:{x:-Math.sin(this.dragon.yaw),z:-Math.cos(this.dragon.yaw)}
     },this.camera);
+    this.skyDome.update(this.camera,{sun:this.world.sunOrb,moon:this.dayNight.moon,night:this.dayNight.starMaterial.opacity/.88});
     this.renderer.render(this.scene,this.camera);
     const benchmarking=this.benchmark.active;
     if(benchmarking)this.updateBenchmark(realDt);

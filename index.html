@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <meta name="theme-color" content="#071a25">
-  <meta name="description" content="Asas de Brumária: explore ilhas, monte em seu dragão e complete missões.">
-  <title>Asas de Brumária v1.5.8 — NPCs vivos com patrulha e diálogos</title>
+  <meta name="description" content="Brumária: Elo dos Dragões — explore ilhas, crie laços com dragões e proteja o arquipélago.">
+  <title>Brumária: Elo dos Dragões v1.6.0 — Voo sem engasgos e novo céu</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071a25'/%3E%3Cpath d='M32 8l6 18 18 6-18 6-6 18-6-18-18-6 18-6z' fill='%23e8c98a'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./src/ui/style.css">
   <link rel="stylesheet" href="./src/ui/mainMenu.css">
 </head>
@@ -13,7 +14,7 @@
   <div id="game" aria-label="Mundo do jogo em 3D"></div>
   <div id="hud">
     <div class="hud-top">
-      <div class="brand"><span class="brand-icon">◆</span><div><strong>ASAS DE BRUMÁRIA</strong><small>VOE · DESCUBRA · AMANSE DRAGÕES</small></div></div>
+      <div class="brand"><span class="brand-icon">◆</span><div><strong>BRUMÁRIA</strong><small>ELO DOS DRAGÕES</small></div></div>
       <div class="top-pills"><span id="mode-pill">EXPLORAÇÃO</span><span id="clock-pill">10:19</span><details id="hud-options" class="hud-options"><summary aria-label="Mostrar opções e ajuda do jogo" title="Opções, atalhos e indicadores">☰ <span>MENU</span></summary><div class="hud-options-panel"><strong>OPÇÕES E AJUDA</strong><span id="weather-pill">CÉU ABERTO</span><span id="fps-pill">60 FPS</span><span id="controller-status" aria-live="polite">TECLADO / TOQUE</span><button id="gpu-toggle" type="button" title="Preferência de GPU, resolução e sombras">⚙ VÍDEO</button><button id="save-export-hud" type="button">EXPORTAR SAVE</button><button id="quality-toggle" type="button" title="Alternar qualidade gráfica">GRÁFICOS: AUTO · G</button><p><b>WASD</b> mover · <b>Espaço</b> subir · <b>Ctrl</b> descer · <b>F</b> fogo · <b>H</b> onda elemental · <b>Q</b> esquiva · <b>E</b> interagir · <b>Shift</b> turbo · <b>V</b> câmera · <b>T</b> estábulo</p></div></details></div>
     </div>
     <div class="mission-card"><div class="eyebrow"><span class="pulse"></span> OBJETIVO <span id="quest-index">01 / 04</span></div><h2 id="quest-title">A PRIMEIRA CONEXÃO</h2><div id="quest-progress"></div><details id="mission-extra"><summary>VER DETALHES</summary><p id="quest-desc">Aproxime-se do dragão e monte nele.</p><div id="quest-guide" aria-live="off">SIGA O OBJETIVO MARCADO NO MAPA</div></details><div id="quest-hint" aria-live="off">Siga o objetivo no mapa</div></div>
@@ -102,14 +103,14 @@
     <div class="menu-frame">
       <header class="menu-header">
         <div class="menu-logo"><span class="menu-logo-glyph" aria-hidden="true">✦</span>
-          <span><strong>ASAS DE BRUMÁRIA</strong><small>UMA AVENTURA NAS ALTURAS</small></span>
+          <span><strong>BRUMÁRIA</strong><small>ELO DOS DRAGÕES</small></span>
         </div>
         <span class="menu-edition"><span aria-hidden="true">◆</span> CAPÍTULO · SETE ILHAS</span>
       </header>
       <div class="menu-main">
         <div class="menu-hero modal-content">
-          <div class="menu-eyebrow"><span class="menu-eyebrow-line"></span> ENTRE NO MUNDO DE BRUMÁRIA</div>
-          <h1 id="menu-title">ASAS <span>DE</span><br><em>BRUMÁRIA</em></h1>
+          <div class="menu-eyebrow"><span class="menu-eyebrow-line"></span> BRUMÁRIA · ALÉM DA NÉVOA</div>
+          <h1 id="menu-title">ELO <span>DOS</span><br><em>DRAGÕES</em></h1>
           <div class="menu-rule"><span>✦</span></div>
           <p class="menu-description">Além da névoa, sete ilhas aguardam seu chamado. Encontre seu dragão, domine os céus e escreva sua própria lenda.</p>
           <div class="menu-tags"><span>EXPLORE</span><span>VOE</span><span>PROTEJA</span></div>

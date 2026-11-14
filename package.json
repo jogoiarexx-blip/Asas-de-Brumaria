@@ -1,9 +1,9 @@
 {
   "name": "asas-de-brumaria",
-  "version": "1.5.8",
+  "version": "1.6.0",
   "private": true,
   "type": "module",
-  "description": "Protótipo 3D de aventura, montaria e missões com dragões feito em Three.js",
+  "description": "Brumária: Elo dos Dragões — aventura 3D de voo, laços e missões com dragões feita em Three.js",
   "scripts": {
     "start": "python start_game.py",
     "check": "node tests/check-project.mjs && node --test tests/*.test.js && node tests/check-species-assets.mjs",

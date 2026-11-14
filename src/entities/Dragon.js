@@ -338,7 +338,8 @@ export class Dragon {
     this.colorMaterials.scaleMat.color.setHex(colors[1]).multiplyScalar(1.25);
     this.colorMaterials.spotMat.color.setHex(colors[5]).lerp(new THREE.Color(colors[1]),.45);
     this.accentLight.color.setHex(id==='furia_luz'?0xb9ebff:id==='brasa'?0xffa35d:id==='raio'?0x87c8ff:0x69eee5);
-    this.accentLight.intensity=id==='furia_luz'?6:8;
+    this.accentBase=id==='furia_luz'?6:8;
+    this.accentLight.intensity=this.accentEnabled===false?0:this.accentBase;
     if(this.externalDragonModel){
       // Remember which species decorations belong to the current selection;
       // keep them hidden until the player restores the procedural dragon.
@@ -353,6 +354,12 @@ export class Dragon {
     const previous=this.stats?.maxEnergy??100;
     this.stats=stats;
     this.energy=Math.max(0,Math.min(stats.maxEnergy,this.energy+(stats.maxEnergy-previous)));
+  }
+  /** Liga/desliga o brilho do dragão só por intensidade (sem mudar a contagem
+   * de luzes da cena, o que recompilaria todos os shaders). */
+  setAccentEnabled(enabled){
+    this.accentEnabled=!!enabled;
+    if(this.accentLight)this.accentLight.intensity=this.accentEnabled?(this.accentBase??this.accentLight.intensity??8):0;
   }
   forward() { const {x,z}=forwardFromYaw(this.yaw);return new THREE.Vector3(x,0,z); }
   setWind(strength){this.windStrength=clamp(Number.isFinite(strength)?strength:0,0,1);}

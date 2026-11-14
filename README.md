@@ -1,3 +1,12 @@
+# Brumária: Elo dos Dragões
+
+> Antigo **Asas de Brumária**. Aventura 3D de voo, laços e missões com dragões em Three.js.
+> Plano de evolução e auditoria: [`docs/EVOLUCAO.md`](docs/EVOLUCAO.md).
+
+## v1.6.0 — Voo sem engasgos e novo céu
+
+O ajuste automático de gráficos não recompila mais shaders durante o voo, as texturas do terreno são decodificadas fora da thread principal e os modelos carregados em jogo são preparados na GPU antes de aparecer. O céu ganhou degradê, bruma e picos distantes; o mar reflete o céu. Detalhes e medições em `CHANGELOG.md` e `docs/EVOLUCAO.md`.
+
 ## v1.5.8 — IA de NPCs e passeios pela ilha
 
 Os seis moradores do Refúgio agora têm rotinas próprias: passeiam pela ilha, escolhem pequenos trajetos, param para descansar, retornam ao posto e olham para o jogador quando ele se aproxima. Astrid, Forja e Cabeça de Vento alternam animações de **Idle** e **Walking** com transição suave e caminhada *in place*, sem deslocar duas vezes o modelo; os outros NPCs movem pernas e braços procedurais. Cada NPC usa o terreno real, desvia dos obstáculos e atualiza seu colisor na grade espacial; o diálogo, o rótulo e os contratos seguem a posição atual. Há limites de patrulha por profissão e desativação de IA/animadores distantes para poupar CPU. Os saves continuam com os mesmos IDs e nenhum modelo GLB é repetido.

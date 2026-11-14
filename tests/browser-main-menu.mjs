@@ -22,7 +22,7 @@ try{
   assert.ok(await page.locator('#menu-title').isVisible());
   assert.ok(await page.locator('#menu-settings-btn').isVisible());
   assert.ok(await page.locator('#start-screen .menu-art').isVisible());
-  assert.ok((await page.locator('#menu-title').innerText()).includes('BRUMÁRIA'));
+  assert.ok((await page.locator('#menu-title').innerText()).includes('DRAGÕES'));
   assert.equal(await page.locator('#start-btn-label').innerText(),'INICIAR AVENTURA');
   const before=await page.evaluate(()=>{
     const game=window.__menuQA;

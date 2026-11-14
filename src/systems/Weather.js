@@ -40,13 +40,15 @@ export class Weather {
     if(previous!==this.state.mode)this.weatherChanges++;
     const desired=this.mode;
     const lighting=skyLighting(dayPhase??.5,desired);
-    this.scene.background.lerp(new THREE.Color(lighting.sky),Math.min(1,dt*.6));
-    this.scene.fog.color.lerp(new THREE.Color(lighting.fog),Math.min(1,dt*.6));
+    // v1.6.0: cores reutilizadas (antes: dois THREE.Color novos por quadro).
+    this._skyTarget??=new THREE.Color();this._fogTarget??=new THREE.Color();
+    this.scene.background.lerp(this._skyTarget.setHex(lighting.sky),Math.min(1,dt*.6));
+    this.scene.fog.color.lerp(this._fogTarget.setHex(lighting.fog),Math.min(1,dt*.6));
     this.scene.fog.density=THREE.MathUtils.damp(this.scene.fog.density,desired.rain?0.00255:0.00165,.5,dt);
     this.world.sun.intensity=THREE.MathUtils.damp(this.world.sun.intensity,lighting.sun,.55,dt);
     this.world.sky.intensity=THREE.MathUtils.damp(this.world.sky.intensity,lighting.hemisphere,.55,dt);
     this.world.cloudWind=1+desired.wind*3;
-    this.world.sun.color.lerp(new THREE.Color(lighting.sunColor),Math.min(1,dt*.65));
+    this._sunTarget??=new THREE.Color();this.world.sun.color.lerp(this._sunTarget.setHex(lighting.sunColor),Math.min(1,dt*.65));
     const wet=desired.rain>0;
     this.rain.visible=wet;
     if(wet){

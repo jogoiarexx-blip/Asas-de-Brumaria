@@ -26,13 +26,32 @@ export class GraphicsQuality {
     this.resolutionScale=1;this.shadowsAllowed=true;
     this.autoPixelScale=1;this.mediumSamples=0;this.recoverySamples=0;
     this.slowSamples=0;this.fastSamples=0;this.cooldown=0;
+    // v1.6.0 — "iluminação travada": depois da preparação gráfica, o ajuste
+    // automático de FPS não pode mudar shadowMap.enabled nem a quantidade de
+    // luzes, pois isso recompila TODOS os shaders da cena em pleno voo.
+    this.lightingLocked=false;this.shadowsActive=false;
     this.apply();
   }
-  apply(){
+  get wantsShadows(){return this.tier!=='economy'&&this.shadowsAllowed;}
+  /** Trava o conjunto de shaders atual. `apply()` passa a ligar/desligar as
+   * sombras apenas por uniformes (sem recompilar). */
+  lockLighting(locked=true){this.lightingLocked=!!locked;return this;}
+  apply({relock=false}={}){
     // Fine adaptive step: keep meshes, shadows, materials and texture detail;
     // adjust only GPU fill rate before selecting a lower-quality tier.
     this.renderer.setPixelRatio(pixelRatioFor(this.tier,this.deviceRatio)*this.resolutionScale*this.autoPixelScale);
-    this.renderer.shadowMap.enabled=this.tier!=='economy'&&this.shadowsAllowed;
+    if(this.lightingLocked&&!relock){
+      // Shaders compilados com sombra: pausa o passe de sombra (autoUpdate) e o
+      // jogo zera a intensidade. Compilados sem sombra: permanecem sem sombra
+      // até uma troca manual (G) ou o próximo carregamento.
+      this.shadowsActive=this.wantsShadows&&this.renderer.shadowMap.enabled;
+      this.renderer.shadowMap.autoUpdate=this.shadowsActive;
+      if(this.shadowsActive)this.renderer.shadowMap.needsUpdate=true;
+      return;
+    }
+    this.renderer.shadowMap.enabled=this.wantsShadows;
+    this.renderer.shadowMap.autoUpdate=true;
+    this.shadowsActive=this.wantsShadows;
     this.renderer.shadowMap.needsUpdate=true;
   }
   get label(){return `${this.mode==='auto'?'AUTO · ':''}${GRAPHICS_LABELS[this.tier]}`;}
@@ -44,7 +63,8 @@ export class GraphicsQuality {
     this.slowSamples=0;this.fastSamples=0;this.cooldown=10;
     this.mediumSamples=0;this.recoverySamples=0;this.autoPixelScale=1;
     try{this.store?.setItem('asas-brumaria-graphics',this.mode);}catch{}
-    this.apply();return this.label;
+    // Escolha manual: única troca autorizada a recompilar shaders.
+    this.apply({relock:true});return this.label;
   }
   setDevice(coarse,memory){this.coarse=coarse;this.memory=memory;}
   sample(fps){

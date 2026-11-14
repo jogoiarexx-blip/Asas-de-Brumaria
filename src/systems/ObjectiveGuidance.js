@@ -25,7 +25,7 @@ export function missionNextStep({stage=0,progress=0,riding=false,carriedIndex=-1
   if(activeContractType==='brasas')return 'BALIZAS DE FOGO: voe até o farol laranja, mire e pressione F. Depois volte para Suri.';
   if(activeContract)return 'CONTRATO DIÁRIO: siga o destino do minimapa e retorne ao morador.';
   switch(stage){
-    case 0:return riding?'MONTARIA PRONTA: descubra os aros da próxima missão.':'ENCONTRE NIMBO: aproxime-se e pressione E para montar.';
+    case 0:return riding?'MONTARIA PRONTA: descubra os aros da próxima missão.':'ENCONTRE SEU DRAGÃO: aproxime-se e pressione E para montar.';
     case 1:return `VOO: atravesse o ${Math.max(1,progress+1)}º aro brilhante · ESPAÇO sobe, CTRL desce.`;
     case 2:return 'RUNAS: voe até o cristal luminoso indicado no minimapa.';
     case 3:return 'ALVOS SOMBRIOS: alinhe a mira e pressione F para atacar.';

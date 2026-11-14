@@ -80,6 +80,11 @@ export class UI {
     });
   }
   renderStable(game){
+    // v1.6.0: o estábulo fechado não é reconstruído a cada abate/recompensa
+    // (isso refazia dezenas de nós do DOM em pleno combate). Abrir o estábulo
+    // sempre chama renderStable com o painel já visível.
+    if(this.stable?.classList?.contains('hidden')){this.stableDirty=true;return;}
+    this.stableDirty=false;
     const p=game.progression,atVillage=game.nearStable();
     document.getElementById('daily-day').textContent=`DIA ${game.dayNight.state.day}`;
     const board=document.getElementById('daily-board');board.replaceChildren();

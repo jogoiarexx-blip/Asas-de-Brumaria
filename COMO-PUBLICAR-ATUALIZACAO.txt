@@ -1,0 +1,24 @@
+BRUMARIA: ELO DOS DRAGOES — ATUALIZACAO v1.6.0
+
+O ZIP contem somente arquivos novos/alterados, portanto NAO substitui o repositorio inteiro.
+
+PUBLICACAO AUTOMATIZADA NO SEU PC WINDOWS
+1. Instale Git e Node.js (caso ainda nao estejam instalados).
+2. Extraia TODO este ZIP em uma pasta. Nao execute o BAT dentro do ZIP sem extrair.
+3. Clique duas vezes em PUBLICAR-NO-GITHUB.bat.
+4. Se solicitado, autorize o GitHub no navegador/gerenciador de credenciais.
+5. O script clona o repositorio original, aplica o update sem apagar arquivos,
+   verifica sintaxe e roda npm run check. Se os testes falharem, ele PARA.
+6. Antes de publicar, salva a versao anterior numa branch backup/antes-v160-*.
+7. Com testes aprovados, cria um unico commit e envia para main.
+8. Aguarde o GitHub Pages atualizar e confira o site.
+
+Para apenas testar e nao publicar, abra um PowerShell na pasta extraida e execute:
+  powershell -ExecutionPolicy Bypass -File .\publicar-v1.6.0.ps1 -SomenteTestar
+
+Repositorio: https://github.com/jogoiarexx-blip/Asas-de-Brumaria
+Site: https://jogoiarexx-blip.github.io/Asas-de-Brumaria/
+
+Seguranca: nao precisa fornecer senha/token a este chat. O Git utiliza sua
+autenticacao ja existente. Se houver erro ou protecao de branch, o push e
+interrompido e a copia local e preservada para analise.

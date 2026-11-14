@@ -1,3 +1,18 @@
+## v1.6.0 — Brumária: Elo dos Dragões · voo sem engasgos (14/11/2026)
+
+- **Novo nome**: Asas de Brumária passa a se chamar **Brumária: Elo dos Dragões** (menu, HUD, título e scripts). Saves antigos continuam válidos.
+- **Travadas ao atirar/carregar textura corrigidas**: o ajuste automático de qualidade não muda mais `shadowMap.enabled`, `castShadow` nem `light.visible` em pleno voo (isso recompilava todos os shaders). Medido no mesmo roteiro: 39 shaders recompilados → 0.
+- Texturas 2K do terreno decodificadas por `ImageBitmap` fora da thread principal, com intervalo mínimo entre envios: maior quadro travado 268 ms → 36 ms (SwiftShader).
+- Novo `GpuPrewarm`: NPCs em GLB e Montanhas da Sombra sobem uma textura por quadro e compilam shaders antes de aparecer.
+- NPCs (Astrid, Forja, Cabeça de Vento): texturas 2048² PNG → 1024² JPEG. Download 39,1 MB → 10,2 MB, malha e animações intactas.
+- **Novo céu** (`SkyDome`): degradê, bruma no horizonte, halo do sol/lua e picos distantes. Um draw call, sem texturas.
+- **Mar** com reflexo do céu por ângulo de visão e sem a mancha branca estourada do sol.
+- Estábulo fechado não é mais reconstruído a cada abate; clima sem alocações por quadro.
+- HUD: linha de velocidade/altitude/esquiva não se embaralha em voo. Textos que citavam "Nimbo" com outro dragão ativo corrigidos. Favicon embutido (fim do 404 em toda abertura).
+- Three.js r180 publicado em `vendor/`: o GitHub Pages não depende mais das CDNs para abrir.
+- Plano de evolução com capítulos 2 a 5 e auditoria completa em `docs/EVOLUCAO.md`.
+- Testes Node: 582 → 589. Smoke, missões, vila, IA de NPCs e texturas reais em Chromium passando.
+
 ## v1.5.8 — IA de NPCs com patrulha na ilha (02/11/2026)
 
 - Seis personagens receberam rotinas independentes: caminhar, escolher destinos, retornar periodicamente ao ponto de trabalho, descansar e responder ao jogador.

@@ -14,7 +14,9 @@ test('GitHub Pages usa GLTFLoader r180 local com fallback de CDN',()=>{
   const gltf=read('../src/entities/dragonAssetLoader.js');
   const loader=read('../vendor/addons/loaders/GLTFLoader.js');
   const utils=read('../vendor/addons/utils/BufferGeometryUtils.js');
-  assert.match(main,/location\.hostname\.endsWith/);
+  // v1.6.0: o Three.js passa a ser publicado em /vendor e é sempre a 1ª opção.
+  assert.match(main,/new URL\('\.\.\/vendor\/three\.module\.js',import\.meta\.url\)\.href,/);
+  assert.match(read('../vendor/three.module.js'),/three\.core\.js/);
   assert.match(gltf,/const localLoader=new URL\('\.\.\/\.\.\/vendor\/addons\/loaders\/GLTFLoader\.js'/);
   assert.match(gltf,/const urls=\[localLoader,\.\.\.mirrors\]/);
   assert.match(loader,/export \{ GLTFLoader \}/);

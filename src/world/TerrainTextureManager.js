@@ -31,6 +31,30 @@ export function desiredTerrainKinds(observer,islands,previous=new Set()){
     (previous.has(terrainKind(i))?TERRAIN_LOD.lowLeave:TERRAIN_LOD.lowEnter))
     .map(terrainKind));
 }
+/** v1.6.0 — decodifica o WebP fora da thread principal. Com HTMLImageElement o
+ * navegador só decodifica no texImage2D, travando o quadro (medido: 120–470 ms
+ * por mapa 2K em SwiftShader contra ~45 ms com ImageBitmap já decodificado).
+ * Sem createImageBitmap (navegadores antigos) mantém o TextureLoader original. */
+export function createTerrainLoader(){
+  const fallback=new THREE.TextureLoader();
+  if(typeof createImageBitmap!=='function'||typeof THREE.ImageBitmapLoader!=='function')return fallback;
+  const bitmaps=new THREE.ImageBitmapLoader();
+  // ImageBitmap ignora UNPACK_FLIP_Y: a orientação é resolvida na decodificação.
+  bitmaps.setOptions({imageOrientation:'flipY',premultiplyAlpha:'none',colorSpaceConversion:'none'});
+  return {
+    usesImageBitmap:true,
+    async loadAsync(url){
+      try{
+        const texture=new THREE.Texture(await bitmaps.loadAsync(url));
+        texture.flipY=false;texture.needsUpdate=true;
+        return texture;
+      }catch{return fallback.loadAsync(url);}
+    }
+  };
+}
+/** Intervalo mínimo entre dois envios de textura à GPU: nunca dois mapas 2K
+ * em quadros vizinhos. */
+export const TERRAIN_UPLOAD_GAP_MS=140;
 const deferIdle=callback=>{
   if(typeof globalThis.requestIdleCallback==='function')
     globalThis.requestIdleCallback(callback,{timeout:3500});
@@ -40,7 +64,10 @@ const deferIdle=callback=>{
 export class TerrainTextureManager {
   constructor(renderer=null,{loader=null,idle=null}={}){
     this.renderer=renderer;
-    this.loader=loader??new THREE.TextureLoader();
+    this.loader=loader??createTerrainLoader();
+    this.uploadGap=loader?0:TERRAIN_UPLOAD_GAP_MS;this.lastUpload=-Infinity;
+    // Conjunto de shaders fixo durante o voo: ver setQuality().
+    this.normalSlot=null;
     this.scheduleIdle=idle??deferIdle;
     this.placeholder=new THREE.DataTexture(new Uint8Array([255,255,255,255]),1,1);
     this.placeholder.colorSpace=THREE.SRGBColorSpace;
@@ -121,12 +148,18 @@ export class TerrainTextureManager {
       if(after>before)this.stats.upgrades++;
       if(after<before)this.stats.downgrades++;
     }
-    const normal=(this.quality==='quality'
-      ?(level==='desktop'?this.loading.get(textureFile(kind,'normal','desktop')):null)??this.neutralNormal
-      :null);
-    if(material.normalMap!==normal){
-      material.normalMap=normal;material.needsUpdate=true;
-    }
+    const normal=this._normalFor(this.quality==='quality'&&level==='desktop'
+      ?this.loading.get(textureFile(kind,'normal','desktop')):null);
+    this._setNormal(material,normal);
+  }
+  /** Com o slot ativo sempre há um normalMap (real ou neutro 1×1): o define
+   * USE_NORMALMAP nunca muda em pleno jogo e nenhum programa é recompilado. */
+  _normalFor(real=null){return this.normalSlot?(real??this.neutralNormal):null;}
+  _setNormal(material,normal){
+    if(material.normalMap===normal)return;
+    const defineChanged=!material.normalMap!==!normal;
+    material.normalMap=normal;
+    if(defineChanged)material.needsUpdate=true;
   }
   _attachTexture(kind,channel,tier,texture){
     for(const [id,entry] of this.registrations){
@@ -170,6 +203,11 @@ export class TerrainTextureManager {
             if(deadline&&!deadline.didTimeout&&deadline.timeRemaining()<9){
               this.scheduleIdle(warm);return;
             }
+            const clock=typeof performance!=='undefined'?performance.now():Date.now();
+            if(this.uploadGap>0&&clock-this.lastUpload<this.uploadGap){
+              setTimeout(()=>this.scheduleIdle(warm),this.uploadGap-(clock-this.lastUpload));return;
+            }
+            this.lastUpload=clock;
             if(!this._desiredURLs().has(job.url)){
               texture.dispose();this.stats.discarded++;resolve();return;
             }
@@ -215,8 +253,7 @@ export class TerrainTextureManager {
       const material=this.registrations.get(id)?.material;
       if(!material)return;
       material.map=this.placeholder;material.color.setScalar(1);
-      const normal=this.quality==='quality'?this.neutralNormal:null;
-      if(material.normalMap!==normal){material.normalMap=normal;material.needsUpdate=true;}
+      this._setNormal(material,this._normalFor());
       this.scheduleIdle(()=>this._pruneUnused());
     },TERRAIN_LOD.evictionSeconds*1000);
     timer.unref?.();
@@ -250,22 +287,26 @@ export class TerrainTextureManager {
       const preview=entry&&this.loading.get(textureFile(entry.kind,'diff','low'));
       if(entry&&preview&&entry.material.map!==preview){
         entry.material.map=preview;entry.material.color.setScalar(1.65);
-        entry.material.normalMap=this.quality==='quality'?this.neutralNormal:null;
-        entry.material.needsUpdate=true;
+        this._setNormal(entry.material,this._normalFor());
         this.scheduleIdle(()=>this._pruneUnused());
       }
       this._retire(id);
     }
     if(this.queue.length)this._pump();
   }
-  setQuality(quality){
+  /** `relock:true` (troca manual de qualidade ou primeira chamada) redefine se o
+   * terreno usa normal map; ajustes automáticos de FPS mantêm o slot e só
+   * trocam texturas — zero compilação de shader durante o voo. */
+  setQuality(quality,{relock=false}={}){
     const tier=textureTier(quality);
-    if(this.quality===quality&&this.tier===tier)return;
-    this.quality=quality;this.tier=tier;this.serial++;
+    const slot=relock||this.normalSlot===null?quality==='quality':this.normalSlot;
+    if(this.quality===quality&&this.tier===tier&&slot===this.normalSlot)return;
+    this.quality=quality;this.tier=tier;this.normalSlot=slot;this.serial++;
     // Avoid a late normal-map shader compilation on first island approach.
     for(const entry of this.registrations.values()){
-      const normal=quality==='quality'?this.neutralNormal:null;
-      if(entry.material.normalMap!==normal){entry.material.normalMap=normal;entry.material.needsUpdate=true;}
+      const current=entry.material.normalMap;
+      const real=quality==='quality'&&current&&current!==this.neutralNormal?current:null;
+      this._setNormal(entry.material,this._normalFor(real));
     }
     if(this.focus)this.updateFocus(this.focus,this.islands);
   }

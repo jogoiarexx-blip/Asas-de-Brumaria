@@ -1,12 +1,10 @@
 // A Three.js dependency can be cached locally on first run by start_game.py.
 // For static hosting without the local cache, test CDN mirrors before locking the import map.
 const THREE_VERSION='0.180.0';
-// GitHub Pages serves repository source without the optional runtime cache.
-// Do not probe a missing /vendor/three.module.js (404 in every clean deploy).
-// Local Python launcher still prefers its cached copy for offline use.
-const IS_STATIC_PAGES=location.hostname.endsWith('.github.io');
+// v1.6.0: o Three.js r180 (MIT) é publicado junto com o jogo em /vendor.
+// O jogo abre mesmo com as CDNs fora do ar; elas ficam apenas como reserva.
 const THREE_CANDIDATES=[
-  ...(!IS_STATIC_PAGES?[new URL('../vendor/three.module.js',import.meta.url).href]:[]),
+  new URL('../vendor/three.module.js',import.meta.url).href,
   `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/build/three.module.js`,
   `https://unpkg.com/three@${THREE_VERSION}/build/three.module.js`,
 ];
@@ -22,7 +20,7 @@ async function resolveThree(){
       if(!response.ok)continue;
       // The r180 browser module imports ./three.core.js. A half-populated
       // offline cache must never mask fully working CDN mirrors.
-      if(!IS_STATIC_PAGES&&url===THREE_CANDIDATES[0]){
+      if(url===THREE_CANDIDATES[0]){
         const core=new URL('../vendor/three.core.js',import.meta.url).href;
         const companion=await fetch(core,{cache:'force-cache',signal:controller.signal});
         if(!companion.ok)continue;
@@ -55,7 +53,7 @@ function checkWebGL(){
     const {Game}=await import('./game/Game.js');
     new Game();
   }catch(error){
-    console.error('Falha ao iniciar Asas de Brumária:',error);
+    console.error('Falha ao iniciar Brumária: Elo dos Dragões:',error);
     const panel=document.getElementById('fatal');
     panel.classList.remove('hidden');
     panel.innerHTML='<h2>Não foi possível abrir o jogo</h2><p>Abra com <b>INICIAR-JOGO.bat</b> ou <b>python start_game.py</b>. Use uma conexão para baixar o Three.js na primeira execução; depois ele pode ser reutilizado offline. Para erro de WebGL, habilite aceleração gráfica. Consulte o arquivo de instruções.</p><pre></pre>';

@@ -94,7 +94,10 @@ export class VillageNPCs {
     if(!candidate)return;
     const id=candidate.spec.id,config=VILLAGE_MODEL_CATALOG[id];
     candidate.modelStatus='loading';
-    this.modelLoading=loadVillageModel(config).then(model=>{
+    this.modelLoading=loadVillageModel(config).then(async model=>{
+      // v1.6.0: sobe as texturas (uma por quadro) e compila os shaders ANTES de
+      // o modelo entrar na cena; antes disso o NPC procedural continua visível.
+      try{await this.prewarm?.(model.holder);}catch(error){console.warn('[Vila GLB] Pré-aquecimento ignorado:',error);}
       // Replace ONLY this NPC's fallback, never reuse a scene for another id.
       candidate.root.add(model.holder);
       candidate.model=model;

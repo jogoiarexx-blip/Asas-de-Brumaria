@@ -1,4 +1,4 @@
-# Asas de Brumaria 1.4.3 - Servidor local portatil para Windows 10/11.
+# Brumaria: Elo dos Dragoes 1.6.0 - Servidor local portatil para Windows 10/11.
 # Usa apenas PowerShell + .NET embutidos; nao requer instalar Python ou Node.
 $ErrorActionPreference = 'Stop'
 $root = [System.IO.Path]::GetFullPath($PSScriptRoot)
@@ -51,7 +51,7 @@ foreach ($candidate in 8765..8785) {
 if (!$port) { throw 'Nenhuma porta local disponivel (8765-8785).' }
 $mime = @{'.html'='text/html; charset=utf-8'; '.js'='text/javascript; charset=utf-8'; '.css'='text/css; charset=utf-8'; '.json'='application/json; charset=utf-8'; '.png'='image/png'; '.jpg'='image/jpeg'; '.svg'='image/svg+xml'; '.webp'='image/webp'; '.glb'='model/gltf-binary'}
 $url = "http://127.0.0.1:$port/"
-Write-Host "Asas de Brumaria 1.4.3 - Jogo aberto em $url"
+Write-Host "Brumaria: Elo dos Dragoes 1.6.0 - Jogo aberto em $url"
 Write-Host 'Nao feche esta janela enquanto estiver jogando. Ctrl+C encerra.'
 Start-Process $url
 try {

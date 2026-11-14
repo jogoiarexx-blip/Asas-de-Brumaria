@@ -1,0 +1,8 @@
+BRUMARIA: ELO DOS DRAGOES v1.6.0 - PACOTE DE ATUALIZACAO
+
+Como aplicar:
+1. Extraia este zip POR CIMA da pasta do repositorio Asas-de-Brumaria (aceite substituir).
+2. Envie tudo ao GitHub (commit + push). O GitHub Pages publica sozinho.
+
+Contem somente os arquivos novos ou alterados (31). Nenhum arquivo precisa ser apagado.
+Auditoria e plano de evolucao: docs/EVOLUCAO.md

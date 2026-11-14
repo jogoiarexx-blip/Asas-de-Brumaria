@@ -253,3 +253,6 @@ body:has(#controller-status.connected) .gamepad-help{opacity:.92}
 }
 @media(max-width:370px){.touch-dpad{transform:scale(.84);transform-origin:left bottom}.touch-actions{transform:scale(.87);transform-origin:right bottom}}
 @media(max-height:520px) and (orientation:landscape){.touch-dpad{transform:scale(.75);transform-origin:left bottom}.touch-actions{transform:scale(.77);transform-origin:right bottom}#hud .mission-card{max-height:33dvh}}
+
+/* v1.6.0 — a linha de velocidade/altitude/esquiva não quebra nem se sobrepõe em voo. */
+.stat-row{gap:3px 10px;flex-wrap:wrap}.stat-row>span{white-space:nowrap;min-width:0}.stat-row>span:last-child{overflow:hidden;text-overflow:ellipsis}

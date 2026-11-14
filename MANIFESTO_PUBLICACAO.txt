@@ -1,0 +1,33 @@
+# Arquivos da atualizacao v1.6.0; nao apaga nenhum arquivo do repositorio
+CHANGELOG.md
+INICIAR-JOGO.bat
+JOGAR-WINDOWS.bat
+README.md
+docs/EVOLUCAO.md
+index.html
+npc/Astrid.glb
+npc/cabeça de vento (2).glb
+npc/forja.glb
+package.json
+src/entities/Dragon.js
+src/entities/VillageNPCs.js
+src/game/Game.js
+src/main.js
+src/systems/GpuPrewarm.js
+src/systems/GraphicsQuality.js
+src/systems/ObjectiveGuidance.js
+src/systems/SaveSystem.js
+src/systems/Weather.js
+src/ui/UI.js
+src/ui/style.css
+src/world/SkyDome.js
+src/world/TerrainTextureManager.js
+src/world/World.js
+start_game.py
+start_windows.ps1
+tests/browser-main-menu.mjs
+tests/stable-preview-fury-import.test.js
+tests/stutter-free-v160.test.js
+vendor/three.core.js
+vendor/three.module.js
+LEIA-ME-ATUALIZACAO.txt

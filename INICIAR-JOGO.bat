@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Asas de Brumaria - Servidor do Jogo
+title Brumaria Elo dos Dragoes - Servidor do Jogo
 where py >nul 2>&1
 if %errorlevel%==0 (
     py -3 start_game.py

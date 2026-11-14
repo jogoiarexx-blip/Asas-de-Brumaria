@@ -61,7 +61,7 @@ export class SaveSystem {
     let envelope;
     try{envelope=JSON.parse(text);}catch{return {ok:false,reason:'Arquivo JSON inválido.'};}
     if(!isPlainObject(envelope)||envelope.format!=='asas-de-brumaria-save')
-      return {ok:false,reason:'Este arquivo não é um backup do Asas de Brumária.'};
+      return {ok:false,reason:'Este arquivo não é um backup de Brumária: Elo dos Dragões (antigo Asas de Brumária).'};
     const normalized=normalizeSave(envelope.data);
     if(!normalized)return {ok:false,reason:'Progresso incompatível ou corrompido.'};
     try{
