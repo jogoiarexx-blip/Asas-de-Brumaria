@@ -152,7 +152,7 @@ export class MountainRegion {
       add(deck,new THREE.BoxGeometry(11.7,.18,4.55),plankMat);
       for(let n=-2;n<=2;n++)add(deck,new THREE.BoxGeometry(11.45,.035,.055),keelMat,0,.12,n*.82);
       for(const side of [-1,1]){
-        add(deck,railGeo,trimMat,0,.48,side*2.4).rotation.y=Math.PI/2;
+        add(deck,railGeo,trimMat,0,.48,side*2.4);
         for(let n=-5;n<=5;n+=2)add(deck,new THREE.BoxGeometry(.16,.72,.2),keelMat,n,.15,side*2.4);
         for(let n=0;n<4;n++){
           const pos=-4.4+n*2.9;
