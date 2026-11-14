@@ -6,6 +6,7 @@ import {actorVisualLevel,shouldAnimateActor,enemySimulationStep} from '../system
 import {dragonMeshVisibility} from '../systems/DragonMeshLOD.js';
 import {enemyCombatPlan} from '../systems/EnemyTactics.js';
 import {buildDragonProxy} from './DragonProxy.js';
+import {pushScallopedFan,membraneFromTriangles,boneBetween} from './WingGeometry.js';
 
 // Malha leve e original, com asas de duas juntas, cauda articulada e cabeça animada.
 function enemyModel(color,accent) {
@@ -32,13 +33,16 @@ function enemyModel(color,accent) {
   for(const side of [-1,1]){
     const wing=new THREE.Group();wing.position.set(side*.95,.52,.05);root.add(wing);
     const elbow=new THREE.Group();elbow.position.set(side*2.45,.12,-.4);wing.add(elbow);
-    const wingShape=(points,parent)=>{
-      const vertices=new Float32Array(points.flatMap(p=>[side*p[0],p[1],p[2]]));
-      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(vertices,3));geo.setIndex([0,1,2,0,2,3,0,3,4]);geo.computeVertexNormals();
-      const mesh=new THREE.Mesh(geo,wingSkin);mesh.castShadow=true;parent.add(mesh);
+    // v1.7.2: cada segmento da asa é um leque de membrana com borda
+    // recortada e ossos dos dedos (antes: polígonos lisos de 5 pontos).
+    const wingShape=(points,parent,depth,fingers=[])=>{
+      const mirrored=points.map(p=>[side*p[0],p[1],p[2]]);
+      const mesh=new THREE.Mesh(membraneFromTriangles(pushScallopedFan([],mirrored[0],mirrored.slice(1),depth)),wingSkin);
+      mesh.castShadow=true;parent.add(mesh);
+      for(const index of fingers)parent.add(boneBetween(mirrored[0],mirrored[index],dark,.075,.03));
     };
-    wingShape([[0,0,0],[1.1,.05,-.5],[2.55,0,-.68],[1.85,-.14,1.45],[.6,-.18,1.08]],wing);
-    wingShape([[0,0,0],[2.7,.2,-1.75],[3,.06,0],[2.2,-.18,1.7],[.8,-.13,1.2]],elbow);
+    wingShape([[0,0,0],[1.1,.05,-.5],[2.55,0,-.68],[1.85,-.14,1.45],[.6,-.18,1.08]],wing,[0,.14,.2,0],[3]);
+    wingShape([[0,0,0],[2.7,.2,-1.75],[3.3,.1,-.7],[3.05,.02,.5],[2.2,-.18,1.7],[1.45,-.16,1.78],[.8,-.13,1.2]],elbow,[.1,.18,.2,.2,.16],[1,2,3,4,5]);
     const beam=add(wing,new THREE.CylinderGeometry(.11,.19,2.6,5),main,side*1.18,.12,-.22);
     beam.rotation.z=side*Math.PI/2;
     wings.push({wing,elbow,side});
@@ -51,6 +55,18 @@ function enemyModel(color,accent) {
   }
   const tip=add(tailParent,new THREE.ConeGeometry(.45,1.25,3),wingSkin,0,0,.92);tip.rotation.x=Math.PI/2;
   for(let i=0;i<4;i++) add(root,new THREE.ConeGeometry(.22,.74,4),dark,0,.77,-.5+i*.65);
+  // v1.7.2: pescoço, mandíbula, placas no ventre, garras e crista de cauda.
+  const neck=add(root,new THREE.CylinderGeometry(.5,.78,1.3,7),main,0,.22,-1.55);neck.rotation.x=-1.2;
+  add(head,new THREE.SphereGeometry(1,8,6),dark,0,-.08,-.95,.5,.2,.85);
+  for(const side of [-1,1]){
+    const brow=add(head,new THREE.ConeGeometry(.12,.5,4),dark,side*.5,.78,-.95);brow.rotation.set(-.9,0,-side*.35);
+    const fang=add(head,new THREE.ConeGeometry(.06,.26,4),eye,side*.24,-.2,-1.7);fang.rotation.x=Math.PI;
+    for(let claw=0;claw<3;claw++){
+      const nail=add(root,new THREE.ConeGeometry(.07,.34,4),dark,side*(.72+claw*.13),-1.2,1.02+claw*.03);nail.rotation.x=Math.PI;
+    }
+  }
+  for(let i=0;i<5;i++)add(root,new THREE.BoxGeometry(.78-i*.07,.1,.34),wingSkin,0,-.64+Math.abs(i-2)*.05,-.9+i*.5);
+  for(let i=0;i<3;i++){const fin=add(tail[i],new THREE.ConeGeometry(.14,.5-i*.08,4),dark,0,.3-i*.03,.35);fin.rotation.x=-.25;}
   // Wing markings and layered horn ridges create distinct enemy silhouettes.
   const stripeGeo=new THREE.PlaneGeometry(1.55,.21);
   const stripeMat=new THREE.MeshBasicMaterial({color:accent,side:THREE.DoubleSide,transparent:true,opacity:.55,depthWrite:false});

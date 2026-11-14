@@ -75,7 +75,7 @@ for candidate in ([port] if remote else range(port, port + 20)):
 if server is None:
     raise SystemExit(f'Nao foi possivel iniciar o servidor na porta {port}.')
 url = f'http://127.0.0.1:{port}/'
-print(f'\nBRUMARIA: ELO DOS DRAGOES v1.7.1 - JOGO THREE.JS\nServidor na porta {port}.\nPressione Ctrl+C para encerrar.\n', flush=True)
+print(f'\nBRUMARIA: ELO DOS DRAGOES v1.7.2 - JOGO THREE.JS\nServidor na porta {port}.\nPressione Ctrl+C para encerrar.\n', flush=True)
 if not remote:
     print(f'Acesse: {url}\n', flush=True)
     threading.Timer(1, lambda: webbrowser.open(url)).start()

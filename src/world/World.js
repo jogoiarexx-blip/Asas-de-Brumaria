@@ -1,3 +1,4 @@
+import {batchRigidMeshes} from '../utils/rigBatch.js';
 import * as THREE from 'three';
 import { ISLANDS } from './config.js';
 import { seededRandom, clamp } from '../utils/math.js';
@@ -108,6 +109,7 @@ export class World {
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
     this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds(); this.buildPollen();
+    this.buildCoastRocks(); this.buildPier();
     this.buildCascades(); this.buildLanternGlow();
   }
   makeWaterTexture() {
@@ -378,7 +380,8 @@ export class World {
   buildLanternGlow(){
     const lamps=this.villageLamps??[];
     if(!lamps.length)return;
-    const points=[];for(const lamp of lamps)points.push(lamp.position.x,lamp.position.y,lamp.position.z);
+    const points=[],world=new THREE.Vector3();
+    for(const lamp of lamps){lamp.getWorldPosition(world);points.push(world.x,world.y,world.z);}
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
     const canvas=document.createElement('canvas');canvas.width=canvas.height=64;
     const ctx=canvas.getContext('2d'),g=ctx.createRadialGradient(32,32,0,32,32,32);
@@ -396,6 +399,7 @@ export class World {
     if(n===this._nightGlow)return;
     this._nightGlow=n;
     for(const lamp of this.villageLamps??[])lamp.material.emissiveIntensity=.55+n*2.4;
+    if(this.windowMaterial)this.windowMaterial.emissiveIntensity=n*1.9;
     if(this.lanternGlow)this.lanternGlow.material.opacity=n*.85;
   }
   // Batch static vegetation into five draw groups instead of thousands of scene meshes.
@@ -537,6 +541,31 @@ export class World {
       const base=new THREE.Mesh(new THREE.BoxGeometry(6,4.5,5),wood);base.position.y=2.35;base.castShadow=true;group.add(base);
       const top=new THREE.Mesh(new THREE.ConeGeometry(5.3,3.6,4),roof);top.position.y=5.6;top.rotation.y=Math.PI/4;top.castShadow=true;group.add(top);
       const door=new THREE.Mesh(new THREE.BoxGeometry(1.4,2.7,.08),new THREE.MeshLambertMaterial({color:0x513729}));door.position.set(0,1.35,2.54);group.add(door);
+      // v1.7.2 — casas com alicerce de pedra, esteios, beiral, janelas que
+      // acendem à noite, chaminé e alpendre. Materiais compartilhados entre as
+      // casas e peças fundidas por material: poucas chamadas de desenho a mais.
+      const kit=this.cabinKit??=this.makeCabinKit();
+      // Os detalhes das quatro casas vão para um único grupo, fundido por
+      // material depois: 4 chamadas de desenho para a vila inteira.
+      const detail=this.cabinDetail??=new THREE.Group();
+      const part=(geometry,material,lx,ly,lz)=>{const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x+lx*size,y+ly*size,z+lz*size);mesh.scale.setScalar(size);mesh.castShadow=false;detail.add(mesh);return mesh;};
+      part(kit.foundation,kit.stone,0,.3,0);
+      for(const sx of [-1,1])for(const sz of [-1,1])part(kit.post,kit.darkWood,sx*3.02,2.35,sz*2.52);
+      for(const y of [1.25,3.45])part(kit.beam,kit.darkWood,0,y,2.53);
+      const eaves=part(kit.eaves,kit.roofTrim,0,3.98,0);eaves.rotation.y=Math.PI/4;
+      const cap=part(kit.roofCap,kit.roofTrim,0,7.42,0);cap.rotation.y=Math.PI/4;
+      for(const sx of [-1,1]){
+        part(kit.window,this.windowMaterial,sx*2.05,2.55,2.535);
+        part(kit.windowBarH,kit.darkWood,sx*2.05,2.55,2.56);part(kit.windowBarV,kit.darkWood,sx*2.05,2.55,2.56);
+        part(kit.sill,kit.darkWood,sx*2.05,1.93,2.62);
+        const side=part(kit.window,this.windowMaterial,sx*3.035,2.55,-.3);side.rotation.y=Math.PI/2;
+        part(kit.porchPost,kit.darkWood,sx*1.25,1.5,3.75);
+      }
+      part(kit.doorFrame,kit.darkWood,0,2.78,2.56);
+      part(kit.knob,kit.stone,.45,1.3,2.61);
+      const awning=part(kit.awning,kit.roofTrim,0,3.12,3.2);awning.rotation.x=.22;
+      part(kit.step,kit.stone,0,.16,3.2);
+      part(kit.chimney,kit.stone,1.75,5.9,-1.1);part(kit.chimneyCap,kit.darkWood,1.75,7.28,-1.1);
       this.scene.add(group);this.villageCabins.push(group);
       this.addObstacle(x,y,z,Math.hypot(3*size,2.5*size),7.6*size,'cabin');
       Object.assign(this.obstacles.at(-1),{shape:'box',halfWidth:3*size,halfDepth:2.5*size});
@@ -546,6 +575,7 @@ export class World {
       Object.assign(this.obstacles.at(-1),{shape:'polygon',sides:4,phase:Math.PI/4,radiusTop:.1*size});
     };
     cabin(-12,-14,1);cabin(-22,9,.8);cabin(21,-23,1.13);cabin(-32,-17,.76);
+    batchRigidMeshes(this.cabinDetail);this.cabinDetail.name='DETALHES_DAS_CASAS';this.scene.add(this.cabinDetail);
     const platform=new THREE.Mesh(new THREE.CylinderGeometry(7.2,7.2,.75,24),new THREE.MeshLambertMaterial({color:0x9d7c5c}));
     platform.position.set(8,this.heightAt(8,7)+.17,7);platform.receiveShadow=true;this.scene.add(platform);
     this.surfaces.push({x:8,z:7,radius:7.2,top:platform.position.y+.375});
@@ -559,6 +589,92 @@ export class World {
     const banner=new THREE.Group();banner.position.set(13,this.heightAt(13,-9),-9);
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.13,.18,9,6),brown);pole.position.y=4.5;banner.add(pole);
     const flag=new THREE.Mesh(new THREE.PlaneGeometry(4,2),new THREE.MeshLambertMaterial({color:0xf0ca79,side:THREE.DoubleSide}));flag.position.set(2,7.4,0);banner.add(flag);this.scene.add(banner);
+  }
+  /** Geometrias e materiais das casas, criados uma única vez. */
+  makeCabinKit(){
+    // Janela: escura de dia, âmbar à noite (só emissiveIntensity muda).
+    this.windowMaterial=new THREE.MeshStandardMaterial({color:0x2b3d47,emissive:0xffb85c,emissiveIntensity:0,roughness:.35});
+    return {
+      stone:new THREE.MeshLambertMaterial({color:0x8a8d86}),
+      darkWood:new THREE.MeshLambertMaterial({color:0x5b3f2c}),
+      roofTrim:new THREE.MeshLambertMaterial({color:0x283b42}),
+      foundation:new THREE.BoxGeometry(6.5,.6,5.5),post:new THREE.BoxGeometry(.34,4.5,.34),
+      beam:new THREE.BoxGeometry(6.2,.22,.14),eaves:new THREE.ConeGeometry(5.75,.55,4),roofCap:new THREE.ConeGeometry(.5,.7,4),
+      window:new THREE.BoxGeometry(1.05,1.05,.07),windowBarH:new THREE.BoxGeometry(1.2,.09,.06),windowBarV:new THREE.BoxGeometry(.09,1.2,.06),
+      sill:new THREE.BoxGeometry(1.35,.12,.24),doorFrame:new THREE.BoxGeometry(1.75,.2,.14),knob:new THREE.SphereGeometry(.08,6,5),
+      awning:new THREE.BoxGeometry(3.1,.14,1.5),porchPost:new THREE.BoxGeometry(.2,3,.2),step:new THREE.BoxGeometry(2.3,.32,1.1),
+      chimney:new THREE.BoxGeometry(.95,2.7,.95),chimneyCap:new THREE.BoxGeometry(1.2,.16,1.2)
+    };
+  }
+  /** v1.7.2 — Costa menos "disco perfeito": pedras na arrebentação e dois
+   * pilares de rocha por ilha. Uma única malha instanciada; os pilares têm
+   * colisão de voo, as pedras pequenas ficam fora da área caminhável. */
+  buildCoastRocks(){
+    const perIsland=18,total=ISLANDS.length*perIsland;
+    const geometry=new THREE.DodecahedronGeometry(1,0);
+    const material=new THREE.MeshLambertMaterial({color:0xffffff,flatShading:true});
+    const mesh=new THREE.InstancedMesh(geometry,material,total);
+    const dummy=new THREE.Object3D(),color=new THREE.Color();
+    let index=0;this.seaStacks=[];
+    for(const island of ISLANDS){
+      let seed=Math.floor(island.seed*7919)+17;
+      const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+      const tint=island.biome==='ash'?0x4a4340:island.biome==='crystal'?0x6f8fa3:0x878b84;
+      for(let i=0;i<perIsland;i++){
+        const stack=i<2,angle=rnd()*Math.PI*2;
+        const radius=island.r*(stack?1.2+rnd()*.1:.965+rnd()*.1);
+        const x=island.x+Math.cos(angle)*radius,z=island.z+Math.sin(angle)*radius;
+        const width=stack?2.3+rnd()*1.3:.7+rnd()*1.25,height=stack?9+rnd()*7:.6+rnd()*1.3;
+        const ground=Math.max(this.heightAt(x,z),-.9);
+        dummy.position.set(x,ground+height*(stack?.42:.3)-.25,z);
+        dummy.scale.set(width,height*(stack?.62:1),width*(.75+rnd()*.5));
+        dummy.rotation.set(rnd()*(stack?.07:.3),rnd()*Math.PI,rnd()*(stack?.07:.3));dummy.updateMatrix();
+        mesh.setMatrixAt(index,dummy.matrix);
+        mesh.setColorAt(index,color.setHex(tint).multiplyScalar(.82+rnd()*.34));
+        index++;
+        if(stack){
+          this.addObstacle(x,ground-1,z,width*.95,height+1,'sea-stack');
+          this.seaStacks.push({x,z,radius:width,height});
+        }
+      }
+    }
+    mesh.instanceMatrix.needsUpdate=true;mesh.instanceColor.needsUpdate=true;
+    mesh.castShadow=false;mesh.receiveShadow=true;mesh.name='ROCHAS_DA_COSTA';mesh.computeBoundingSphere();
+    this.coastRocks=mesh;this.scene.add(mesh);
+  }
+  /** v1.7.2 — Píer de madeira e dois barcos no Refúgio (apenas cenário). */
+  buildPier(){
+    const island=ISLANDS[0],angle=1.02,dx=Math.cos(angle),dz=Math.sin(angle);
+    const wood=new THREE.MeshLambertMaterial({color:0x8a6a4a}),dark=new THREE.MeshLambertMaterial({color:0x4f3a2a});
+    const hull=new THREE.MeshLambertMaterial({color:0x7a4b33,side:THREE.DoubleSide}),sail=new THREE.MeshLambertMaterial({color:0xe9dcc0,side:THREE.DoubleSide});
+    const group=new THREE.Group();group.name='PIER_DO_REFUGIO';
+    const start=island.r*.9,length=island.r*.3,deck=.55;
+    group.position.set(island.x+dx*start,deck,island.z+dz*start);group.rotation.y=Math.atan2(dx,dz);
+    const add=(geometry,material,x,y,z)=>{const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);group.add(m);return m;};
+    const plank=new THREE.BoxGeometry(3.2,.2,1.15);
+    for(let z=.6;z<length;z+=1.3)add(plank,wood,0,0,z);
+    const post=new THREE.CylinderGeometry(.2,.24,3.2,6);
+    for(let z=1;z<length;z+=3.9)for(const sx of [-1,1])add(post,dark,sx*1.55,-.9,z);
+    add(new THREE.BoxGeometry(.14,.14,length),dark,-1.55,.75,length/2);
+    for(let z=1;z<length;z+=3.9)add(new THREE.BoxGeometry(.14,.85,.14),dark,-1.55,.4,z);
+    const lampPost=add(new THREE.CylinderGeometry(.09,.12,2.6,6),dark,1.45,1.3,length-.8);lampPost.castShadow=true;
+    const lamp=new THREE.Mesh(new THREE.OctahedronGeometry(.34),new THREE.MeshStandardMaterial({color:0xffce78,emissive:0xff9e42,emissiveIntensity:.9}));
+    lamp.position.set(1.45,2.75,length-.8);group.add(lamp);
+    const hullGeometry=new THREE.SphereGeometry(1,8,5,0,Math.PI*2,Math.PI/2,Math.PI/2);
+    for(const [bx,bz,yaw] of [[3.4,length*.55,.25],[-3.6,length*.82,-.4]]){
+      const boat=new THREE.Group();boat.position.set(bx,-deck-.45,bz);boat.rotation.y=yaw;group.add(boat);
+      const body=new THREE.Mesh(hullGeometry,hull);body.scale.set(1,.75,2.5);boat.add(body);
+      const bench=new THREE.Mesh(new THREE.BoxGeometry(1.7,.1,.4),dark);bench.position.y=-.12;boat.add(bench);
+      const mast=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,3.2,5),dark);mast.position.set(0,1.4,-.3);boat.add(mast);
+      const cloth=new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute([0,.3,-.2, 0,2.9,-.2, 0,.3,1.7],3)),sail);
+      cloth.geometry.computeVertexNormals();boat.add(cloth);
+      batchRigidMeshes(boat);(this.pierBoats??=[]).push(boat);
+    }
+    batchRigidMeshes(group,{preserve:[lamp]});
+    this.scene.add(group);this.pier=group;
+    // A lanterna do píer acende junto com as da vila.
+    lamp.updateWorldMatrix(true,false);
+    (this.villageLamps??=[]).push(lamp);this.pierLamp=lamp;
   }
   buildClouds() {
     const material=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.62,depthWrite:false,fog:true});
@@ -653,17 +769,31 @@ export class World {
       }
     };
     const wing=0xe6e9db,feather=0xc4d2ce,body=0xf7f1de,tail=0xaebec0;
+    // v1.7.2 — ave com volume: corpo em fuso de 6 lados, cabeça, bico, asas em
+    // três painéis com pontas escuras e cauda em leque. Mesma envergadura de
+    // antes (o shader bate as asas pela distância |x| ao corpo).
+    const tipDark=0x58666c,belly=0xfffaf0,beak=0xe8a94e;
     for(const side of [-1,1]){
-      pushTriangle([side*.23,.06,-.32],[side*1.25,.12,-.92],[side*2.96,.02,-.34],wing);
-      pushTriangle([side*.23,.06,-.32],[side*2.96,.02,-.34],[side*2.04,-.06,.70],feather);
-      pushTriangle([side*.28,.09,-.24],[side*1.16,.15,-.75],[side*2.10,.02,.08],body);
-      pushTriangle([side*.08,.03,.61],[side*.52,.05,1.38],[0,-.08,1.27],tail);
+      pushTriangle([side*.2,.1,-.42],[side*1.2,.16,-.95],[side*1.25,.08,.2],wing);
+      pushTriangle([side*.2,.1,-.42],[side*1.25,.08,.2],[side*.22,.04,.34],feather);
+      pushTriangle([side*1.2,.16,-.95],[side*2.2,.1,-.72],[side*2.05,.02,.42],wing);
+      pushTriangle([side*1.2,.16,-.95],[side*2.05,.02,.42],[side*1.25,.08,.2],feather);
+      pushTriangle([side*2.2,.1,-.72],[side*2.96,.02,-.3],[side*2.05,.02,.42],tipDark);
+      pushTriangle([side*.06,.02,.7],[side*.5,.03,1.42],[side*.12,-.02,1.5],tail);
     }
-    pushTriangle([0,.31,-.96],[-.48,-.05,-.36],[.48,-.05,-.36],body);
-    pushTriangle([-.48,-.05,-.36],[0,-.12,.78],[.48,-.05,-.36],body);
-    pushTriangle([0,.31,-.96],[.48,-.05,-.36],[0,-.12,.78],feather);
-    pushTriangle([0,.31,-.96],[0,-.12,.78],[-.48,-.05,-.36],feather);
-    pushTriangle([0,.22,-1.17],[-.17,.14,-.89],[.17,.14,-.89],0xe8bb78);
+    pushTriangle([-.12,-.02,1.5],[0,.02,.7],[.12,-.02,1.5],feather);
+    const ring=[];for(let k=0;k<6;k++){const a=k*Math.PI/3;ring.push([Math.cos(a)*.3,Math.sin(a)*.24+.02,-.25]);}
+    const nose=[0,.14,-.98],rear=[0,0,.82];
+    for(let k=0;k<6;k++){
+      const a=ring[k],b=ring[(k+1)%6],shade=a[1]+b[1]>.1?body:belly;
+      pushTriangle(nose,b,a,shade);pushTriangle(rear,a,b,k%2?feather:shade);
+    }
+    pushTriangle([0,.34,-.92],[-.15,.16,-1.02],[.15,.16,-1.02],body);
+    pushTriangle([0,.34,-.92],[.15,.16,-1.02],[0,.2,-.66],body);
+    pushTriangle([0,.34,-.92],[0,.2,-.66],[-.15,.16,-1.02],body);
+    pushTriangle([0,.2,-1.36],[-.08,.2,-1.0],[.08,.2,-1.0],beak);
+    pushTriangle([0,.2,-1.36],[.08,.2,-1.0],[0,.12,-1.0],beak);
+    pushTriangle([0,.2,-1.36],[0,.12,-1.0],[-.08,.2,-1.0],beak);
     const geometry=new THREE.BufferGeometry();
     geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
     geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
@@ -772,7 +902,13 @@ export class World {
       bands[i].material.opacity=(i===0?.28:.17)*(0.86+.14*Math.sin(time*1.3+i));
     }
     if(this.fire)this.fire.scale.y=1+Math.sin(time*9)*.16;
-    if(this.cascadeTexture)this.cascadeTexture.offset.y=(time*.42)%1;
+    // Detalhes acompanham as casas quando elas viram impostor ao longe.
+    if(this.cabinDetail&&this.villageCabins[0])this.cabinDetail.visible=this.villageCabins[0].visible;
+    // Barcos balançam de leve: duas rotações por quadro, sem alocação.
+    if(this.pierBoats)for(let i=0;i<this.pierBoats.length;i++){const boat=this.pierBoats[i];boat.rotation.z=Math.sin(time*.9+i*2.1)*.07;boat.rotation.x=Math.sin(time*.7+i)*.035;}
+    // v1.7.2: V cresce morro abaixo; deslocar no sentido negativo faz a água
+    // descer (antes ela subia a encosta).
+    if(this.cascadeTexture)this.cascadeTexture.offset.y=1-(time*.42)%1;
     const elapsed=Math.max(0,dt);
     this.cloudTravel+=elapsed*this.cloudWind;this.cloudElapsed+=elapsed;
     if(shouldRefreshClouds(this.cloudElapsed,this.detailTier))this.updateClouds(this.cloudTravel);

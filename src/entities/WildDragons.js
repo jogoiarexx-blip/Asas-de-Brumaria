@@ -7,6 +7,7 @@ import {dragonMeshVisibility} from '../systems/DragonMeshLOD.js';
 import {buildDragonProxy} from './DragonProxy.js';
 import {wildDragonPose} from './CreatureMotion.js';
 import {batchRigidMeshes} from '../utils/rigBatch.js';
+import {wingMembraneGeometry,wingBones} from './WingGeometry.js';
 const shape=(geometry,material,x,y,z,sx=1,sy=1,sz=1)=>{
   const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;return m;
 };
@@ -57,16 +58,35 @@ function buildCreature(spec){
   const wings=[];
   for(const side of [-1,1]){
     const joint=new THREE.Group();joint.position.set(side*.69,2.48,-.1);group.add(joint);
-    const membrane=shape(new THREE.ConeGeometry(1.38,3.35,3),wingMat,side*1.48,0,.37);
-    membrane.rotation.z=side*Math.PI*.50;membrane.rotation.x=.2;joint.add(membrane);
-    const bone=shape(new THREE.CylinderGeometry(.09,.13,2.9,6),spikeMat,side*1.4,.04,.04);
-    bone.rotation.z=side*Math.PI*.5;joint.add(bone);
+    // v1.7.2: membrana em leque com borda recortada e ossos dos dedos
+    // (antes: um cone triangular chapado).
+    const membrane=shape(wingMembraneGeometry(side,3.5,2.35),wingMat,0,0,.1);
+    joint.add(membrane);
+    for(const bone of wingBones(side,spikeMat,3.5,2.35)){bone.position.z+=.1;joint.add(bone);}
     wings.push({joint,side});
+  }
+  // v1.7.2: pescoço, ventre claro, coxas e garras dão volume ao corpo.
+  const bellyMat=new THREE.MeshStandardMaterial({color:bodyColor[5],roughness:.8,flatShading:true});
+  group.add(shape(new THREE.SphereGeometry(1,12,9),bellyMat,0,1.62,.3,.74,.42,1.32));
+  const neck=shape(new THREE.CylinderGeometry(.42,.6,1.15,8),skin,0,2.3,-1.02);neck.rotation.x=-1.05;group.add(neck);
+  for(const side of [-1,1]){
+    group.add(shape(new THREE.SphereGeometry(1,9,7),skin,side*.66,1.55,.95,.42,.62,.62));
+    const fore=shape(new THREE.CylinderGeometry(.17,.21,.95,6),skin,side*.6,.75,-.62);fore.rotation.x=-.12;group.add(fore);
+    group.add(shape(new THREE.SphereGeometry(.22,8,6),face,side*.61,.26,-.76,1.4,.55,1.6));
+    for(let claw=0;claw<3;claw++){
+      const nail=shape(new THREE.ConeGeometry(.055,.24,4),spikeMat,side*(.56+claw*.11),.16,.4+0);nail.rotation.x=-Math.PI/2;group.add(nail);
+      const front=shape(new THREE.ConeGeometry(.05,.22,4),spikeMat,side*(.51+claw*.1),.15,-1.08);front.rotation.x=-Math.PI/2;group.add(front);
+    }
   }
   const tail=new THREE.Group();tail.position.set(0,1.95,1.5);group.add(tail);
   const tailBody=shape(new THREE.ConeGeometry(.36,3.0,7),skin,0,-.22,1.2);
   tailBody.rotation.x=Math.PI/2;tail.add(tailBody);
   tail.add(shape(new THREE.OctahedronGeometry(.48),spikeMat,0,-.15,2.75,1,.5,1.35));
+  for(const side of [-1,1]){
+    const fin=shape(new THREE.ConeGeometry(.42,1.05,3),wingMat,side*.42,-.16,2.5,1,1,.22);
+    fin.rotation.set(Math.PI/2,0,-side*1.05);tail.add(fin);
+  }
+  for(let i=0;i<4;i++){const spine=shape(new THREE.ConeGeometry(.1,.3,4),spikeMat,0,.12-i*.05,.25+i*.55);spine.rotation.x=-.2;tail.add(spine);}
   for(let i=0;i<4;i++)group.add(shape(new THREE.ConeGeometry(.17,.45,5),spikeMat,0,2.62,-.62+i*.61));
   if(spec.species==='brasa'){
     for(const side of [-1,1]){

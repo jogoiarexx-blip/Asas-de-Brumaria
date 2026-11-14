@@ -1,6 +1,6 @@
 # Brumária: Elo dos Dragões — Auditoria e Plano de Evolução
 
-> Antigo **Asas de Brumária**. Documento criado na v1.6.0 e atualizado na v1.7.1 (14/11/2026).
+> Antigo **Asas de Brumária**. Documento criado na v1.6.0 e atualizado na v1.7.2 (14/11/2026).
 > Parte 1: o que a auditoria encontrou e o que já foi corrigido.
 > Parte 2: o que ainda falta corrigir, por prioridade.
 > Parte 3: o plano de evolução, com novos capítulos, fases, chefes e sistemas.
@@ -96,6 +96,14 @@ consciente: sombra a menos em vez de travada a mais.
 - **Estábulo**: jogo primeiro, ferramentas de modelo no fim.
 - Quadro de missões com os nomes reais dos moradores; plaquinhas ocultas no modo foto.
 
+### v1.7.2 — Dragões, casas e ilhas
+
+- Cascata no sentido certo (a água subia a encosta).
+- Dragões selvagens e inimigos com asas de membrana, garras, pescoço e ventre.
+- Casas detalhadas com janelas acesas à noite; píer com barcos; rochas e pilares na costa; aves com volume.
+- Ainda não mexido: o dragão procedural do jogador (só aparece sem os GLBs), o chefe das
+  Montanhas e o formato circular do terreno das ilhas (mudar o relevo afeta colisão e missões).
+
 ---
 
 ## Parte 2 — Pendências encontradas (ainda não corrigidas)
@@ -167,6 +175,7 @@ Checklist "sem travada" para qualquer conteúdo novo:
 | **1.6.1** ✅ | Pausa e cenário | Pausa, cascatas, lanternas noturnas, aurora |
 | **1.7.0** ✅ | Elo | Nível de Elo com assobio, modo foto |
 | **1.7.1** ✅ | Som e estábulo | Trilha generativa, estábulo reorganizado |
+| **1.7.2** ✅ | Visual | Dragões procedurais, casas, costa, píer e aves |
 | **1.7.x** | Fundação | Pendências 1–3, divisão do `Game.js`, Diário do Domador |
 | **1.8** | Capítulo 2 — Recifes do Trovão | 3 ilhas, 4 fases, chefe Leviatã |
 | **1.9** | Capítulo 3 — Floresta Suspensa | 3 ilhas flutuantes, 4 fases, chefe Matriarca |
@@ -285,14 +294,15 @@ Os dragões amigos conquistados nos capítulos anteriores voam em formação e a
 1. **Nuvens volumétricas baratas**: camadas de impostores com o mesmo degradê do céu novo.
 2. **Espuma na costa** por distância ao litoral, no shader do mar.
 3. ~~Cachoeiras na Ilha das Cascatas~~ feito na v1.6.1. Próximo: queda vertical com névoa na base.
-4. **Vila viva**: ~~lanternas ao anoitecer~~ (v1.6.1); faltam janelas acesas, fumaça nas
-   chaminés e barcos atracados.
-5. **Pilares de rocha no mar** entre as ilhas, com colisão, para dar referência de velocidade em voo.
+4. **Vila viva**: ~~lanternas~~ (v1.6.1), ~~janelas acesas e barcos atracados~~ (v1.7.2); falta
+   fumaça nas chaminés.
+5. ~~Pilares de rocha na costa~~ (v1.7.2). Próximo: **contorno irregular das ilhas** (enseadas e
+   penhascos), que exige rever colisão, área caminhável e posições de missão.
 6. ~~Aurora~~ (v1.6.1); faltam **estrelas cadentes** no `SkyDome`.
 
 ### Como medir cada entrega
 
-- `npm run check` — testes de lógica (604 hoje).
+- `npm run check` — testes de lógica (610 hoje).
 - Roteiro de engasgos: shaders compilados e maior envio de textura por fase (tabela da Parte 1).
 - F3 em jogo: FPS, draw calls e triângulos. Tecla B: comparação entre LEVE, EQUILIBRADO e DETALHADO.
 - Critério de aceite de uma fase nova: zero shader compilado em voo, orçamento da tabela

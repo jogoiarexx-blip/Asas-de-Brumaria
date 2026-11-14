@@ -1,3 +1,12 @@
+## v1.7.2 — Dragões, casas e ilhas renovados (14/11/2026)
+
+- **Cascata corrigida**: a água subia a encosta; agora desce até o mar.
+- **Dragões procedurais** (selvagens e inimigos): asas de membrana em leque com borda recortada e ossos dos dedos no lugar dos triângulos chapados; pescoço, ventre claro, coxas, garras, mandíbula, presas, placas e cristas. Juntas e animações não mudaram.
+- **Casas**: alicerce de pedra, esteios, beiral, janelas que acendem à noite, chaminé, alpendre e degrau. Colisão idêntica; peças fundidas por material.
+- **Ilhas**: pedras na arrebentação e dois pilares de rocha por ilha (uma malha instanciada; os pilares têm colisão de voo). **Píer com dois barcos** no Refúgio, com lanterna que acende à noite.
+- **Aves** com corpo, cabeça, bico, asas em três painéis de pontas escuras e cauda em leque.
+- Testes Node: 604 → 610.
+
 ## v1.7.1 — Trilha sonora e estábulo organizado (14/11/2026)
 
 - **Trilha generativa** (`src/systems/Music.js`): acordes e melodia pentatônica criados em tempo real, sem arquivos de áudio. Quatro climas: vila, voo, noite e combate (entra por 7 s após dano, tiro inimigo ou acerto). Controle "Música" nas configurações (padrão 60%); pausa e mudo (M) silenciam.
