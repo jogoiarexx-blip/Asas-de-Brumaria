@@ -21,6 +21,8 @@ uniform vec3 uSunDir;
 uniform vec3 uSunColor;
 uniform float uGlow;
 uniform float uPeaks;
+uniform float uNight;
+uniform float uTime;
 varying vec3 vDir;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){
@@ -38,6 +40,15 @@ void main(){
   col=mix(col,uHorizon,exp(-abs(h)*11.0)*0.6);
   float s=max(dot(d,uSunDir),0.0);
   col+=uSunColor*(pow(s,64.0)*0.5+pow(s,7.0)*0.14)*uGlow;
+  // v1.6.1 — aurora ao norte nas noites: cortinas ondulantes, só matemática.
+  if(uNight>0.02){
+    float ang=atan(d.x,-d.z);
+    float band=smoothstep(0.1,0.28,h)*smoothstep(0.78,0.36,h)*smoothstep(2.0,0.5,abs(ang));
+    float curtain=pow(sin(ang*5.0+uTime*0.11+sin(ang*2.3-uTime*0.07)*1.6)*0.5+0.5,3.0);
+    float rays=0.55+0.45*noise(vec2(ang*42.0,uTime*0.22));
+    vec3 aurora=mix(vec3(0.12,0.92,0.56),vec3(0.46,0.32,0.96),smoothstep(0.24,0.62,h));
+    col+=aurora*band*curtain*rays*uNight*0.3;
+  }
   // Picos distantes: duas camadas, sempre periódicas (ruído no círculo XZ).
   vec2 c=normalize(d.xz+vec2(1e-5));
   float far=0.016+ridge(c,2.6,11.0)*0.085;
@@ -65,7 +76,7 @@ export class SkyDome {
     this.uniforms={
       uZenith:{value:new THREE.Color(0x3f86c9)},uHorizon:{value:new THREE.Color(0xa3e2ed)},
       uSunDir:{value:new THREE.Vector3(0,1,0)},uSunColor:{value:new THREE.Color(0xffe2b0)},
-      uGlow:{value:1},uPeaks:{value:1}
+      uGlow:{value:1},uPeaks:{value:1},uNight:{value:0},uTime:{value:0}
     };
     this.material=new THREE.ShaderMaterial({uniforms:this.uniforms,vertexShader:VERTEX,fragmentShader:FRAGMENT,
       side:THREE.BackSide,depthTest:false,depthWrite:false,fog:false,toneMapped:false});
@@ -76,8 +87,9 @@ export class SkyDome {
     this._dir=new THREE.Vector3();
   }
   /** `sun`/`moon` são os astros existentes; `night` em 0..1 (opacidade das estrelas). */
-  update(camera,{sun=null,moon=null,night=0}={}){
+  update(camera,{sun=null,moon=null,night=0,time=0}={}){
     this.mesh.position.copy(camera.position);
+    this.uniforms.uNight.value=Math.max(0,Math.min(1,night));this.uniforms.uTime.value=time;
     const sky=this.scene.background,fog=this.scene.fog;
     if(sky?.isColor)zenithFromSky(sky,this.uniforms.uZenith.value);
     if(fog?.color)this.uniforms.uHorizon.value.copy(fog.color);

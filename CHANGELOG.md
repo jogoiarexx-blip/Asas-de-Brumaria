@@ -1,3 +1,13 @@
+## v1.6.1 — Pausa, cascatas e noites vivas (14/11/2026)
+
+- **Pausa (Esc)**: com painéis abertos, Esc fecha; com tudo fechado, pausa. Simulação, clima, relógio e áudio param; o progresso é salvo. Botão "PAUSAR" no menu do HUD para celular.
+- **Cascatas** na Ilha das Cascatas: três riachos que descem a encosta até o mar, em uma única malha sem colisão.
+- **Lanternas da vila acendem ao anoitecer** (emissivo + brilho aditivo). Nenhuma luz dinâmica nova, nenhum shader recompilado.
+- **Aurora** ao norte nas noites, calculada no shader do céu.
+- Herói: pacote de texturas 1024² preparado (4× menos memória de vídeo, malha e 16 animações intactas). **Publicação do GLB otimizado pendente**, enquanto o arquivo binário original permanece no GitHub.
+- `tests/browser-performance.mjs` atualizado para as 28 aves do nível EQUILIBRADO.
+- Testes Node: 589 → 593.
+
 ## v1.6.0 — Brumária: Elo dos Dragões · voo sem engasgos (14/11/2026)
 
 - **Novo nome**: Asas de Brumária passa a se chamar **Brumária: Elo dos Dragões** (menu, HUD, título e scripts). Saves antigos continuam válidos.

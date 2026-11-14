@@ -112,6 +112,7 @@ export class Game {
     this.applySceneQuality();
     this.contracts=new VillageContracts(this.savedData?.contracts,this.dayNight.state.day);
     this.villagers=new VillageNPCs(this.scene,this.world);
+    this.paused=false;this.initPauseControls();
     this.villagers.prewarm=root=>prewarmObject(this.renderer,root,{camera:this.camera,scene:this.scene});
     this.wildDragons=new WildDragons(this.scene,this.world,this.wildBonds);
     this.villagers.refresh(this.contracts);
@@ -1121,6 +1122,26 @@ export class Game {
     const next=(current+direction+buttons.length)%buttons.length;
     buttons[next].focus();
   }
+  /** Pausa/retoma a simulação. Só existe depois de iniciar a aventura. */
+  setPaused(paused){
+    const next=!!paused&&this.started&&!this.benchmark?.active;
+    if(next===!!this.paused)return this.paused;
+    this.paused=next;
+    document.getElementById('pause-screen')?.classList.toggle('hidden',!next);
+    document.body.classList.toggle('game-paused',next);
+    this.input.down.clear();this.input.clearActions();
+    try{
+      if(next){this.saveGame();this.audio.ctx?.suspend?.();document.getElementById('pause-resume')?.focus();}
+      else{this.audio.ctx?.resume?.();this.clock.getDelta();}
+    }catch(error){console.warn('Pausa: áudio/salvamento indisponível:',error);}
+    return this.paused;
+  }
+  initPauseControls(){
+    document.getElementById('pause-resume')?.addEventListener('click',()=>this.setPaused(false));
+    document.getElementById('pause-hud')?.addEventListener('click',()=>{document.getElementById('hud-options')?.removeAttribute('open');this.setPaused(true);});
+    document.getElementById('pause-video')?.addEventListener('click',()=>{this.setPaused(false);document.getElementById('gpu-panel')?.classList.remove('hidden');});
+    document.getElementById('pause-save')?.addEventListener('click',()=>{this.saveGame(true);});
+  }
   frame(){
     const realDt=this.clock.getDelta();
     if(shouldSkipRendering({hidden:document.hidden,webglLost:this.webglLost})){
@@ -1143,6 +1164,14 @@ export class Game {
           return;
         }
       }
+    }
+    // v1.6.1 — pausa: nada de IA, física, clima, relógio ou salvamento
+    // automático; a cena continua desenhada parada atrás do painel.
+    if(this.paused){
+      if(this.input.consume('escape')||this.input.consume('start'))this.setPaused(false);
+      this.input.clearActions();
+      this.renderer.render(this.scene,this.camera);
+      return;
     }
     const controllerConnected=this.input.pad.connected;
     if(controllerConnected!==this.controllerWasConnected){
@@ -1168,7 +1197,13 @@ export class Game {
     if(this.started){
       const pulseChord=this.input.pad.connected&&this.input.isDown('t')&&this.input.isDown('f');
       if((!pulseChord&&this.input.consume('t'))||this.input.consume('start'))this.toggleStable();
-      if(this.input.consume('escape')){this.ui.stable.classList.add('hidden');this.ui.hideDialogue();document.getElementById('gpu-panel').classList.add('hidden');}
+      if(this.input.consume('escape')){
+        // v1.6.1: Esc fecha o que estiver aberto; com tudo fechado, pausa.
+        const gpuPanel=document.getElementById('gpu-panel');
+        const anyOpen=!this.ui.stable.classList.contains('hidden')||this.ui.dialogueOpen||!gpuPanel.classList.contains('hidden');
+        this.ui.stable.classList.add('hidden');this.ui.hideDialogue();gpuPanel.classList.add('hidden');
+        if(!anyOpen){this.setPaused(true);return;}
+      }
       if(this.input.consume('p'))this.saveGame(true);
       if(this.input.consume('c')){this.weather.cycle();this.saveGame();this.ui.toast(`Clima: ${this.weather.mode.label}`,3);}
       if(this.input.consume('g'))this.cycleGraphics();
@@ -1282,7 +1317,9 @@ export class Game {
       speed:this.dragon.speed,
       direction:{x:-Math.sin(this.dragon.yaw),z:-Math.cos(this.dragon.yaw)}
     },this.camera);
-    this.skyDome.update(this.camera,{sun:this.world.sunOrb,moon:this.dayNight.moon,night:this.dayNight.starMaterial.opacity/.88});
+    const night=this.dayNight.starMaterial.opacity/.88;
+    this.world.setNightGlow(night);
+    this.skyDome.update(this.camera,{sun:this.world.sunOrb,moon:this.dayNight.moon,night,time:this.elapsed});
     this.renderer.render(this.scene,this.camera);
     const benchmarking=this.benchmark.active;
     if(benchmarking)this.updateBenchmark(realDt);

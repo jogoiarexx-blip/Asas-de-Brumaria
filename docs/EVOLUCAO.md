@@ -1,6 +1,6 @@
 # Brumária: Elo dos Dragões — Auditoria e Plano de Evolução
 
-> Antigo **Asas de Brumária**. Documento criado na v1.6.0 (14/11/2026).
+> Antigo **Asas de Brumária**. Documento criado na v1.6.0 e atualizado na v1.6.1 (14/11/2026).
 > Parte 1: o que a auditoria encontrou e o que já foi corrigido.
 > Parte 2: o que ainda falta corrigir, por prioridade.
 > Parte 3: o plano de evolução, com novos capítulos, fases, chefes e sistemas.
@@ -73,6 +73,14 @@ Com a iluminação travada, quem começa no modo LEVE (aparelhos com até 4 GB) 
 sozinho se o FPS melhorar depois. Basta apertar **G** ou recarregar a página. Foi uma troca
 consciente: sombra a menos em vez de travada a mais.
 
+### v1.6.1 — o que entrou depois
+
+- **Pausa (Esc)** com retomar, vídeo/áudio e salvar. Com painéis abertos, Esc ainda fecha primeiro.
+- **Cascatas** na Ilha das Cascatas (1 draw call, sem colisão).
+- **Lanternas da vila acendem ao anoitecer** e **aurora** ao norte nas noites.
+- Texturas do herói em 1024² (4× menos memória de vídeo) preparadas; substituição do GLB no GitHub pendente.
+- Teste de desempenho em navegador corrigido (28 aves).
+
 ---
 
 ## Parte 2 — Pendências encontradas (ainda não corrigidas)
@@ -85,10 +93,10 @@ consciente: sombra a menos em vez de travada a mais.
    antes de divulgar. Sugestões que combinam com o mundo: **Véu-Noturno** e **Alva-Aurora** para
    as espécies; **Íris** para a exploradora. O jogo já tem espécies originais (Nimbo, Brasa,
    Raio) que podem virar as protagonistas.
-2. **Dragões e herói ainda pesam 10–12 MB cada** (`furia-da-noite.glb`, `furia-da-luz.glb`,
-   `personagem_animado_montaria.glb`), também com 3 texturas 2048². O mesmo tratamento dos NPCs
-   reduziria ~33 MB para ~8 MB. Não foi feito agora porque esses arquivos têm conferência de
-   integridade (`asset-qa.json`) e variantes mobile ligadas aos testes.
+2. **Dragões e herói ainda pesam ~10 MB cada.** A v1.6.1 mostrou que o peso é da **malha e das
+   animações**, não das texturas (reduzir as do herói só levou o arquivo de 10,1 para 9,8 MB). O caminho
+   é compressão Meshopt + simplificação de malha, que exige publicar o decodificador e
+   regenerar as variantes mobile e o `asset-qa.json` juntos.
 3. **Playtest em aparelho real.** Falta medir FPS num celular intermediário e num PC com vídeo
    integrado. O painel F3 e o benchmark (B) já existem para isso.
 
@@ -98,21 +106,17 @@ consciente: sombra a menos em vez de travada a mais.
    Dividir em `CombatController`, `ExpeditionController` e `CameraRig` antes do Capítulo 2.
 5. **Sem música.** Todo o áudio é sintetizado (efeitos e ambiente). Uma trilha por bioma muda
    muito a percepção de qualidade.
-6. **`user-scalable=no`** no viewport impede zoom de acessibilidade no celular.
-7. **Repositório com 186 MB** e 80 MB de histórico. Os 22 arquivos `TESTES-v*.txt` e o README de
+6. **Repositório com 186 MB** e 80 MB de histórico. Os 22 arquivos `TESTES-v*.txt` e o README de
    106 KB podem ir para `docs/historico/`.
-8. **Sombra do sol em 512²** cobrindo 280×280 unidades: serrilhada de perto. Sombra em cascata
+7. **Sombra do sol em 512²** cobrindo 280×280 unidades: serrilhada de perto. Sombra em cascata
    simples (2 níveis) só no modo DETALHADO.
-
-9. **`tests/browser-performance.mjs` está desatualizado**: espera 12 aves, mas a v1.5.6 passou
-   para 14/28/42. Falha igual na v1.5.8 original.
 
 ### Prioridade baixa
 
-10. Texturas em **KTX2/Basis** (4–6× menos memória de vídeo) e malhas com **Meshopt**. Exige
+8. Texturas em **KTX2/Basis** (4–6× menos memória de vídeo) e malhas com **Meshopt**. Exige
     publicar os decodificadores junto.
-11. Cabeça de Vento ainda tem 5,8 MB de geometria: simplificar a malha.
-12. Nome de arquivo `npc/cabeça de vento (2).glb` com acento, espaço e parênteses: renomear
+9. Cabeça de Vento ainda tem 5,8 MB de geometria: simplificar a malha.
+10. Nome de arquivo `npc/cabeça de vento (2).glb` com acento, espaço e parênteses: renomear
     para `cabeca-de-vento.glb`.
 
 ---
@@ -147,7 +151,8 @@ Checklist "sem travada" para qualquer conteúdo novo:
 | Versão | Tema | Conteúdo principal |
 |--------|------|--------------------|
 | **1.6.0** ✅ | Voo sem engasgos | Este documento |
-| **1.6.x** | Fundação | Pendências 1–3, divisão do `Game.js`, pausa e modo foto |
+| **1.6.1** ✅ | Pausa e cenário | Pausa, cascatas, lanternas noturnas, aurora |
+| **1.6.x** | Fundação | Pendências 1–3, divisão do `Game.js`, modo foto, Nível de Elo |
 | **1.7** | Capítulo 2 — Recifes do Trovão | 3 ilhas, 4 fases, chefe Leviatã |
 | **1.8** | Capítulo 3 — Floresta Suspensa | 3 ilhas flutuantes, 4 fases, chefe Matriarca |
 | **1.9** | Capítulo 4 — Geleiras do Silêncio | 2 ilhas + caverna, 4 fases, chefe Colosso |
@@ -160,7 +165,7 @@ O Capítulo 1 é o que existe hoje: sete ilhas, sete missões e a expedição à
 
 ### v1.6.x — Fundação
 
-- **Pausa (Esc)** com retomar, opções e voltar ao menu. **Modo foto**: câmera livre, esconder HUD.
+- ~~Pausa (Esc)~~ feita na v1.6.1. Falta o **modo foto**: câmera livre e esconder HUD.
 - **Nível de Elo** (dá sentido ao novo nome): carinho, voo junto e resgates enchem uma barra
   de 1 a 5. Cada nível libera algo: assobio para chamar o dragão, mergulho rápido, rasante,
   sopro carregado, voo em formação com um dragão selvagem amigo.
@@ -264,15 +269,15 @@ Os dragões amigos conquistados nos capítulos anteriores voam em formação e a
 
 1. **Nuvens volumétricas baratas**: camadas de impostores com o mesmo degradê do céu novo.
 2. **Espuma na costa** por distância ao litoral, no shader do mar.
-3. **Cachoeiras** na Ilha das Cascatas (hoje o nome promete mais do que a ilha mostra).
-4. **Vila viva**: lanternas que acendem ao anoitecer (emissivo, sem luz dinâmica), fumaça nas
-   chaminés, barcos atracados.
+3. ~~Cachoeiras na Ilha das Cascatas~~ feito na v1.6.1. Próximo: queda vertical com névoa na base.
+4. **Vila viva**: ~~lanternas ao anoitecer~~ (v1.6.1); faltam janelas acesas, fumaça nas
+   chaminés e barcos atracados.
 5. **Pilares de rocha no mar** entre as ilhas, com colisão, para dar referência de velocidade em voo.
-6. **Aurora e estrelas cadentes** no `SkyDome`.
+6. ~~Aurora~~ (v1.6.1); faltam **estrelas cadentes** no `SkyDome`.
 
 ### Como medir cada entrega
 
-- `npm run check` — testes de lógica (589 hoje).
+- `npm run check` — testes de lógica (593 hoje).
 - Roteiro de engasgos: shaders compilados e maior envio de textura por fase (tabela da Parte 1).
 - F3 em jogo: FPS, draw calls e triângulos. Tecla B: comparação entre LEVE, EQUILIBRADO e DETALHADO.
 - Critério de aceite de uma fase nova: zero shader compilado em voo, orçamento da tabela

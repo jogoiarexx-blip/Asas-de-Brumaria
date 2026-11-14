@@ -108,6 +108,7 @@ export class World {
     for (const island of ISLANDS) this.buildIsland(island);
     this.flushFoliage();
     this.buildCoastalDetails(); this.buildWildGrass(); this.buildWildflowers(); this.buildBiomeAccents(); this.buildVillage(); this.buildVillageProps(); this.buildClouds(); this.buildSeabirds(); this.buildPollen();
+    this.buildCascades(); this.buildLanternGlow();
   }
   makeWaterTexture() {
     const canvas=document.createElement('canvas');canvas.width=384;canvas.height=384;
@@ -318,8 +319,84 @@ export class World {
       post.position.set(x,y+1.7,z);post.castShadow=true;this.scene.add(post);
       const lamp=new THREE.Mesh(new THREE.OctahedronGeometry(.46),new THREE.MeshStandardMaterial({color:0xffce78,emissive:0xff9e42,emissiveIntensity:.9}));
       lamp.position.set(x,y+3.43,z);this.scene.add(lamp);
+      (this.villageLamps??=[]).push(lamp);
       this.addObstacle(x,y,z,.33,3.55,'post');
     }
+  }
+  /** v1.6.1 — Cascatas da Ilha das Cascatas: três riachos que descem a encosta
+   * acompanhando o relevo até o mar. Uma única malha (1 draw call), textura
+   * procedural rolando; sem colisão, sombra ou partículas. */
+  buildCascades(){
+    const island=ISLANDS.find(i=>i.name==='Ilha das Cascatas');
+    if(!island)return;
+    const canvas=document.createElement('canvas');canvas.width=64;canvas.height=256;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='rgba(96,186,226,.7)';ctx.fillRect(0,0,64,256); // lâmina d'água
+    const edge=ctx.createLinearGradient(0,0,64,0);edge.addColorStop(0,'rgba(255,255,255,.75)');edge.addColorStop(.16,'rgba(255,255,255,0)');edge.addColorStop(.84,'rgba(255,255,255,0)');edge.addColorStop(1,'rgba(255,255,255,.75)');
+    ctx.fillStyle=edge;ctx.fillRect(0,0,64,256); // espuma nas margens
+    let seed=9157;const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
+    for(let i=0;i<70;i++){
+      const x=rnd()*64,y=rnd()*256,len=26+rnd()*80,w=1+rnd()*3.2;
+      const g=ctx.createLinearGradient(0,y,0,y+len);
+      g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,`rgba(${225+rnd()*30|0},250,255,${.55+rnd()*.45})`);g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=g;
+      for(const oy of [0,-256,256])ctx.fillRect(x,y+oy,w,len); // emenda vertical contínua
+    }
+    const texture=new THREE.CanvasTexture(canvas);
+    texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.colorSpace=THREE.SRGBColorSpace;
+    this.cascadeTexture=texture;
+    const positions=[],uvs=[],indices=[];
+    for(const angle of [.55,2.5,4.35]){
+      const dx=Math.cos(angle),dz=Math.sin(angle),tx=-dz,tz=dx;
+      let travelled=0,previous=null,base=positions.length/3,rows=0;
+      for(let step=0;step<=64;step++){
+        const radius=island.r*(.16+.84*step/64);
+        const x=island.x+dx*radius+Math.sin(step*.42+angle)*1.4,z=island.z+dz*radius+Math.cos(step*.37+angle)*1.4;
+        const ground=this.heightAt(x,z);
+        if(previous)travelled+=Math.hypot(x-previous.x,z-previous.z,ground-previous.y);
+        previous={x,y:ground,z};
+        const half=.8+1.7*Math.min(1,step/22);
+        const y=Math.max(ground,-.9)+.22;
+        positions.push(x-tx*half,y,z-tz*half,x+tx*half,y,z+tz*half);
+        uvs.push(0,travelled/9,1,travelled/9);rows++;
+        if(ground<-.7)break; // chegou ao mar
+      }
+      for(let r=0;r<rows-1;r++){const i=base+r*2;indices.push(i,i+2,i+1,i+1,i+2,i+3);}
+    }
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+    geometry.setIndex(indices);geometry.computeBoundingSphere();
+    const material=new THREE.MeshBasicMaterial({color:0xc4e8fb,map:texture,transparent:true,opacity:.92,
+      depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
+    this.cascades=new THREE.Mesh(geometry,material);this.cascades.name='CASCATAS';
+    this.cascades.castShadow=false;this.cascades.receiveShadow=false;this.cascades.renderOrder=2;
+    this.scene.add(this.cascades);
+  }
+  /** v1.6.1 — As lanternas da vila acendem ao anoitecer. Só uniformes mudam
+   * (emissivo + opacidade do brilho): nenhuma luz dinâmica nova. */
+  buildLanternGlow(){
+    const lamps=this.villageLamps??[];
+    if(!lamps.length)return;
+    const points=[];for(const lamp of lamps)points.push(lamp.position.x,lamp.position.y,lamp.position.z);
+    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=64;
+    const ctx=canvas.getContext('2d'),g=ctx.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0,'rgba(255,236,190,1)');g.addColorStop(.25,'rgba(255,190,110,.55)');g.addColorStop(1,'rgba(255,150,60,0)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,64,64);
+    const sprite=new THREE.CanvasTexture(canvas);sprite.colorSpace=THREE.SRGBColorSpace;
+    this.lanternGlow=new THREE.Points(geometry,new THREE.PointsMaterial({map:sprite,size:9,sizeAttenuation:true,
+      transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,fog:true}));
+    this.lanternGlow.name='BRILHO_LANTERNAS';this.lanternGlow.frustumCulled=false;this.scene.add(this.lanternGlow);
+    this.setNightGlow(0);
+  }
+  /** `night` em 0..1 (mesma medida das estrelas). */
+  setNightGlow(night=0){
+    const n=THREE.MathUtils.clamp(night,0,1);
+    if(n===this._nightGlow)return;
+    this._nightGlow=n;
+    for(const lamp of this.villageLamps??[])lamp.material.emissiveIntensity=.55+n*2.4;
+    if(this.lanternGlow)this.lanternGlow.material.opacity=n*.85;
   }
   // Batch static vegetation into five draw groups instead of thousands of scene meshes.
   // The collision volumes remain identical to the procedural v0.7 terrain.
@@ -695,6 +772,7 @@ export class World {
       bands[i].material.opacity=(i===0?.28:.17)*(0.86+.14*Math.sin(time*1.3+i));
     }
     if(this.fire)this.fire.scale.y=1+Math.sin(time*9)*.16;
+    if(this.cascadeTexture)this.cascadeTexture.offset.y=(time*.42)%1;
     const elapsed=Math.max(0,dt);
     this.cloudTravel+=elapsed*this.cloudWind;this.cloudElapsed+=elapsed;
     if(shouldRefreshClouds(this.cloudElapsed,this.detailTier))this.updateClouds(this.cloudTravel);

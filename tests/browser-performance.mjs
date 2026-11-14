@@ -80,7 +80,8 @@ try{
   await measure('village');
   const batching=await page.evaluate(()=>{
     const g=window.__brumariaPerfGame,birds=g.world.birdMesh;
-    if(!birds?.isInstancedMesh||birds.count!==12||g.world.birds.length!==12)
+    // v1.5.6 passou a 14/28/42 aves por nível; a cena é medida em EQUILIBRADO.
+    if(!birds?.isInstancedMesh||birds.count<1||birds.count>28||g.world.birds.length<28)
       throw Error('Seabird instances missing');
     const before=new birds.matrixWorld.constructor(),after=before.clone();
     birds.getMatrixAt(0,before);
